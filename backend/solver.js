@@ -35,6 +35,12 @@ function normalizeInput(input) {
     text = text.replace(/\bpower of (\d+)/g, "^$1");
     text = text.replace(/\bto the (\d+)/g, "^$1");
 
+    // Normalize Operators
+    text = text.replace(/\bplus\b/g, "+");
+    text = text.replace(/\bminus\b/g, "-");
+    text = text.replace(/\btimes\b/g, "*");
+    text = text.replace(/\bdivided by\b/g, "/");
+
     return text;
 }
 
@@ -223,12 +229,17 @@ function solveMathProblem(question) {
         const rule = identifyRule(expression);
         const animationFlow = getAnimationFlow(topic, rule, !!limits);
 
+        // NEW: Logic Engine Execution
+        const calculusLogic = require('./calculusSolver');
+        const solvedData = calculusLogic.solveCalculusProblem(expression, topic);
+
         return {
             topic,
             rule,
             expression,
             limits,
             animationFlow: animationFlow,
+            parsedTerms: solvedData.terms, // Explicit logic steps
             original_question: question,
             normalized_question: normalized
         };

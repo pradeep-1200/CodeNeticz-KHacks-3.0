@@ -1,21 +1,35 @@
-const { solveNumerical } = require('./numericalSolver');
+const { solveMathProblem } = require('./solver');
 
 const questions = [
     "What is 30 percent of 200",
-    "What is 5 percent of 80",
     "If 1 apple costs 5 rupees, how much do 10 apples cost?",
-    "If 1 book costs 20 rupees, how much do 3 books cost?",
     "A train goes 100 km in 1 hour. How far in 4 hours?",
-    "A person walks 3 km in 1 hour. How far in 2 hours?"
+    "How many minutes from 2:15 to 3:00?",
+    "Differentiate 2x square",
+    "integral of 2x",
+    "find the derivative of 3x squared plus 2x"
 ];
 
 questions.forEach(q => {
     try {
-        const result = solveNumerical(q);
+        const result = solveMathProblem(q);
         console.log(`Q: "${q}"`);
-        console.log(`TYPE: ${result.steps[0].visual} -> ${result.steps[result.steps.length - 1].visual}`);
+        console.log(`TOPIC: ${result.topic}`);
+        if (result.steps) {
+            console.log(`STEPS: ${result.steps.length} steps generated.`);
+            result.steps.forEach(s => console.log(`  [${s.text}] -> ${s.visual}`));
+        } else if (result.animationFlow) {
+            console.log(`FLOW: ${JSON.stringify(result.animationFlow)}`);
+            if (result.parsedTerms) {
+                console.log(`LOGIC ENGINE TERMS:`);
+                result.parsedTerms.forEach(t => {
+                    console.log(`  Term: ${t.original} -> Type: ${t.type}, Result: ${t.result.str}`);
+                });
+            }
+        }
         console.log("------------------------------------------------");
     } catch (e) {
         console.log(`Q: "${q}" -> ERROR: ${e.message}`);
+        console.log("------------------------------------------------");
     }
 });

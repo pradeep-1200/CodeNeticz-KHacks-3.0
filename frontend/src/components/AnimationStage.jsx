@@ -12,13 +12,43 @@ const TERM_COLORS_CLASSES = [
     'term-emerald'
 ];
 
-const parseTerms = (expression) => {
-    // Basic split by + or - but keep the delimiter
-    // This regex matches likely terms for polynomials
-    // e.g. "x^2 + 2x" -> ["x^2", "2x"] (roughly)
-    if (!expression) return [];
-    const parts = expression.split(/(?=[+-])/).map(t => t.trim());
-    return parts.filter(p => p.length > 0);
+// Helper to convert string term (fallback) to object
+// Matches backend 'parseTermDetails' logic roughly
+const shimTerm = (rawStr) => {
+    const clean = rawStr.replace(/\s+/g, '');
+    let coeffStr = "1";
+    let powerStr = "0";
+    let isConst = true;
+    let isLinear = false;
+    let sign = clean.startsWith('-') ? '-' : '+';
+
+    const absClean = clean.replace(/^[+-]/, '');
+
+    if (absClean.includes('x')) {
+        isConst = false;
+        powerStr = "1";
+        const pMatch = absClean.match(/\^(\d+)/);
+        if (pMatch) powerStr = pMatch[1];
+    }
+
+    const baseMatch = absClean.split('x')[0];
+    if (baseMatch === '' || baseMatch === '+') coeffStr = "1";
+    else if (baseMatch === '-') coeffStr = "1";
+    else coeffStr = baseMatch;
+
+    let c = parseInt(coeffStr);
+    if (sign === '-') c = c * -1;
+    let p = parseInt(powerStr);
+
+    if (p === 1 && !isConst) isLinear = true;
+
+    return {
+        original: rawStr, // keep exact string for display if needed
+        coeff: c,
+        power: p,
+        type: isConst ? 'constant' : (isLinear ? 'linear' : 'power'),
+        isConstant: isConst
+    };
 };
 
 // --- TIMELINE BUILDER ---
@@ -30,7 +60,15 @@ const buildTimeline = (solution) => {
         currentTime += duration;
     };
 
-    const terms = solution.terms || parseTerms(solution.expression || "");
+    // Use backend parsedTerms if available, otherwise shim the expression strings
+    let terms = [];
+    if (solution.parsedTerms) {
+        terms = solution.parsedTerms;
+    } else if (solution.expression) {
+        // Fallback split
+        const parts = solution.expression.split(/(?=[+-])/).map(t => t.trim()).filter(p => p.length > 0);
+        terms = parts.map(shimTerm);
+    }
 
     if (solution.topic === "numerical_reasoning") {
         solution.steps.forEach((step, index) => {
@@ -60,13 +98,6 @@ const buildTimeline = (solution) => {
         addPhase('SPLIT', 3000, 'Split Terms');
 
         // PARALLEL SOLVING FLOW
-        // We define 5 universal steps for parallel solving
-        // 1. SETUP: Show term with clear exponents
-        // 2. EXPAND: Show multiplication rule (n * ...)
-        // 3. SUBTRACT: Show power subtraction
-        // 4. SIMPLIFY: Perform arithmetic
-        // 5. FINAL: Clean up (x^1 -> x, x^0 -> 1)
-
         addPhase('PARALLEL_STEP_1', 4000, 'Setup Terms');
         addPhase('PARALLEL_STEP_2', 4000, 'Apply Rule');
         addPhase('PARALLEL_STEP_3', 4000, 'Subtract Powers');
@@ -75,33 +106,30 @@ const buildTimeline = (solution) => {
         addPhase('PARALLEL_HOLD', 3000, 'Review Results');
 
     } else {
-        // SEQUENTIAL SOLVE LOOP (for single term or fallback)
+        // SEQUENTIAL SOLVE LOOP (for single term or fallback or integration)
         terms.forEach((term, index) => {
-            const cleanTerm = term.replace(/[+-]/g, '').trim();
-            const isLinear = /^(\d*)x$/.test(cleanTerm); // ax or x
-            const isConstant = /^\d+$/.test(cleanTerm);
-
+            // term is an Object now: { original, coeff, power, type }
             const baseId = `SOLVE_TERM_${index}`;
 
             if (solution.topic === 'differentiation') {
-                if (isLinear) {
-                    addPhase(`${baseId}_LINEAR_SETUP`, 4000, `Term ${index + 1}: Setup`, { term, index, type: 'linear' });
-                    addPhase(`${baseId}_LINEAR_RULE`, 4000, `Term ${index + 1}: Power Rule`, { term, index, type: 'linear' });
-                    addPhase(`${baseId}_LINEAR_SUBTRACT`, 4000, `Term ${index + 1}: Subtract`, { term, index, type: 'linear' });
-                    addPhase(`${baseId}_LINEAR_ZERO`, 4000, `Term ${index + 1}: Zero Power`, { term, index, type: 'linear' });
-                    addPhase(`${baseId}_LINEAR_FINAL`, 3000, `Term ${index + 1}: Simplified`, { term, index, type: 'linear' });
-                } else if (isConstant) {
-                    addPhase(`${baseId}_SHOW`, 3000, `Term ${index + 1}: Constant`, { term, index, type: 'constant' });
-                    addPhase(`${baseId}_CONST_ZERO`, 3000, `Term ${index + 1}: Becomes Zero`, { term, index, type: 'constant' });
+                if (term.type === 'linear') {
+                    addPhase(`${baseId}_LINEAR_SETUP`, 4000, `Term ${index + 1}: Setup`, { termIndex: index, type: 'linear' });
+                    addPhase(`${baseId}_LINEAR_RULE`, 4000, `Term ${index + 1}: Power Rule`, { termIndex: index, type: 'linear' });
+                    addPhase(`${baseId}_LINEAR_SUBTRACT`, 4000, `Term ${index + 1}: Subtract`, { termIndex: index, type: 'linear' });
+                    addPhase(`${baseId}_LINEAR_ZERO`, 4000, `Term ${index + 1}: Zero Power`, { termIndex: index, type: 'linear' });
+                    addPhase(`${baseId}_LINEAR_FINAL`, 3000, `Term ${index + 1}: Simplified`, { termIndex: index, type: 'linear' });
+                } else if (term.type === 'constant') {
+                    addPhase(`${baseId}_SHOW`, 3000, `Term ${index + 1}: Constant`, { termIndex: index, type: 'constant' });
+                    addPhase(`${baseId}_CONST_ZERO`, 3000, `Term ${index + 1}: Becomes Zero`, { termIndex: index, type: 'constant' });
                 } else {
-                    addPhase(`${baseId}_SHOW`, 3000, `Term ${index + 1}: Setup`, { term, index, type: 'power' });
-                    addPhase(`${baseId}_POWER_RULE`, 4000, `Term ${index + 1}: Power Rule`, { term, index, type: 'power' });
-                    addPhase(`${baseId}_SUBTRACT`, 4000, `Term ${index + 1}: Subtract`, { term, index, type: 'power' });
-                    addPhase(`${baseId}_SIMPLIFY`, 4000, `Term ${index + 1}: Simplify`, { term, index, type: 'power' });
-                    addPhase(`${baseId}_POWER_FINAL`, 3000, `Term ${index + 1}: Final`, { term, index, type: 'power' });
+                    addPhase(`${baseId}_SHOW`, 3000, `Term ${index + 1}: Setup`, { termIndex: index, type: 'power' });
+                    addPhase(`${baseId}_POWER_RULE`, 4000, `Term ${index + 1}: Power Rule`, { termIndex: index, type: 'power' });
+                    addPhase(`${baseId}_SUBTRACT`, 4000, `Term ${index + 1}: Subtract`, { termIndex: index, type: 'power' });
+                    addPhase(`${baseId}_SIMPLIFY`, 4000, `Term ${index + 1}: Simplify`, { termIndex: index, type: 'power' });
+                    addPhase(`${baseId}_POWER_FINAL`, 3000, `Term ${index + 1}: Final`, { termIndex: index, type: 'power' });
                 }
             } else {
-                addPhase(`${baseId}_INTEGRATE`, 5000, `Integrate: ${term}`, { term, index, type: 'integration' });
+                addPhase(`${baseId}_INTEGRATE`, 5000, `Integrate: ${term.original}`, { termIndex: index, type: 'integration' });
             }
         });
     }
@@ -158,31 +186,19 @@ const RulePhase = ({ topic }) => {
     );
 };
 
-// Granular Term Visualization
-const GranularTermVisual = ({ term, phaseSuffix, type }) => {
-    // Parse term details
-    const cleanTerm = term.replace(/[+-]/g, '').trim();
-    // Extract coeff and power. e.g. "2x^3" -> c=2, p=3. "x" -> c=1, p=1
-    let coeffStr = "1";
-    let powerStr = "1";
+// Granular Term Visualization - Updated for Schema Input
+const GranularTermVisual = ({ termObj, phaseSuffix, type }) => {
+    // termObj: { coeff, power, original, type, ... }
 
-    // Check for explicit coefficient
-    const coeffMatch = cleanTerm.match(/^(\d+)/);
-    if (coeffMatch) coeffStr = coeffMatch[1];
-    else if (cleanTerm.startsWith('x')) coeffStr = "1";
+    // Safety check
+    if (!termObj) return null;
 
-    // Check for explicit power
-    const powMatch = cleanTerm.match(/\^(\d+)/);
-    if (powMatch) powerStr = powMatch[1];
-    else if (!cleanTerm.includes('x')) powerStr = "0"; // Constant
-    else powerStr = "1"; // Linear x
+    const c = termObj.coeff;
+    const p = termObj.power;
+    const cleanTerm = termObj.original.replace(/[+-]/, ''); // For display if needed
 
-    const c = parseInt(coeffStr);
-    const p = parseInt(powerStr);
-
-    // Render logic based on phaseSuffix
-    // Suffixes: LINEAR_SETUP, LINEAR_RULE, LINEAR_SUBTRACT, LINEAR_ZERO, LINEAR_FINAL
-    // Power Suffixes: SHOW, POWER_RULE, SUBTRACT, SIMPLIFY
+    // Check backend logic result if available for Final step
+    // termObj.result might exist: { str: "4x", ... }
 
     const floatStyle = { display: 'inline-block' };
     const bigOp = { margin: '0 0.2em', color: '#9CA3AF' }; // Grey multiplier dot
@@ -195,8 +211,12 @@ const GranularTermVisual = ({ term, phaseSuffix, type }) => {
             return (
                 <div className="term-large term-blue">
                     {c !== 1 ? c : ''}x<sup style={{ color: '#6B7280' }}>1</sup>
+                    {c === 1 && termObj.original.includes('-') && '-'}
                 </div>
             );
+            // Note: simple negative handling visual. 
+            // Real negative handling might want {c} to show -1.
+            // If c is -2, it shows -2.
         }
         if (phaseSuffix === 'LINEAR_RULE') { // a * 1 * x^1
             return (
@@ -228,7 +248,9 @@ const GranularTermVisual = ({ term, phaseSuffix, type }) => {
             );
         }
         if (phaseSuffix === 'LINEAR_FINAL') { // a
-            return <div className="term-large term-emerald">{c}</div>;
+            // Use logical result if available
+            const display = termObj.result?.str || c;
+            return <div className="term-large term-emerald">{display}</div>;
         }
     }
 
@@ -261,18 +283,23 @@ const GranularTermVisual = ({ term, phaseSuffix, type }) => {
             );
         }
         if (phaseSuffix === 'POWER_FINAL') {
-            // Clean up x^1 to x
-            const newPower = p - 1;
+            // Use logic result
+            const display = termObj.result?.str || `${p * c}x^${p - 1}`;
+
+            // Format for superscripts if needed
+            // Simple split by '^' for display
+            const parts = display.toString().split('^');
+
             return (
                 <div className="term-large term-emerald">
-                    {p * c}{newPower === 1 ? 'x' : <>x<sup>{newPower}</sup></>}
+                    {parts[0]}{parts[1] ? <sup>{parts[1]}</sup> : ''}
                 </div>
             );
         }
     }
 
     if (type === 'constant') {
-        if (phaseSuffix === 'SHOW') return <div className="term-large term-blue">{cleanTerm}</div>;
+        if (phaseSuffix === 'SHOW') return <div className="term-large term-blue">{termObj.original}</div>;
         return <div className="term-large term-emerald">0</div>;
     }
 
@@ -383,7 +410,11 @@ export default function AnimationStage({ solution }) {
         if (activePhase.id === 'QUESTION_SHOW') return <div className="term-large">{solution.expression}</div>;
         if (activePhase.id === 'SPLIT') return (
             <div className="math-split-row">
-                {terms.map((t, i) => <div key={i} className={`math-equation-row ${TERM_COLORS_CLASSES[i % 3]}`}>{t}</div>)}
+                {terms.map((t, i) => (
+                    <div key={i} className={`math-equation-row ${TERM_COLORS_CLASSES[i % 3]}`}>
+                        {t.original}
+                    </div>
+                ))}
             </div>
         );
 
@@ -428,12 +459,8 @@ export default function AnimationStage({ solution }) {
             return (
                 <div className="math-split-row" style={{ width: '100%', justifyContent: 'space-around' }}>
                     {terms.map((t, i) => {
-                        const cleanTerm = t.replace(/[+-]/g, '').trim();
-                        // Strict check: linear must match 'ax' AND not contain '^'
-                        const isLinear = /^(\d*)x$/.test(cleanTerm) && !cleanTerm.includes('^');
-                        const isConstant = /^\d+$/.test(cleanTerm);
-                        const type = isLinear ? 'linear' : (isConstant ? 'constant' : 'power');
-
+                        // t is termObject
+                        const type = t.type;
                         const suffix = currentStepMap[type];
 
                         return (
@@ -445,7 +472,7 @@ export default function AnimationStage({ solution }) {
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -20 }}
                                     >
-                                        <GranularTermVisual term={t} phaseSuffix={suffix} type={type} />
+                                        <GranularTermVisual termObj={t} phaseSuffix={suffix} type={type} />
                                     </motion.div>
                                 </AnimatePresence>
                             </div>
@@ -457,7 +484,9 @@ export default function AnimationStage({ solution }) {
 
         if (activePhase.id.startsWith('SOLVE_TERM')) {
             // Check for integration fallback
-            if (activePhase.id.endsWith('INTEGRATE')) return <div className="term-large">∫ {activePhase.term} dx</div>;
+            const termObj = terms[activePhase.termIndex];
+
+            if (activePhase.id.endsWith('INTEGRATE')) return <div className="term-large">∫ {termObj.original} dx</div>;
 
             // Granular Differentiation
             const suffix = activePhase.id.split(/SOLVE_TERM_\d+_/)[1];
@@ -469,7 +498,7 @@ export default function AnimationStage({ solution }) {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                     >
-                        <GranularTermVisual term={activePhase.term} phaseSuffix={suffix} type={activePhase.type} />
+                        <GranularTermVisual termObj={termObj} phaseSuffix={suffix} type={activePhase.type} />
                     </motion.div>
                 </AnimatePresence>
             );
@@ -477,30 +506,15 @@ export default function AnimationStage({ solution }) {
 
         if (activePhase.id === 'COMBINE' || activePhase.id === 'FINAL_ANSWER') {
             if (solution.topic === 'integration') {
-                // Calculate integral parts
+                // INTEGRATION COMBINE
                 const integralTerms = terms.map(t => {
-                    const clean = t.replace(/[+-]/g, '').trim();
-                    let coeff = 1, power = 1;
-
-                    const cMatch = clean.match(/^(\d+)/);
-                    if (cMatch) coeff = parseInt(cMatch[1]);
-                    else if (clean.startsWith('x')) coeff = 1;
-
-                    const pMatch = clean.match(/\^(\d+)/);
-                    if (pMatch) power = parseInt(pMatch[1]);
-                    else if (!clean.includes('x')) power = 0; // Constant
-
-                    // Integrate: x^n -> x^(n+1) / (n+1)
-                    // New Coeff = coeff / (power + 1)
+                    const { coeff, power } = t;
                     const newPower = power + 1;
-                    const divisor = power + 1;
-
+                    const divisor = newPower;
                     return { c: coeff, divisor: divisor, p: newPower };
                 });
 
                 // Simplified String Construction for Integration
-                // handling simplified fractions like 1/2 x^2 or x^2/2.
-                // We won't combine like terms for integration as usually they are distinct powers in these simple examples
                 const parts = integralTerms.map((item, idx) => {
                     let termStr = "";
                     const isWhole = item.c % item.divisor === 0;
@@ -524,61 +538,23 @@ export default function AnimationStage({ solution }) {
                 return <div className="term-large term-emerald">∫ = {finalStr}</div>;
             }
 
-            // Differentiation Logic (Existing)
-            const derivativeTerms = terms.map(t => {
-                const clean = t.replace(/[+-]/g, '').trim();
-                let coeff = 1, power = 1;
-
-                const cMatch = clean.match(/^(\d+)/);
-                if (cMatch) coeff = parseInt(cMatch[1]);
-                else if (clean.startsWith('x')) coeff = 1;
-
-                const pMatch = clean.match(/\^(\d+)/);
-                if (pMatch) power = parseInt(pMatch[1]);
-                else if (!clean.includes('x')) power = 0; // Constant
-
-                // Differentiate: power rule
-                const newCoeff = coeff * power;
-                const newPower = power - 1;
-
-                if (newCoeff === 0) return null;
-                return { c: newCoeff, p: newPower };
-            }).filter(Boolean);
-
-            // Simplify: Combine like terms
-            const simplifiedMap = {};
-            derivativeTerms.forEach(item => {
-                if (!simplifiedMap[item.p]) simplifiedMap[item.p] = 0;
-                simplifiedMap[item.p] += item.c;
-            });
-
-            // Reconstruct string sorted by power desc
-            const sortedPowers = Object.keys(simplifiedMap).map(Number).sort((a, b) => b - a);
-            const finalParts = sortedPowers.map(pow => {
-                const coeff = simplifiedMap[pow];
-                if (coeff === 0) return null;
-
-                const absCoeff = Math.abs(coeff);
-                const sign = coeff < 0 ? ' - ' : ' + ';
-
-                let termStr = `${absCoeff}`;
-                if (pow === 1) termStr = `${absCoeff}x`;
-                if (pow > 1) termStr = `${absCoeff}x^${pow}`;
-
-                return { str: termStr, sign, isFirst: false };
-            }).filter(Boolean);
+            // Differentiation Logic (Existing) using Object Terms
+            // Reconstruct final string from Logic Engine results if possible
 
             let finalStr = "";
-            if (finalParts.length > 0) {
-                // Fix first term sign
-                finalParts[0].isFirst = true;
-                const firstPart = finalParts[0];
-                finalStr = (firstPart.sign.includes('-') ? '-' : '') + firstPart.str;
+            let processedParts = [];
 
-                // Append separate parts
-                for (let i = 1; i < finalParts.length; i++) {
-                    finalStr += finalParts[i].sign + finalParts[i].str;
+            terms.forEach(t => {
+                if (t.result && t.result.str !== "0") {
+                    processedParts.push(t.result.str);
                 }
+            });
+
+            if (processedParts.length > 0) {
+                // Join with logic for signs?
+                // result.str usually has sign unless it's first positive
+                finalStr = processedParts.join(" + ").replace(/\+ -/g, "- ");
+                // Simple join for now, refinement if needed
             } else {
                 finalStr = "0";
             }
@@ -586,24 +562,17 @@ export default function AnimationStage({ solution }) {
             return <div className="term-large term-emerald">dy/dx = {finalStr}</div>;
         }
 
-        // Fix for Limits phases showing blank
-        // Fix for Limits phases showing blank
         if (activePhase.id.startsWith('LIMITS')) {
             // Re-calculate integral terms for evaluation
+            // Logic engine integration for limits
             const integralTerms = terms.map(t => {
-                const clean = t.replace(/[+-]/g, '').trim();
-                let coeff = 1, power = 1;
-
-                const cMatch = clean.match(/^(\d+)/);
-                if (cMatch) coeff = parseInt(cMatch[1]);
-                else if (clean.startsWith('x')) coeff = 1;
-
-                const pMatch = clean.match(/\^(\d+)/);
-                if (pMatch) power = parseInt(pMatch[1]);
-                else if (!clean.includes('x')) power = 0; // Constant
-
+                // Same logic as backend calculusSolver integration
+                const { coeff, power } = t;
+                // t is raw term here? No t is object 
+                // WAIT: If using limits, we need INTEGRATED form.
+                // The terms array currently has original problem terms.
                 const newPower = power + 1;
-                const divisor = power + 1;
+                const divisor = newPower;
                 return { c: coeff, divisor: divisor, p: newPower };
             });
 

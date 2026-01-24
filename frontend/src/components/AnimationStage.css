@@ -1,0 +1,384 @@
+/* Main Container */
+.player-container {
+    height: 100%;
+    background-color: #000;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+}
+
+/* Cinema Screen Area */
+.cinema-screen {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(to bottom right, #111827, #000);
+}
+
+.cinema-background-grid {
+    position: absolute;
+    inset: 0;
+    opacity: 0.2;
+    background-image: linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px);
+    background-size: 50px 50px;
+}
+
+.cinema-content-layer {
+    z-index: 10;
+}
+
+/* Phase Label Overlay */
+.phase-label-container {
+    position: absolute;
+    top: 2rem;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+}
+
+.phase-label {
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(4px);
+    padding: 0.25rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #D1D5DB;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* Subtitle Overlay - at Bottom */
+.subtitle-overlay-container {
+    position: absolute;
+    bottom: 2rem;
+    left: 10%;
+    right: 10%;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 50;
+}
+
+.subtitle-text {
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    color: #F3F4F6;
+    font-size: 1.125rem;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.5;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Player Controls */
+.player-controls {
+    height: 5rem;
+    background-color: rgba(17, 24, 39, 0.9);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid #1F2937;
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    z-index: 20;
+}
+
+.play-pause-btn {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background-color: white;
+    color: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.play-pause-btn:active {
+    transform: scale(0.95);
+}
+
+.timeline-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.timeline-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.625rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #6B7280;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.timeline-track {
+    height: 0.375rem;
+    background-color: #1F2937;
+    border-radius: 9999px;
+    position: relative;
+    overflow: hidden;
+}
+
+.timeline-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background-color: #6366f1;
+    /* Indigo 500 */
+}
+
+.timeline-marker {
+    position: absolute;
+    top: 0;
+    width: 1px;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.speed-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.speed-btn {
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    border: none;
+    cursor: pointer;
+    background-color: transparent;
+    color: #9CA3AF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.speed-btn:hover {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.speed-btn.active {
+    background-color: #374151;
+    color: white;
+}
+
+.speed-btn.active-icon {
+    color: #60A5FA;
+    /* Blue tint for active toggles */
+}
+
+.divider-vertical {
+    width: 1px;
+    height: 1.5rem;
+    background-color: #374151;
+    margin: 0 0.25rem;
+}
+
+.settings-icon {
+    color: #6B7280;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.settings-icon:hover {
+    color: white;
+}
+
+/* Waiting State */
+.waiting-screen {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #111827;
+    color: #9CA3AF;
+}
+
+/* Intro Phase */
+.intro-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.intro-title {
+    font-size: 3rem;
+    font-weight: 700;
+    background: linear-gradient(to right, #60A5FA, #C084FC);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.intro-subtitle {
+    color: #9CA3AF;
+    font-size: 1.25rem;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Rule Phase */
+.rule-container {
+    text-align: center;
+}
+
+.rule-label {
+    color: #6B7280;
+    margin-bottom: 2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.875rem;
+}
+
+.rule-formula {
+    font-size: 3.75rem;
+    font-family: serif;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Math Terms */
+.math-equation-row {
+    font-size: 3.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.math-split-row {
+    display: flex;
+    gap: 3rem;
+}
+
+.term-blue {
+    color: #60A5FA;
+}
+
+.term-orange {
+    color: #FB923C;
+}
+
+.term-emerald {
+    color: #34D399;
+}
+
+/* Using emerald for 3rd term */
+
+.term-large {
+    font-size: 4.5rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    display: flex;
+    align-items: center;
+}
+
+.exponent-red {
+    color: #EF4444;
+    margin-left: 0.25rem;
+}
+
+.exponent-green {
+    color: #4ADE80;
+    margin-left: 0.25rem;
+}
+
+/* Integrals Limits View */
+.limits-view {
+    display: flex;
+    align-items: stretch;
+    font-size: 3.75rem;
+    color: white;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.limit-bracket {
+    width: 1rem;
+    border-top: 4px solid white;
+    border-bottom: 4px solid white;
+}
+
+.limit-bracket-left {
+    border-left: 4px solid white;
+    margin-right: 1rem;
+}
+
+.limit-bracket-right {
+    border-right: 4px solid white;
+    margin-left: 1rem;
+}
+
+.limit-values {
+    display: flex;
+    flex-direction: column;
+    font-size: 1.875rem;
+    margin-left: 0.5rem;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    color: #FACC15;
+    /* Yellow */
+}
+
+/* Numerical Reasoning */
+.numerical-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+}
+
+.numerical-visual {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.scene-badge {
+    background-color: #374151;
+    color: #F3F4F6;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+}
+
+.term-giant {
+    font-size: 3.5rem;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    color: #FBBF24;
+    /* Amber */
+    line-height: 1.2;
+    text-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+    white-space: pre-wrap;
+}

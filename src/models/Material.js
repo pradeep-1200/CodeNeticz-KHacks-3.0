@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const materialSchema = new mongoose.Schema({
-    classroom: {
+    classId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Classroom',
         required: true,
@@ -15,11 +15,11 @@ const materialSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['text', 'link'],
+        enum: ['text', 'audio', 'video'],
         required: true,
     },
     content: {
-        type: String, // Can be the text content or the URL
+        type: String, // Text content or URL
         required: true,
     },
     createdBy: {

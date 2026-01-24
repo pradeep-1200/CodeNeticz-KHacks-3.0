@@ -19,10 +19,25 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+const classroomRoutes = require('./routes/classroomRoutes');
+const materialRoutes = require('./routes/materialRoutes');
+
 app.use('/api/auth', authRoutes);
+app.use('/api/class', classroomRoutes);
+app.use('/api/material', materialRoutes);
 
 app.get('/health', (req, res) => {
     res.send('Server Running');
+});
+
+const { protect, teacherOnly } = require('./middleware/auth');
+
+app.get('/api/test-auth', protect, (req, res) => {
+    res.json({ message: 'Authenticated successfully', user: req.user });
+});
+
+app.get('/api/test-teacher', protect, teacherOnly, (req, res) => {
+    res.json({ message: 'Teacher access granted' });
 });
 
 const PORT = process.env.PORT || 5000;

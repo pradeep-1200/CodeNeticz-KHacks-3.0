@@ -2,12 +2,12 @@ const Material = require('../models/Material');
 const Classroom = require('../models/Classroom');
 
 // @desc    Add material to a classroom
-// @route   POST /api/materials
+// @route   POST /api/material/add
 // @access  Private/Teacher
 const addMaterial = async (req, res) => {
-    const { classroomId, title, description, type, content } = req.body;
+    const { classId, title, description, type, content } = req.body;
 
-    const classroom = await Classroom.findById(classroomId);
+    const classroom = await Classroom.findById(classId);
 
     if (!classroom) {
         res.status(404).json({ message: 'Classroom not found' });
@@ -15,13 +15,13 @@ const addMaterial = async (req, res) => {
     }
 
     // Ensure user is the teacher of the classroom
-    if (classroom.teacher.toString() !== req.user._id.toString()) {
+    if (classroom.teacherId.toString() !== req.user._id.toString()) {
         res.status(403).json({ message: 'Not authorized to add material to this classroom' });
         return;
     }
 
     const material = await Material.create({
-        classroom: classroomId,
+        classId,
         title,
         description,
         type,
@@ -33,26 +33,27 @@ const addMaterial = async (req, res) => {
 };
 
 // @desc    Get materials for a classroom
-// @route   GET /api/materials/:classroomId
+// @route   GET /api/material/:classId
 // @access  Private
 const getMaterials = async (req, res) => {
-    const classroom = await Classroom.findById(req.params.classroomId);
+    const classroom = await Classroom.findById(req.params.classId);
 
     if (!classroom) {
         res.status(404).json({ message: 'Classroom not found' });
         return;
     }
 
-    // Check access
-    const isTeacher = classroom.teacher.toString() === req.user._id.toString();
-    const isStudent = classroom.students.includes(req.user._id);
+    // Check access: must be teacher or student of that class
+    const isTeacher = classroom.teacherId.toString() === req.user._id.toString();
+    // classroom.students contains ObjectIds, so we need to check string equality
+    const isStudent = classroom.students.some(id => id.toString() === req.user._id.toString());
 
     if (!isTeacher && !isStudent) {
         res.status(403).json({ message: 'Not authorized to view materials for this classroom' });
         return;
     }
 
-    const materials = await Material.find({ classroom: req.params.classroomId }).sort({ createdAt: -1 });
+    const materials = await Material.find({ classId: req.params.classId }).sort({ createdAt: -1 });
 
     res.json(materials);
 };

@@ -3,16 +3,12 @@ const router = express.Router();
 const {
     createClassroom,
     joinClassroom,
-    getClassrooms,
     getClassroomById,
 } = require('../controllers/classroomController');
-const { protect, teacher } = require('../middleware/authMiddleware');
+const { protect, teacherOnly } = require('../middleware/auth');
 
-router.route('/')
-    .post(protect, teacher, createClassroom)
-    .get(protect, getClassrooms);
-
+router.post('/create', protect, teacherOnly, createClassroom);
 router.post('/join', protect, joinClassroom);
-router.get('/:id', protect, getClassroomById);
+router.get('/:classId', protect, getClassroomById);
 
 module.exports = router;

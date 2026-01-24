@@ -1,17 +1,16 @@
 const Classroom = require('../models/Classroom');
-const User = require('../models/User');
 const crypto = require('crypto');
 
 // @desc    Create a new classroom
-// @route   POST /api/classrooms
+// @route   POST /api/class/create
 // @access  Private/Teacher
 const createClassroom = async (req, res) => {
-    const { name, description } = req.body;
+    const { className, description } = req.body;
 
     // Generate a random 6-character unique join code
     let joinCode = crypto.randomBytes(3).toString('hex').toUpperCase();
 
-    // Ensure uniqueness (simple check)
+    // Ensure uniqueness
     let existingClassroom = await Classroom.findOne({ joinCode });
     while (existingClassroom) {
         joinCode = crypto.randomBytes(3).toString('hex').toUpperCase();
@@ -19,9 +18,9 @@ const createClassroom = async (req, res) => {
     }
 
     const classroom = await Classroom.create({
-        name,
+        className,
         description,
-        teacher: req.user._id,
+        teacherId: req.user._id,
         joinCode,
     });
 
@@ -29,7 +28,7 @@ const createClassroom = async (req, res) => {
 };
 
 // @desc    Join a classroom
-// @route   POST /api/classrooms/join
+// @route   POST /api/class/join
 // @access  Private/Student
 const joinClassroom = async (req, res) => {
     const { joinCode } = req.body;
@@ -41,12 +40,13 @@ const joinClassroom = async (req, res) => {
         return;
     }
 
-    // Check if already joined via students array or if it is the teacher
-    if (classroom.teacher.toString() === req.user._id.toString()) {
+    // Check if teacher
+    if (classroom.teacherId.toString() === req.user._id.toString()) {
         res.status(400).json({ message: 'You are the teacher of this classroom' });
         return;
     }
 
+    // Check if already student
     if (classroom.students.includes(req.user._id)) {
         res.status(400).json({ message: 'You are already a member of this classroom' });
         return;
@@ -58,32 +58,17 @@ const joinClassroom = async (req, res) => {
     res.json({ message: 'Classroom joined successfully', classroom });
 };
 
-// @desc    Get all classrooms for the logged in user
-// @route   GET /api/classrooms
-// @access  Private
-const getClassrooms = async (req, res) => {
-    let classrooms;
-
-    if (req.user.role === 'teacher') {
-        classrooms = await Classroom.find({ teacher: req.user._id });
-    } else {
-        classrooms = await Classroom.find({ students: req.user._id });
-    }
-
-    res.json(classrooms);
-};
-
 // @desc    Get classroom by ID
-// @route   GET /api/classrooms/:id
+// @route   GET /api/class/:classId
 // @access  Private
 const getClassroomById = async (req, res) => {
-    const classroom = await Classroom.findById(req.params.id)
-        .populate('teacher', 'name email')
+    const classroom = await Classroom.findById(req.params.classId)
+        .populate('teacherId', 'name email')
         .populate('students', 'name email');
 
     if (classroom) {
         // Check if user is part of the classroom
-        const isTeacher = classroom.teacher._id.toString() === req.user._id.toString();
+        const isTeacher = classroom.teacherId._id.toString() === req.user._id.toString();
         const isStudent = classroom.students.some(student => student._id.toString() === req.user._id.toString());
 
         if (isTeacher || isStudent) {
@@ -96,4 +81,4 @@ const getClassroomById = async (req, res) => {
     }
 };
 
-module.exports = { createClassroom, joinClassroom, getClassrooms, getClassroomById };
+module.exports = { createClassroom, joinClassroom, getClassroomById };

@@ -20,8 +20,7 @@
 .class-title {
     font-size: 2rem;
     font-weight: 700;
-    color: #1a73e8;
-    /* Primary Blue from index.css */
+    color: var(--primary-blue);
     margin-bottom: 0.5rem;
 }
 
@@ -37,7 +36,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: #1a73e8;
+    color: var(--primary-blue);
     display: flex;
     align-items: center;
 }
@@ -74,7 +73,7 @@
     left: 0;
     width: 100%;
     height: 3px;
-    background-color: #1a73e8;
+    background-color: var(--primary-blue);
 }
 
 .tab-button:hover {
@@ -89,8 +88,8 @@
 }
 
 .upload-btn {
-    background-color: #1a73e8;
-    color: white;
+    background-color: var(--primary-blue);
+    color: var(--bg-white);
     padding: 0.75rem 1.5rem;
     border-radius: 24px;
     border: none;
@@ -105,7 +104,7 @@
 }
 
 .upload-btn:hover {
-    background-color: #1557b0;
+    background-color: var(--primary-blue-hover);
 }
 
 .materials-grid {
@@ -137,8 +136,8 @@
 }
 
 .card-icon {
-    background-color: #e8f0fe;
-    color: #1a73e8;
+    background-color: var(--bg-blue-light);
+    color: var(--primary-blue);
     padding: 10px;
     border-radius: 50%;
 }
@@ -170,8 +169,8 @@
 }
 
 .badge-topic {
-    background-color: #e6f4ea;
-    color: #137333;
+    background-color: var(--bg-green-light);
+    color: var(--secondary-green);
 }
 
 .access-controls {
@@ -216,8 +215,8 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background-color: #1a73e8;
-    color: white;
+    background-color: var(--primary-blue);
+    color: var(--bg-white);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -268,8 +267,8 @@
 }
 
 .teacher-badge {
-    background-color: #1a73e8;
-    color: white;
+    background-color: var(--primary-blue);
+    color: var(--bg-white);
     font-size: 0.75rem;
     padding: 2px 8px;
     border-radius: 4px;
@@ -321,21 +320,21 @@
 
 .student-status {
     font-size: 0.9rem;
-    color: #137333;
+    color: var(--secondary-green);
     /* Green for joined */
 }
 
 .progress-indicator {
     width: 150px;
     height: 8px;
-    background-color: #e8f0fe;
+    background-color: var(--bg-blue-light);
     border-radius: 4px;
     overflow: hidden;
 }
 
 .progress-bar {
     height: 100%;
-    background-color: #1a73e8;
+    background-color: var(--primary-blue);
 }
 
 /* Toggle Switch (Simplified) */

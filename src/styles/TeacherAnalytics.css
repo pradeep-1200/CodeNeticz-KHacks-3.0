@@ -14,12 +14,12 @@
 
 .analytics-header h1 {
     font-size: 2rem;
-    color: #1a73e8;
+    color: var(--primary-blue);
     margin-bottom: 0.5rem;
 }
 
 .analytics-header p {
-    color: #5f6368;
+    color: var(--text-secondary);
 }
 
 /* Stats Cards */
@@ -31,10 +31,10 @@
 }
 
 .stat-card {
-    background: white;
+    background: var(--bg-white);
     padding: 1.5rem;
     border-radius: 12px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--border-color);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     display: flex;
     align-items: center;
@@ -76,7 +76,7 @@
 }
 
 .trend-up {
-    color: #137333;
+    color: var(--secondary-green);
 }
 
 .trend-down {
@@ -143,10 +143,10 @@
 
 .student-list-header {
     padding: 1rem 1.5rem;
-    background: #f8f9fa;
-    border-bottom: 1px solid #e0e0e0;
+    background: var(--bg-light);
+    border-bottom: 1px solid var(--border-color);
     font-weight: 600;
-    color: #5f6368;
+    color: var(--text-secondary);
 }
 
 .student-list-content {
@@ -168,8 +168,8 @@
 }
 
 .student-item.active {
-    background-color: #e8f0fe;
-    border-left: 4px solid #1a73e8;
+    background-color: var(--bg-blue-light);
+    border-left: 4px solid var(--primary-blue);
 }
 
 .student-detail-card {
@@ -192,8 +192,8 @@
 .student-avatar-lg {
     width: 50px;
     height: 50px;
-    background: #1a73e8;
-    color: white;
+    background: var(--primary-blue);
+    color: var(--bg-white);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -225,13 +225,13 @@
 }
 
 .tag-concept {
-    background: #e8f0fe;
+    background: var(--bg-blue-light);
     color: #1967d2;
 }
 
 .tag-input {
-    background: #e6f4ea;
-    color: #137333;
+    background: var(--bg-green-light);
+    color: var(--secondary-green);
 }
 
 .comparison-box {

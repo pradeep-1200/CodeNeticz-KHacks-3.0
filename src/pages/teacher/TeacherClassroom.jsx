@@ -141,7 +141,7 @@ export default function TeacherClassroom() {
                                 aria-label="More options"
                                 style={{ background: 'none', border: 'none', cursor: 'pointer' }}
                             >
-                                <MoreVertical size={20} color="#5f6368" />
+                                <MoreVertical size={20} color="var(--text-secondary)" />
                             </button>
                         </div>
 
@@ -153,13 +153,13 @@ export default function TeacherClassroom() {
                         <div>
                             <span className="badge badge-topic">{material.topic}</span>
                             <span className={`badge ${material.difficulty === 'Hard' ? 'badge-difficulty' : 'badge-topic'}`}
-                                style={material.difficulty === 'Hard' ? {} : { backgroundColor: '#e8f0fe', color: '#1967d2' }}>
+                                style={material.difficulty === 'Hard' ? {} : { backgroundColor: 'var(--bg-blue-light)', color: 'var(--primary-blue-hover)' }}>
                                 {material.difficulty}
                             </span>
                         </div>
 
                         <div className="access-controls">
-                            <p style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#5f6368', textTransform: 'uppercase' }}>Accessibility Preview</p>
+                            <p style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Accessibility Preview</p>
 
                             <div className="access-toggle">
                                 <span>Simplified View</span>
@@ -225,7 +225,7 @@ export default function TeacherClassroom() {
                     {MOCK_DISCUSSIONS.map(post => (
                         <div key={post.id} className="comment-card">
                             <div className="comment-header">
-                                <div className="avatar" style={{ backgroundColor: post.isTeacher ? '#1a73e8' : '#e37400' }}>
+                                <div className="avatar" style={{ backgroundColor: post.isTeacher ? 'var(--primary-blue)' : '#e37400' }}>
                                     {post.author.split(' ').map(n => n[0]).join('')}
                                 </div>
                                 <div>
@@ -244,7 +244,7 @@ export default function TeacherClassroom() {
                                     style={{
                                         width: '100%',
                                         padding: '0.75rem',
-                                        border: '1px solid #dadce0',
+                                        border: '1px solid var(--border-color)',
                                         borderRadius: '20px',
                                         outline: 'none'
                                     }}
@@ -260,15 +260,15 @@ export default function TeacherClassroom() {
     const renderStudents = () => (
         <div className="tab-content fade-in">
             <div className="student-list">
-                <div style={{ padding: '1rem 1.5rem', background: '#f8f9fa', borderBottom: '1px solid #e0e0e0', display: 'flex' }}>
-                    <span style={{ flex: 1, fontWeight: 'bold', color: '#5f6368' }}>Name</span>
-                    <span style={{ width: '150px', fontWeight: 'bold', color: '#5f6368' }}>Status</span>
-                    <span style={{ width: '150px', fontWeight: 'bold', color: '#5f6368' }}>Progress</span>
+                <div style={{ padding: '1rem 1.5rem', background: 'var(--bg-light)', borderBottom: '1px solid var(--border-color)', display: 'flex' }}>
+                    <span style={{ flex: 1, fontWeight: 'bold', color: 'var(--text-secondary)' }}>Name</span>
+                    <span style={{ width: '150px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>Status</span>
+                    <span style={{ width: '150px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>Progress</span>
                 </div>
                 {MOCK_STUDENTS.map(student => (
                     <div key={student.id} className="student-row">
                         <div className="student-info">
-                            <div className="avatar" style={{ width: '32px', height: '32px', fontSize: '0.8rem', backgroundColor: '#5f6368' }}>
+                            <div className="avatar" style={{ width: '32px', height: '32px', fontSize: '0.8rem', backgroundColor: 'var(--text-secondary)' }}>
                                 {student.name.split(' ').map(n => n[0]).join('')}
                             </div>
                             <span className="student-name">{student.name}</span>
@@ -288,7 +288,7 @@ export default function TeacherClassroom() {
                             <div className="progress-indicator">
                                 <div className="progress-bar" style={{ width: `${student.progress}%` }}></div>
                             </div>
-                            <span style={{ fontSize: '0.75rem', color: '#5f6368' }}>{student.progress}% completed</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{student.progress}% completed</span>
                         </div>
                     </div>
                 ))}
@@ -304,7 +304,7 @@ export default function TeacherClassroom() {
                 style={{ height: '200px', marginBottom: '1rem', opacity: 0.5 }}
             />
             <h3>No assessments scheduled</h3>
-            <p style={{ color: '#5f6368' }}>Create a new quiz or assignment to get started.</p>
+            <p style={{ color: 'var(--text-secondary)' }}>Create a new quiz or assignment to get started.</p>
             <button className="upload-btn" style={{ margin: '1rem auto' }}>
                 <Plus size={20} /> Create Assessment
             </button>
@@ -318,7 +318,7 @@ export default function TeacherClassroom() {
                 <h1 className="class-title">{MOCK_CLASS_INFO.name}</h1>
                 <div className="class-code">
                     <span>Class Code:</span>
-                    <span style={{ fontWeight: 'bold', color: '#202124' }}>{MOCK_CLASS_INFO.code}</span>
+                    <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>{MOCK_CLASS_INFO.code}</span>
                     <button
                         className="copy-btn"
                         onClick={handleCopyCode}

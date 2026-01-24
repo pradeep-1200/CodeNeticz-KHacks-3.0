@@ -30,9 +30,9 @@ import '../../styles/TeacherAnalytics.css';
 // --- Dummy Data ---
 
 const CLASS_STATS = [
-    { label: "Avg Class Score", value: "78%", change: "+5%", icon: <Activity />, color: "#1a73e8", bg: "#e8f0fe" },
-    { label: "Engagement Rate", value: "85%", change: "+12%", icon: <Users />, color: "#137333", bg: "#e6f4ea" },
-    { label: "Completion Rate", value: "92%", change: "+2%", icon: <CheckCircle />, color: "#e37400", bg: "#fef7e0" },
+    { label: "Avg Class Score", value: "78%", change: "+5%", icon: <Activity />, color: "var(--primary-blue)", bg: "var(--bg-blue-light)" },
+    { label: "Engagement Rate", value: "85%", change: "+12%", icon: <Users />, color: "var(--secondary-green)", bg: "var(--bg-green-light)" },
+    { label: "Completion Rate", value: "92%", change: "+2%", icon: <CheckCircle />, color: "var(--text-disabled)", bg: "#fef7e0" },
 ];
 
 const ASSESSMENT_DATA = [
@@ -136,7 +136,7 @@ export default function TeacherAnalytics() {
                     <div className="chart-card">
                         <div className="chart-header">
                             <h2 className="chart-title">Assessment Performance History</h2>
-                            <TrendingUp size={20} color="#5f6368" />
+                            <TrendingUp size={20} color="var(--text-secondary)" />
                         </div>
                         <div style={{ width: '100%', height: 300 }}>
                             <ResponsiveContainer>
@@ -157,7 +157,7 @@ export default function TeacherAnalytics() {
                     <div className="chart-card">
                         <div className="chart-header">
                             <h2 className="chart-title">Improvement Over Time</h2>
-                            <Activity size={20} color="#5f6368" />
+                            <Activity size={20} color="var(--text-secondary)" />
                         </div>
                         <div style={{ width: '100%', height: 300 }}>
                             <ResponsiveContainer>
@@ -223,14 +223,14 @@ export default function TeacherAnalytics() {
                                         <div
                                             style={{
                                                 width: '32px', height: '32px', borderRadius: '50%',
-                                                background: '#e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                fontSize: '0.8rem', fontWeight: 'bold', color: '#5f6368'
+                                                background: 'var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-secondary)'
                                             }}>
                                             {student.name.split(' ').map(n => n[0]).join('')}
                                         </div>
                                         <div>
-                                            <div style={{ fontWeight: '500', color: '#202124' }}>{student.name}</div>
-                                            <div style={{ fontSize: '0.8rem', color: '#5f6368' }}>{student.performance}</div>
+                                            <div style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{student.name}</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{student.performance}</div>
                                         </div>
                                     </div>
                                     <ArrowRight size={16} color="#dadce0" />
@@ -247,7 +247,7 @@ export default function TeacherAnalytics() {
                             </div>
                             <div>
                                 <h2 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>{selectedStudent.name}</h2>
-                                <p style={{ color: '#5f6368', fontSize: '0.9rem' }}>Student ID: #{1000 + selectedStudent.id}</p>
+                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Student ID: #{1000 + selectedStudent.id}</p>
                             </div>
                         </div>
 
@@ -270,14 +270,14 @@ export default function TeacherAnalytics() {
                         </div>
 
                         <div className="comparison-box">
-                            <h4 style={{ marginBottom: '1rem', color: '#202124', fontSize: '1rem' }}>Before vs After Adaptation</h4>
+                            <h4 style={{ marginBottom: '1rem', color: 'var(--text-primary)', fontSize: '1rem' }}>Before vs After Adaptation</h4>
 
                             <div className="comparison-row">
                                 <span className="comparison-label">Assessment Score</span>
                                 <div>
                                     <span className="comparison-value">{selectedStudent.before.score}</span>
-                                    <span style={{ margin: '0 0.5rem', color: '#dadce0' }}>→</span>
-                                    <span className="comparison-value" style={{ color: '#137333' }}>{selectedStudent.after.score}</span>
+                                    <span style={{ margin: '0 0.5rem', color: 'var(--border-color)' }}>→</span>
+                                    <span className="comparison-value" style={{ color: 'var(--secondary-green)' }}>{selectedStudent.after.score}</span>
                                     <span className="impact-badge">+{selectedStudent.after.score - selectedStudent.before.score}</span>
                                 </div>
                             </div>
@@ -286,9 +286,9 @@ export default function TeacherAnalytics() {
                                 <span className="comparison-label">Time Taken</span>
                                 <div>
                                     <span className="comparison-value">{selectedStudent.before.time}</span>
-                                    <span style={{ margin: '0 0.5rem', color: '#dadce0' }}>→</span>
-                                    <span className="comparison-value" style={{ color: '#137333' }}>{selectedStudent.after.time}</span>
-                                    <span className="impact-badge" style={{ background: '#e8f0fe', color: '#1967d2' }}>Faster</span>
+                                    <span style={{ margin: '0 0.5rem', color: 'var(--border-color)' }}>→</span>
+                                    <span className="comparison-value" style={{ color: 'var(--secondary-green)' }}>{selectedStudent.after.time}</span>
+                                    <span className="impact-badge" style={{ background: 'var(--bg-blue-light)', color: 'var(--primary-blue-hover)' }}>Faster</span>
                                 </div>
                             </div>
                         </div>

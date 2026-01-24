@@ -1,14 +1,9 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 
 export default function TeacherLanding() {
-    return (
-        <div className="page-placeholder">
-            <h1>Teacher Portal</h1>
-            <ul style={{ paddingLeft: '20px', marginTop: '10px' }}>
-                <li><Link to="/teacher/login">Login</Link></li>
-                <li><Link to="/teacher/dashboard">Dashboard</Link></li>
-            </ul>
-        </div>
-    );
+    // Since the workflow is strictly Login -> Dashboard, we can just redirect /teacher to /teacher/login
+    // or provide a simple button. Given the user's emphasis on flow, a redirect might be best,
+    // but a landing page is often nice. Let's redirect for now as it's the most efficient "workflow".
+    return <Navigate to="/teacher/login" replace />;
 }

@@ -1,225 +1,330 @@
 import React, { useState } from 'react';
 import Navbar from '../../components/Navbar';
+import StudyMaterial from '../../components/StudyMaterial';
 import { 
-  FileText, Video, Mic, Heart, MessageSquare, Send, 
-  MoreVertical, Lock, Globe, Volume2, Scissors, Bookmark, 
-  ThumbsUp, BarChart2, CheckCircle, Accessibility
+  Accessibility, CheckCircle, Clock, Lock, 
+  ChevronRight, Users, BookOpen, AlertCircle 
 } from 'lucide-react';
 
 const Classroom = () => {
-  const [activeTab, setActiveTab] = useState('materials');
-  const [privateComment, setPrivateComment] = useState(false);
-  const [commentText, setCommentText] = useState('');
+  // State to simulate invite flow (part B)
+  // Set to false initially to show the "Accept Invite" flow as requested in Part B,
+  // or set to true to show the Full Classroom immediately. 
+  // I will default to false so the user can experience the "Accept" action.
+  const [isJoined, setIsJoined] = useState(true); 
+  
+  const [activeTab, setActiveTab] = useState('feed');
+
+  const classroomData = {
+    title: "Data Structures – Section A",
+    teacher: "Prof. Alan Turing",
+    progress: "Stage 2 / 5",
+    level: "Level 2: Queue & Stack",
+    description: "Master the fundamentals of organizing data efficiently.",
+    members: 34
+  };
 
   const materials = [
     { 
       id: 1, 
-      title: 'Introduction to Photosynthesis', 
-      desc: 'Watch this video to understand the basic process of turning light into energy.',
+      title: 'Introduction to Linked Lists', 
+      desc: 'Watch this animation to understand how nodes connect in memory compared to arrays.',
       type: 'video', 
       date: 'Oct 24', 
       likes: 12 
     },
     { 
       id: 2, 
-      title: 'Chapter 4: Cell Structure.pdf', 
-      desc: 'Read pages 12-15 covering mitochondria and nucleus functions.',
+      title: 'Assignment 3: Stack Implementation', 
+      desc: 'Read the spec sheet carefully. You need to implement Push, Pop, and Peek functions.',
       type: 'pdf', 
       date: 'Oct 23', 
       likes: 5 
     },
     { 
       id: 3, 
-      title: 'Audio Summary: Week 3', 
-      desc: 'A quick recap of last week\'s biology lessons.',
+      title: 'Audio Lecture: Queue Real-world Examples', 
+      desc: 'Listen to how printer spools and CPU scheduling use queues.',
       type: 'audio', 
       date: 'Oct 22', 
       likes: 8 
     },
+    { 
+      id: 4, 
+      title: 'Simplified Notes: Linked Lists (Reading-Friendly)', 
+      desc: 'A simplified version of the lesson with shorter sentences, highlighted keywords, and optional audio support.',
+      type: 'reading-friendly', 
+      date: 'Oct 25', 
+      likes: 3 
+    },
   ];
 
-  // Dummy Accessibility Actions
-  const handleReadAloud = (text) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance("Reading: " + text);
-      window.speechSynthesis.speak(utterance);
-    }
-  };
+  const feedItems = [
+    { id: 1, text: "📢 Welcome to the Linked Lists module! Please check the study materials for new videos.", date: "Oct 24, 10:00 AM" },
+    { id: 2, text: "⏰ Assignment 3 is due tomorrow at 11:59 PM. Don't forget to submit your GitHub links.", date: "Oct 23, 2:00 PM" },
+    { id: 3, text: "🎉 Great job on the Array assessment everyone! The class average was 85%.", date: "Oct 21, 9:30 AM" },
+  ];
 
+  const students = [
+    { id: 1, name: "Alice Johnson", initials: "AJ" },
+    { id: 2, name: "Bob Smith", initials: "BS" },
+    { id: 3, name: "Charlie Davis", initials: "CD" },
+    { id: 4, name: "Dana Lee", initials: "DL" },
+    { id: 5, name: "Ethan Hunt", initials: "EH" },
+  ];
+
+  const stages = [
+    { id: 1, name: "Basics of Arrays", status: "completed" },
+    { id: 2, name: "Linked Lists & Pointers", status: "current" },
+    { id: 3, name: "Stacks & Queues", status: "locked" },
+    { id: 4, name: "Trees & Graphs", status: "locked" },
+  ];
+
+  // Part B: Teacher Invite Acceptance UI
+  if (!isJoined) {
+    return (
+      <div className="min-h-screen bg-[var(--bg-secondary)] text-[var(--text-primary)] transition-colors duration-300">
+        <Navbar />
+        <main className="container mx-auto px-4 h-[calc(100vh-80px)] flex flex-col items-center justify-center">
+          <div className="max-w-md w-full bg-[var(--bg-primary)] rounded-3xl p-8 shadow-xl border border-[var(--border-color)] text-center">
+            
+            <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-600 dark:text-blue-400">
+              <Users size={32} />
+            </div>
+
+            <h2 className="text-2xl font-bold mb-2">Class Invitation</h2>
+            <p className="text-[var(--text-secondary)] mb-8">
+              You have been invited to join <span className="font-bold text-[var(--text-primary)]">{classroomData.title}</span> by <span className="font-bold text-[var(--text-primary)]">{classroomData.teacher}</span>.
+            </p>
+
+            <div className="bg-[var(--bg-secondary)] p-4 rounded-xl mb-8 flex items-center gap-4 text-left">
+               <div className="p-3 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
+                  <BookOpen size={24} className="text-blue-500"/>
+               </div>
+               <div>
+                  <h3 className="font-bold text-sm">{classroomData.title}</h3>
+                  <p className="text-xs text-[var(--text-secondary)]">{classroomData.members} Students • {classroomData.teacher}</p>
+               </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={() => setIsJoined(true)}
+                className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all transform hover:scale-[1.02] shadow-lg shadow-blue-500/20"
+              >
+                Accept Invite
+              </button>
+              <button className="w-full py-3.5 bg-transparent hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded-xl font-semibold transition-colors">
+                Decline
+              </button>
+            </div>
+            
+            <p className="mt-6 text-xs text-[var(--text-secondary)] flex items-center justify-center gap-2">
+               <Lock size={12} /> This class is private and secure.
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Main Classroom UI
   return (
     <div className="min-h-screen bg-[var(--bg-secondary)] text-[var(--text-primary)] transition-colors duration-300">
       <Navbar />
 
-      <main className="container mx-auto px-4 md:px-6 py-6 space-y-8 max-w-4xl">
+      <main className="container mx-auto px-4 md:px-6 py-8 md:py-12 max-w-6xl">
         
-        {/* A - Classroom Header */}
-        <section className="bg-[var(--bg-primary)] rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-           <div className="p-8 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900 border-b border-[var(--border-color)]">
-              <div className="flex flex-col gap-4">
-                 <div className="inline-flex items-center gap-2 self-start px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full border border-green-200">
-                    <Accessibility size={12} /> Accessibility & audio support enabled
-                 </div>
-                 <div>
-                    <h1 className="text-3xl font-bold text-[var(--text-primary)]">Biology 101: Life Sciences</h1>
-                    <p className="text-lg text-[var(--text-secondary)] mt-1">Teacher: Mr. Anderson</p>
-                 </div>
-              </div>
-           </div>
-           
-           {/* Section Tabs */}
-           <div className="flex bg-[var(--bg-primary)] p-2 gap-2 overflow-x-auto">
-              {['materials', 'assessments', 'progress'].map((tab) => (
-                 <button
-                   key={tab}
-                   onClick={() => setActiveTab(tab)}
-                   className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm capitalize transition-all ${
-                      activeTab === tab 
-                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200' 
-                      : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'
-                   }`}
-                 >
-                    {tab}
-                 </button>
-              ))}
-           </div>
-        </section>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          {/* LEFT COLUMN (Header + Feed) - Spans 8 cols */}
+          <div className="lg:col-span-8 space-y-8">
+            
+            {/* 1. CLASS HEADER */}
+            <header className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-3xl p-8 text-white shadow-lg relative overflow-hidden">
+               {/* Decorative Circles */}
+               <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
+               <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-xl"></div>
+               
+               <div className="relative z-10">
+                  <div className="flex justify-between items-start mb-6">
+                     <span className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold border border-white/30">
+                        <Users size={12} /> {classroomData.members} Students
+                     </span>
+                     <button className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-full transition-colors text-white" title="Accessibility Options">
+                        <Accessibility size={20} />
+                     </button>
+                  </div>
 
-        {/* B - Study Materials Feed */}
-        <section className="space-y-6">
-           {activeTab === 'materials' && materials.map((item) => (
-             <article key={item.id} className="bg-[var(--bg-primary)] rounded-2xl shadow-sm border border-[var(--border-color)] transition-all hover:shadow-md">
-                
-                {/* Card Header & Content */}
-                <div className="p-6">
-                   <div className="flex items-start justify-between mb-4">
-                      <div className="flex gap-4">
-                         <div className={`p-3 rounded-full h-fit ${
-                            item.type === 'video' ? 'bg-red-100 text-red-600' : 
-                            item.type === 'pdf' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
-                         } dark:bg-slate-800`}>
-                            {item.type === 'video' ? <Video size={24}/> : item.type === 'pdf' ? <FileText size={24}/> : <Mic size={24}/>}
-                         </div>
-                         <div>
-                            <h3 className="font-bold text-xl text-[var(--text-primary)]">{item.title}</h3>
-                            <p className="text-sm text-[var(--text-secondary)] mb-2">Posted {item.date}</p>
-                            <span className="inline-block px-2 py-1 bg-[var(--bg-secondary)] text-[var(--text-secondary)] text-xs rounded border border-[var(--border-color)] uppercase tracking-wide font-semibold">
-                               {item.type}
-                            </span>
-                         </div>
-                      </div>
-                      <button className="text-[var(--text-secondary)] p-2 hover:bg-[var(--bg-secondary)] rounded-full">
-                         <MoreVertical size={20}/>
-                      </button>
-                   </div>
+                  <h1 className="text-3xl md:text-4xl font-extrabold mb-2 tracking-tight">{classroomData.title}</h1>
+                  <p className="text-indigo-100 text-lg font-medium mb-6">Teacher: {classroomData.teacher}</p>
 
-                   <p className="text-[var(--text-primary)] mb-6 leading-relaxed">
-                      {item.desc}
-                   </p>
+                  <div className="flex items-center gap-4">
+                     <div className="flex-1 bg-black/20 h-2 rounded-full overflow-hidden backdrop-blur-sm max-w-xs">
+                        <div className="bg-green-400 h-full w-2/5 rounded-full"></div>
+                     </div>
+                     <span className="text-sm font-bold">{classroomData.progress}</span>
+                  </div>
+               </div>
+            </header>
 
-                   {/* Inline Accessibility Controls */}
-                   <div className="flex flex-wrap gap-3 mb-6 p-4 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-color)]">
-                      <button 
-                        onClick={() => handleReadAloud(item.title + ". " + item.desc)}
-                        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-[var(--border-color)] rounded-lg text-sm font-semibold hover:border-blue-400 hover:text-blue-600 transition-colors"
-                        title="Read this content aloud"
+            {/* Navigation Tabs (Mobile mostly, or section switcher) */}
+            <div className="flex border-b border-[var(--border-color)] space-x-6 overflow-x-auto scrolbar-hide">
+               {['Feed', 'Study Materials', 'People'].map((tab) => {
+                  const tabKey = tab === 'Feed' ? 'feed' : tab === 'Study Materials' ? 'materials' : 'people';
+                  return (
+                  <button 
+                     key={tab}
+                     className={`pb-3 text-sm font-bold capitalize border-b-2 transition-colors ${
+                        activeTab === tabKey
+                        ? 'border-blue-500 text-blue-600 dark:text-blue-400' 
+                        : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                     }`}
+                     onClick={() => setActiveTab(tabKey)}
+                  >
+                     {tab}
+                  </button>
+                  );
+               })}
+            </div>
+
+            {/* 2. STUDY MATERIAL FEED */}
+            <section className="space-y-6">
+               <h2 className="sr-only">Content</h2>
+               
+               {/* FEED TAB CONTENT */}
+               {activeTab === 'feed' && feedItems.map((item) => (
+                  <div key={item.id} className="bg-[var(--bg-primary)] p-6 rounded-2xl shadow-sm border border-[var(--border-color)] flex gap-4">
+                     <div className="p-3 h-fit bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-full">
+                        <Users size={20} />
+                     </div>
+                     <div>
+                        <p className="font-medium text-[var(--text-primary)] text-lg mb-2">{item.text}</p>
+                        <p className="text-sm text-[var(--text-secondary)]">{item.date}</p>
+                     </div>
+                  </div>
+               ))}
+
+               {/* MATERIALS TAB CONTENT */}
+               {activeTab === 'materials' && materials.map((item) => (
+                  <StudyMaterial key={item.id} material={item} />
+               ))}
+
+               {/* PEOPLE TAB CONTENT */}
+               {activeTab === 'people' && (
+                  <div className="bg-[var(--bg-primary)] rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
+                     {/* Teacher Section */}
+                     <div className="p-6 border-b border-[var(--border-color)]">
+                        <h3 className="text-blue-600 font-bold uppercase tracking-wider text-xs mb-4">Teacher</h3>
+                        <div className="flex items-center gap-4">
+                           <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg">
+                             {classroomData.teacher.split(' ').slice(-1)[0][0]}
+                           </div>
+                           <span className="font-bold text-[var(--text-primary)] text-lg">{classroomData.teacher}</span>
+                        </div>
+                     </div>
+                     {/* Student Section */}
+                     <div className="p-6">
+                        <div className="flex justify-between items-center mb-6">
+                           <h3 className="text-blue-600 font-bold uppercase tracking-wider text-xs">Classmates</h3>
+                           <span className="text-xs font-bold text-[var(--text-secondary)] bg-[var(--bg-secondary)] px-2 py-1 rounded">{classroomData.members} Students</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           {students.map((student) => (
+                             <div key={student.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--bg-secondary)] transition-colors">
+                               <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 flex items-center justify-center font-bold text-sm">
+                                 {student.initials}
+                               </div>
+                               <span className="font-medium text-[var(--text-primary)]">{student.name}</span>
+                             </div>
+                           ))}
+                           <div className="flex items-center gap-3 p-3 rounded-xl text-[var(--text-secondary)] italic">
+                              And 29 others...
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               )}
+               
+               <div className="flex justify-center pt-4">
+                  <button className="px-6 py-2 bg-[var(--bg-primary)] hover:bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-full text-sm font-semibold text-[var(--text-secondary)] transition-colors">
+                     Load earlier posts...
+                  </button>
+               </div>
+            </section>
+          </div>
+
+          {/* RIGHT COLUMN (Sidebar) - Spans 4 cols */}
+          <aside className="lg:col-span-4 space-y-8">
+             
+             {/* 4. CLASS PROGRESS SIDEBAR */}
+             <div className="bg-[var(--bg-primary)] rounded-2xl p-6 border border-[var(--border-color)] shadow-sm sticky top-24">
+                <div className="flex items-center justify-between mb-6">
+                   <h3 className="font-bold text-lg">Your Journey</h3>
+                   <span className="text-xs font-bold text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-1 rounded">
+                      {classroomData.level}
+                   </span>
+                </div>
+                <p className="text-xs text-[var(--text-secondary)] mb-4 -mt-4 italic">
+                  Progress adapts based on how you learn, not how fast you finish.
+                </p>
+
+                <div className="space-y-4">
+                   {stages.map((stage) => (
+                      <div 
+                        key={stage.id} 
+                        className={`p-4 rounded-xl border transition-all ${
+                           stage.status === 'bg-white' 
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20' // Active? No logic for active yet
+                              : stage.status === 'current'
+                                 ? 'bg-[var(--bg-secondary)] border-blue-500 ring-1 ring-blue-500' // Current
+                                 : stage.status === 'completed'
+                                    ? 'bg-[var(--bg-secondary)] border-[var(--border-color)] opacity-75' // Completed
+                                    : 'bg-[var(--bg-secondary)] border-[var(--border-color)] opacity-50' // Locked
+                        }`}
                       >
-                         <Volume2 size={16}/> Read Aloud
-                      </button>
-                      <button className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-[var(--border-color)] rounded-lg text-sm font-semibold hover:border-green-400 hover:text-green-600 transition-colors">
-                         <Scissors size={16}/> Simplify Text
-                      </button>
-                      <button className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-[var(--border-color)] rounded-lg text-sm font-semibold hover:border-purple-400 hover:text-purple-600 transition-colors">
-                         <Bookmark size={16}/> Key Points
-                      </button>
-                   </div>
-                </div>
-
-                {/* C - Interaction System */}
-                <div className="border-t border-[var(--border-color)] bg-[var(--bg-secondary)]/30">
-                   {/* Reactions Bar */}
-                   <div className="px-6 py-3 flex items-center justify-between border-b border-[var(--border-color)]">
-                      <div className="flex items-center gap-6">
-                         <button className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-blue-600 font-bold text-sm transition-colors">
-                            <ThumbsUp size={18} /> Like ({item.likes})
-                         </button>
-                         <button className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-blue-600 font-bold text-sm transition-colors">
-                            <MessageSquare size={18} /> Comment
-                         </button>
-                      </div>
-                   </div>
-
-                   {/* Commment Input */}
-                   <div className="p-6">
-                      <div className="flex items-center gap-3">
-                         <div className="flex-1 relative">
-                            <input 
-                               type="text" 
-                               placeholder={privateComment ? "Message teacher privately..." : "Share with the class..."}
-                               className="w-full pl-4 pr-12 py-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                               value={commentText}
-                               onChange={(e) => setCommentText(e.target.value)}
-                            />
-                            <button className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300">
-                               <Send size={16} />
-                            </button>
+                         <div className="flex items-center gap-3">
+                            <div className={`
+                               w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
+                               ${stage.status === 'completed' ? 'bg-green-100 text-green-700' : 
+                                 stage.status === 'current' ? 'bg-blue-100 text-blue-700' : 
+                                 'bg-[var(--border-color)] text-[var(--text-secondary)]'}
+                            `}>
+                               {stage.status === 'completed' ? <CheckCircle size={16}/> : 
+                                stage.status === 'locked' ? <Lock size={14}/> : stage.id}
+                            </div>
+                            <div className="flex-1">
+                               <p className={`text-sm font-bold ${stage.status === 'locked' ? 'text-[var(--text-secondary)]' : 'text-[var(--text-primary)]'}`}>
+                                  {stage.name}
+                               </p>
+                               {stage.status === 'current' && (
+                                  <span className="text-xs text-blue-600 font-semibold flex items-center gap-1 mt-1">
+                                     <Clock size={10} /> In Progress
+                                  </span>
+                               )}
+                            </div>
                          </div>
                       </div>
-                      
-                      <div className="flex items-center justify-between mt-3">
-                         <button 
-                            onClick={() => setPrivateComment(!privateComment)}
-                            className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full transition-all ${
-                               privateComment ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'
-                            }`}
-                         >
-                            {privateComment ? <Lock size={12}/> : <Globe size={12}/>}
-                            {privateComment ? 'Private (Teacher Only)' : 'Public'}
-                         </button>
-                         <span className="text-xs text-[var(--text-secondary)] italic">
-                            Tip: You can type or speak your comment.
-                         </span>
+                   ))}
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-[var(--border-color)]">
+                   <h4 className="font-bold text-sm mb-3 text-[var(--text-secondary)] uppercase tracking-wider">Upcoming</h4>
+                   <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 p-4 rounded-xl border border-orange-100 dark:border-orange-900/30">
+                      <div className="flex items-start gap-3">
+                         <AlertCircle size={20} className="text-orange-500 mt-0.5" />
+                         <div>
+                            <p className="text-sm font-bold text-orange-800 dark:text-orange-200">Assignment Due</p>
+                            <p className="text-xs text-orange-600 dark:text-orange-300 mt-1">Stack Implementation (Tomorrow, 11:59 PM)</p>
+                         </div>
                       </div>
                    </div>
                 </div>
+             </div>
 
-             </article>
-           ))}
+          </aside>
 
-           {activeTab !== 'materials' && (
-              <div className="p-12 text-center text-[var(--text-secondary)] bg-[var(--bg-primary)] rounded-2xl border border-[var(--border-color)]">
-                 <p className="text-lg">Select 'Materials' to view class content.</p>
-              </div>
-           )}
-        </section>
-
-        {/* D - Progress Snapshot */}
-        <section className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-lg p-6 text-white flex flex-col md:flex-row items-center justify-between gap-6">
-           <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                 <BarChart2 size={32} className="text-white" />
-              </div>
-              <div>
-                 <h3 className="text-xl font-bold">Your Progress</h3>
-                 <p className="text-indigo-100 text-sm">Consistency matters more than speed.</p>
-              </div>
-           </div>
-           
-           <div className="flex-1 w-full md:max-w-xs">
-              <div className="flex justify-between text-xs font-bold mb-2 text-indigo-100 uppercase tracking-widest">
-                 <span>Materials Viewed</span>
-                 <span>8/10</span>
-              </div>
-              <div className="w-full bg-black/20 h-3 rounded-full overflow-hidden">
-                 <div className="bg-green-400 h-full w-[80%] rounded-full"></div>
-              </div>
-           </div>
-           
-           <button className="px-6 py-2 bg-white text-indigo-700 font-bold rounded-lg shadow hover:bg-indigo-50 transition-colors text-sm">
-              View Full Report
-           </button>
-        </section>
-
+        </div>
       </main>
     </div>
   );

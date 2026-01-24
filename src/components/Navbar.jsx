@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Layout, BookOpen, ClipboardCheck, BarChart2, LogOut } from 'lucide-react';
+import { Layout, BookOpen, ClipboardCheck, BarChart2, LogOut, Settings } from 'lucide-react';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -41,14 +41,23 @@ const Navbar = () => {
           ))}
        </div>
 
-       <button 
-         onClick={() => navigate('/login')}
-         className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-red-500 transition-colors px-2"
-         title="Logout"
-       >
-          <LogOut size={20} />
-          <span className="hidden md:inline">Logout</span>
-       </button>
+       <div className="flex items-center gap-2">
+           <button 
+             onClick={() => window.dispatchEvent(new Event('open-a11y-toolbar'))}
+             className="p-2 text-[var(--text-secondary)] hover:text-blue-600 hover:bg-[var(--bg-secondary)] rounded-full transition-colors"
+             title="Settings"
+           >
+              <Settings size={20} />
+           </button>
+           <button 
+             onClick={() => navigate('/login')}
+             className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-red-500 transition-colors px-2"
+             title="Logout"
+           >
+              <LogOut size={20} />
+              <span className="hidden md:inline">Logout</span>
+           </button>
+       </div>
     </nav>
   );
 };

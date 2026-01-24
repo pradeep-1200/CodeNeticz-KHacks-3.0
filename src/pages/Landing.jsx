@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Users, Layout, ArrowRight, Volume2, Target, Accessibility } from 'lucide-react';
+import { BookOpen, Users, Layout, ArrowRight, Volume2, Target, Accessibility, Settings } from 'lucide-react';
 
 const Landing = () => {
   const openAccessibilityToolbar = () => {
@@ -11,18 +11,34 @@ const Landing = () => {
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] transition-colors duration-300">
       
       {/* Header */}
-      <header className="p-6 flex justify-between items-center border-b border-[var(--border-color)]">
+      <header className="p-6 flex flex-col md:flex-row justify-between items-center border-b border-[var(--border-color)] gap-4">
         <div className="flex items-center gap-2 text-2xl font-bold">
           <BookOpen size={32} className="text-blue-600" />
-          <span className="text-blue-600">Adaptive Cognitive Learning</span>
+          <span className="text-blue-600 text-center md:text-left">Adaptive Cognitive Learning</span>
           <span className="text-green-600">Classroom</span>
         </div>
-        <Link 
-          to="/login"
-          className="px-6 py-2 bg-blue-600 text-white rounded-full font-semibold hover:opacity-90 transition-all focus:ring-4 ring-blue-300"
-        >
-          Login
-        </Link>
+        
+        <div className="flex items-center gap-4">
+           <Link 
+             to="/login"
+             className="px-5 py-2 text-blue-600 font-bold hover:bg-blue-50 rounded-full transition-colors"
+           >
+             Login
+           </Link>
+           <Link 
+             to="/register"
+             className="px-6 py-2 bg-blue-600 text-white rounded-full font-bold hover:opacity-90 transition-all shadow-md hover:shadow-lg"
+           >
+             Register
+           </Link>
+           <button
+             onClick={openAccessibilityToolbar}
+             className="p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors"
+             title="Settings / Accessibility"
+           >
+             <Settings size={24} />
+           </button>
+        </div>
       </header>
 
       {/* Hero Section */}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { User, GraduationCap, ArrowRight, Accessibility } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { User, GraduationCap, ArrowRight, ArrowLeft, Accessibility } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -19,9 +19,15 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--bg-secondary)] p-4">
-      <div className="w-full max-w-md bg-[var(--bg-primary)] p-8 rounded-2xl shadow-xl border border-[var(--border-color)]">
+      <div className="w-full max-w-md bg-[var(--bg-primary)] p-8 rounded-2xl shadow-xl border border-[var(--border-color)] relative">
         
-        <div className="text-center mb-8">
+        <div className="absolute top-4 left-4">
+          <Link to="/" className="p-2 text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors rounded-full hover:bg-[var(--bg-secondary)] block">
+             <ArrowLeft size={24} />
+          </Link>
+        </div>
+
+        <div className="text-center mb-8 pt-8">
           <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">Welcome Back</h1>
           <p className="text-[var(--text-secondary)]">Please login to access your classroom.</p>
         </div>
@@ -59,11 +65,11 @@ const Login = () => {
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Email Address</label>
+            <label className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Email Address</label>
             <div className="relative">
               <input 
                 type="email" 
-                className="w-full p-3 pl-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] outline-none transition-all"
+                className="w-full p-3 pl-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] outline-none transition-all"
                 placeholder="student@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -72,11 +78,11 @@ const Login = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Password</label>
+            <label className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Password</label>
             <div className="relative">
               <input 
                 type="password" 
-                className="w-full p-3 pl-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] outline-none transition-all"
+                className="w-full p-3 pl-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] outline-none transition-all"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -86,11 +92,17 @@ const Login = () => {
 
           <button 
             type="submit"
-            className="w-full py-3 bg-[var(--accent-primary)] text-white rounded-xl font-bold text-lg hover:opacity-90 shadow-lg transition-all transform hover:scale-[1.02] flex justify-center items-center gap-2"
+            className="w-full py-4 bg-[var(--accent-primary)] text-white rounded-xl font-bold text-lg hover:bg-[var(--accent-hover)] shadow-lg transition-all transform hover:scale-[1.02] flex justify-center items-center gap-2"
           >
              {userType === 'student' ? <User size={20}/> : <GraduationCap size={20}/>}
              Login as {userType === 'student' ? 'Student' : 'Teacher'}
           </button>
+          
+          <div className="text-center pt-2">
+             <Link to="/register" className="text-[var(--accent-primary)] font-bold hover:underline">
+                Don't have an account? Register
+             </Link>
+          </div>
         </form>
 
         <div className="mt-6 pt-6 border-t border-[var(--border-color)] text-center space-y-4">

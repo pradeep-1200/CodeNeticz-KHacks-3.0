@@ -1,109 +1,163 @@
 import React from 'react';
 import Navbar from '../../components/Navbar';
-import ProgressChart from '../../components/ProgressChart';
-import { Award, Zap, Target, TrendingUp, CheckCircle, Info } from 'lucide-react';
+import { 
+  Award, TrendingUp, BookOpen, Mic, Type, 
+  ArrowRight, Sparkles, Brain, Layout 
+} from 'lucide-react';
 
 const Report = () => {
-  const improvementData = [
-    { subject: 'Math', score: 65, improved: 85 },
-    { subject: 'Science', score: 70, improved: 75 },
-    { subject: 'History', score: 60, improved: 80 },
-    { subject: 'English', score: 75, improved: 88 },
-  ];
-
-  const skillData = [
-     { name: 'Week 1', progress: 40 },
-     { name: 'Week 2', progress: 55 },
-     { name: 'Week 3', progress: 60 },
-     { name: 'Week 4', progress: 85 },
-  ];
-
   return (
     <div className="min-h-screen bg-[var(--bg-secondary)] text-[var(--text-primary)] transition-colors duration-300">
       <Navbar />
 
-      <main className="container mx-auto px-4 md:px-6 py-8 space-y-8">
+      <main className="container mx-auto px-4 md:px-6 py-8 space-y-8 max-w-5xl">
          
-         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
-            <div>
-               <h1 className="text-3xl font-bold">Your Learning Journey</h1>
-               <p className="text-[var(--text-secondary)]">See how far you've come!</p>
+         {/* A - Student Overview */}
+         <section className="bg-[var(--bg-primary)] p-8 rounded-2xl shadow-sm border border-[var(--border-color)] flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-6">
+                <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-4xl border-4 border-white dark:border-slate-800 shadow-lg">
+                   🎓
+                </div>
+                <div>
+                   <h1 className="text-2xl font-bold mb-1">Student</h1>
+                   <p className="text-[var(--text-secondary)]">Class 5-B • Assessment Level 2</p>
+                </div>
             </div>
-            <div className="px-6 py-3 bg-[var(--bg-primary)] rounded-full border border-[var(--border-color)] shadow-sm flex items-center gap-2">
-               <Award className="text-yellow-500" />
-               <span className="font-bold">Current Streak: 5 Days</span>
-            </div>
-         </div>
-
-         {/* Strength & Focus Cards */}
-         <div className="grid md:grid-cols-2 gap-6">
-            <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-2xl border border-green-200 dark:border-green-800">
-               <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-green-800 dark:text-green-300">
-                  <Zap size={24}/> Top Strengths
-               </h3>
-               <ul className="space-y-3">
-                  <li className="flex items-center gap-2">
-                     <CheckCircle size={18} className="text-green-600"/> 
-                     <span>Visual Pattern Recognition</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                     <CheckCircle size={18} className="text-green-600"/> 
-                     <span>Auditory Listening Skills</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                     <CheckCircle size={18} className="text-green-600"/> 
-                     <span>Creative Problem Solving</span>
-                  </li>
-               </ul>
-            </div>
-
-            <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-2xl border border-blue-200 dark:border-blue-800">
-               <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-blue-800 dark:text-blue-300">
-                  <Target size={24}/> Areas to Explore
-               </h3>
-               <ul className="space-y-3">
-                  <li className="flex items-center gap-2">
-                     <Info size={18} className="text-blue-600"/> 
-                     <span>Reading Comprehension Speed</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                     <Info size={18} className="text-blue-600"/> 
-                     <span>Complex Arithmetic</span>
-                  </li>
-               </ul>
-            </div>
-         </div>
-
-         {/* Charts Section */}
-         <div className="grid md:grid-cols-2 gap-8">
-            
-            {/* Subject Improvement */}
-            <div className="bg-[var(--bg-primary)] p-6 rounded-2xl shadow-lg border border-[var(--border-color)]">
-               <h3 className="font-bold text-lg mb-6 flex items-center gap-2">
-                  <TrendingUp size={20}/> Subject Performance
-               </h3>
-               <div className="h-[300px] w-full">
-                  <ProgressChart type="bar" data={improvementData} xKey="subject" dataKey="improved" color="var(--accent-primary)" />
+            <div className="text-right">
+               <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full font-bold border border-green-200">
+                  <Award size={18} /> You’re making steady progress. Keep going! 👍
                </div>
-               <p className="text-center text-sm text-[var(--text-secondary)] mt-4">
-                  Showing your best scores across subjects.
-               </p>
             </div>
+         </section>
 
-            {/* Monthly Progress */}
-            <div className="bg-[var(--bg-primary)] p-6 rounded-2xl shadow-lg border border-[var(--border-color)]">
-               <h3 className="font-bold text-lg mb-6 flex items-center gap-2">
-                  <Award size={20}/> Monthly Growth
-               </h3>
-               <div className="h-[300px] w-full">
-                  <ProgressChart type="area" data={skillData} xKey="name" dataKey="progress" color="#8b5cf6" />
-               </div>
-               <p className="text-center text-sm text-[var(--text-secondary)] mt-4">
-                  Consistent effort over the last 4 weeks.
-               </p>
+         {/* B - Learning Progress (Before vs After) */}
+         <section className="bg-[var(--bg-primary)] p-8 rounded-2xl shadow-lg border border-[var(--border-color)]">
+             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                <TrendingUp className="text-blue-600"/> Improvement with Adaptive Support
+             </h2>
+             
+             <div className="grid md:grid-cols-2 gap-12">
+                {/* Before */}
+                <div className="space-y-4 opacity-70">
+                   <h3 className="font-bold text-[var(--text-secondary)] uppercase text-xs tracking-wider">Before Support Enabled</h3>
+                   
+                   <div>
+                      <div className="flex justify-between text-sm mb-1">
+                         <span>Reading Comfort</span>
+                         <span>Low</span>
+                      </div>
+                      <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
+                         <div className="w-[30%] h-full bg-gray-400"></div>
+                      </div>
+                   </div>
+
+                   <div>
+                      <div className="flex justify-between text-sm mb-1">
+                         <span>Concept Clarity</span>
+                         <span>Medium</span>
+                      </div>
+                      <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
+                         <div className="w-[50%] h-full bg-gray-400"></div>
+                      </div>
+                   </div>
+                </div>
+
+                {/* After */}
+                <div className="space-y-4">
+                   <h3 className="font-bold text-green-600 uppercase text-xs tracking-wider flex items-center gap-2">
+                      <Sparkles size={14}/> Current Progress
+                   </h3>
+                   
+                   <div>
+                      <div className="flex justify-between text-sm mb-1 font-bold">
+                         <span>Reading Comfort</span>
+                         <span className="text-green-600">High</span>
+                      </div>
+                      <div className="h-4 bg-gray-100 rounded-full overflow-hidden border border-green-100">
+                         <div className="w-[85%] h-full bg-gradient-to-r from-green-400 to-green-600"></div>
+                      </div>
+                   </div>
+
+                   <div>
+                      <div className="flex justify-between text-sm mb-1 font-bold">
+                         <span>Concept Clarity</span>
+                         <span className="text-green-600">Very High</span>
+                      </div>
+                      <div className="h-4 bg-gray-100 rounded-full overflow-hidden border border-green-100">
+                         <div className="w-[92%] h-full bg-gradient-to-r from-green-400 to-green-600"></div>
+                      </div>
+                   </div>
+                </div>
+             </div>
+         </section>
+
+         {/* C - Learning Preferences & Supports */}
+         <section>
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2 px-2">
+               <Brain className="text-purple-600"/> Your Learning Style
+            </h2>
+            <div className="grid md:grid-cols-3 gap-6">
+                <div className="p-6 bg-white dark:bg-slate-800 rounded-xl border border-[var(--border-color)] shadow-sm hover:translate-y-[-2px] transition-transform">
+                   <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center mb-4">
+                      <Layout size={24}/>
+                   </div>
+                   <h3 className="font-bold mb-2">Visual Learner</h3>
+                   <p className="text-sm text-[var(--text-secondary)]">
+                      You prefer simplified text layouts and clear spacing.
+                   </p>
+                </div>
+
+                <div className="p-6 bg-white dark:bg-slate-800 rounded-xl border border-[var(--border-color)] shadow-sm hover:translate-y-[-2px] transition-transform">
+                   <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center mb-4">
+                      <Mic size={24}/>
+                   </div>
+                   <h3 className="font-bold mb-2">Voice Active</h3>
+                   <p className="text-sm text-[var(--text-secondary)]">
+                      You frequently use speech-to-text for answering.
+                   </p>
+                </div>
+
+                <div className="p-6 bg-white dark:bg-slate-800 rounded-xl border border-[var(--border-color)] shadow-sm hover:translate-y-[-2px] transition-transform">
+                   <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center mb-4">
+                      <Type size={24}/>
+                   </div>
+                   <h3 className="font-bold mb-2">Large Text</h3>
+                   <p className="text-sm text-[var(--text-secondary)]">
+                      You learn better with 120% text scale enabled.
+                   </p>
+                </div>
             </div>
+         </section>
 
-         </div>
+         {/* D - Next-Step Suggestions */}
+         <section className="bg-gradient-to-br from-indigo-900 to-blue-900 rounded-2xl p-8 text-white">
+             <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+                <div>
+                   <h2 className="text-2xl font-bold mb-2">Recommended Next Steps</h2>
+                   <p className="text-indigo-200 max-w-xl">
+                      Based on your recent activity, we suggest focusing on these areas to keep your momentum going.
+                   </p>
+                </div>
+                <button className="px-6 py-3 bg-white text-indigo-900 rounded-xl font-bold hover:bg-indigo-50 transition-colors flex items-center gap-2 whitespace-nowrap">
+                   Continue Learning <ArrowRight size={20}/>
+                </button>
+             </div>
+
+             <div className="grid md:grid-cols-3 gap-6 mt-8">
+                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/10">
+                   <span className="text-xs font-bold text-indigo-300 uppercase">Suggested Focus</span>
+                   <p className="font-semibold text-lg mt-1">Short reading passages with audio support</p>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/10">
+                   <span className="text-xs font-bold text-indigo-300 uppercase">Practice Mode</span>
+                   <p className="font-semibold text-lg mt-1">Concept-based questions instead of timed tests</p>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/10">
+                   <span className="text-xs font-bold text-indigo-300 uppercase">Try This</span>
+                   <p className="font-semibold text-lg mt-1">Use voice answers for detailed explanations</p>
+                </div>
+             </div>
+         </section>
 
       </main>
     </div>

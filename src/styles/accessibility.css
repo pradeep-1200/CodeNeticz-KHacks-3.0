@@ -6,14 +6,14 @@
   --cursor-type: auto;
   
   /* Default Light Theme (Calm colors: blue/green/neutral) */
-  --bg-primary: #f8fafc; /* Slate 50 */
+  --bg-primary: #f8fafc; /* Very Light Gray */
   --bg-secondary: #ffffff; /* White */
-  --text-primary: #0f172a; /* Slate 900 */
+  --text-primary: #0f172a; /* Dark Slate Blue */
   --text-secondary: #334155; /* Slate 700 */
-  --accent-primary: #0ea5e9; /* Sky 500 */
-  --accent-hover: #0284c7; /* Sky 600 */
+  --accent-primary: #2563eb; /* Calm Blue */
+  --accent-hover: #1d4ed8; /* Darker Blue */
   --border-color: #e2e8f0; /* Slate 200 */
-  --success-color: #22c55e; /* Green 500 */
+  --success-color: #16a34a; /* Success Green */
   --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 

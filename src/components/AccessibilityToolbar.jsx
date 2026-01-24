@@ -105,6 +105,8 @@ const AccessibilityToolbar = () => {
   return (
     <>
       {/* Floating Toggle Button (Fixed Position) */}
+      {/* Floating Toggle Button (Removed - Moved to Navbar) */}
+      {/* 
       <button 
         onClick={() => setIsOpen(!isOpen)}
         className="fixed top-24 right-0 z-50 p-4 bg-blue-600 text-white rounded-l-xl shadow-xl hover:bg-blue-700 transition-all focus:ring-4 focus:ring-blue-300"
@@ -112,7 +114,8 @@ const AccessibilityToolbar = () => {
         title="Open Accessibility Tools"
       >
         <Settings size={28} />
-      </button>
+      </button> 
+      */}
 
       {/* Main Toolbar Panel (Fixed Right Sidebar) */}
       <div 

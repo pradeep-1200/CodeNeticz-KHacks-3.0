@@ -15,6 +15,7 @@ import TeacherDashboard from './pages/teacher/TeacherDashboard';
 import TeacherLogin from './pages/teacher/TeacherLogin';
 import TeacherSignup from './pages/teacher/TeacherSignup';
 import TeacherCreateClass from './pages/teacher/TeacherCreateClass';
+import TeacherClassroomList from './pages/teacher/TeacherClassroomList';
 import TeacherClassroom from './pages/teacher/TeacherClassroom';
 import TeacherUpload from './pages/teacher/TeacherUpload';
 import TeacherAssessment from './pages/teacher/TeacherAssessment';
@@ -69,6 +70,7 @@ function App() {
             <Route path="/teacher/login" element={<TeacherLogin />} />
             <Route path="/teacher/signup" element={<TeacherSignup />} />
             <Route path="/teacher/create-class" element={<TeacherCreateClass />} />
+            <Route path="/teacher/classroom" element={<TeacherClassroomList />} />
             <Route path="/teacher/classroom/:id" element={<TeacherClassroom />} />
             <Route path="/teacher/upload" element={<TeacherUpload />} />
             <Route path="/teacher/assessment" element={<TeacherAssessment />} />

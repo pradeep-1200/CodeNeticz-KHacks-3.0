@@ -1,107 +1,281 @@
-import React, { useRef, useState } from 'react';
-import { Upload, FileText, Video, Image, File, CheckCircle } from 'lucide-react';
-import '../../styles/TeacherUpload.css';
+import React, { useState, useEffect } from 'react';
+import TeacherNavbar from '../../components/TeacherNavbar';
+import { Upload, FileText, Video, Image, File, CheckCircle, AlertCircle, X } from 'lucide-react';
+import apiClient from '../../api/client';
 
-export default function TeacherUpload() {
-    const fileInputRef = useRef(null);
+const TeacherUpload = () => {
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [type, setType] = useState('pdf');
+    const [uploading, setUploading] = useState(false);
+    const [uploadStatus, setUploadStatus] = useState(null);
+    const [materials, setMaterials] = useState([]);
+    const [dragActive, setDragActive] = useState(false);
 
-    const [uploads, setUploads] = useState([
-        { name: "Calculus_Intro.pdf", type: "PDF", size: "2.4 MB", date: "Just now", icon: <FileText /> },
-        { name: "Geometry_Basics.mp4", type: "Video", size: "156 MB", date: "2 hours ago", icon: <Video /> },
-        { name: "Algebra_Diagrams.png", type: "Image", size: "1.2 MB", date: "Yesterday", icon: <Image /> },
-    ]);
+    useEffect(() => {
+        fetchMaterials();
+    }, []);
 
-    const handleUploadClick = () => {
-        fileInputRef.current.click();
+    const fetchMaterials = async () => {
+        try {
+            const response = await apiClient.get('/teacher/materials');
+            setMaterials(response.data || []);
+        } catch (error) {
+            console.error('Error fetching materials:', error);
+        }
     };
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            let type = "File";
-            let icon = <File />;
+    const handleDrag = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
+    };
 
-            if (file.type.includes('image')) {
-                type = "Image";
-                icon = <Image />;
-            } else if (file.type.includes('video')) {
-                type = "Video";
-                icon = <Video />;
-            } else if (file.type.includes('pdf')) {
-                type = "PDF";
-                icon = <FileText />;
-            } else if (file.type.includes('text')) {
-                type = "Document";
-                icon = <FileText />;
+    const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleFileSelect(e.dataTransfer.files[0]);
+        }
+    };
+
+    const handleFileSelect = (file) => {
+        setSelectedFile(file);
+        if (!title) {
+            setTitle(file.name.split('.')[0]);
+        }
+        
+        // Auto-detect file type
+        const extension = file.name.split('.').pop().toLowerCase();
+        if (['pdf'].includes(extension)) setType('pdf');
+        else if (['mp4', 'avi', 'mov'].includes(extension)) setType('video');
+        else if (['jpg', 'jpeg', 'png', 'gif'].includes(extension)) setType('image');
+        else if (['doc', 'docx'].includes(extension)) setType('word');
+        else if (['ppt', 'pptx'].includes(extension)) setType('ppt');
+        else setType('pdf');
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!selectedFile) {
+            setUploadStatus({ type: 'error', message: 'Please select a file' });
+            return;
+        }
+
+        setUploading(true);
+        setUploadStatus(null);
+
+        try {
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('title', title);
+            formData.append('description', description);
+            formData.append('type', type);
+
+            const response = await apiClient.post('/teacher/upload-material', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            if (response.data.success) {
+                setUploadStatus({ type: 'success', message: 'Material uploaded successfully!' });
+                setSelectedFile(null);
+                setTitle('');
+                setDescription('');
+                setType('pdf');
+                fetchMaterials();
             }
+        } catch (error) {
+            console.error('Upload error:', error);
+            setUploadStatus({ 
+                type: 'error', 
+                message: error.response?.data?.message || 'Upload failed. Please try again.' 
+            });
+        } finally {
+            setUploading(false);
+        }
+    };
 
-            const newUpload = {
-                name: file.name,
-                type: type,
-                size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
-                date: "Just now",
-                icon: icon
-            };
-
-            setUploads([newUpload, ...uploads]);
-            alert(`Successfully uploaded ${file.name}`);
+    const getFileIcon = (fileType) => {
+        switch (fileType) {
+            case 'video': return <Video size={20} className="text-red-500" />;
+            case 'image': return <Image size={20} className="text-green-500" />;
+            case 'word': return <FileText size={20} className="text-blue-500" />;
+            case 'ppt': return <FileText size={20} className="text-orange-500" />;
+            default: return <FileText size={20} className="text-gray-500" />;
         }
     };
 
     return (
-        <div className="min-h-screen bg-[var(--bg-secondary)] p-8">
-            <div className="upload-container fade-in">
-                <div className="upload-card">
-                    <div className="upload-area" onClick={handleUploadClick}>
-                        <div className="upload-icon">
-                            <Upload size={32} color="var(--primary-blue)" />
-                        </div>
-                        <h2 className="upload-title">Click to upload or drag and drop</h2>
-                        <p className="upload-subtitle">PDF, Video, Images or Documents (max. 500MB)</p>
-
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            style={{ display: 'none' }}
-                            onChange={handleFileChange}
-                        />
-                    </div>
-
-                    <div className="file-types">
-                        <span className="file-type-tag"><FileText size={14} /> Documents</span>
-                        <span className="file-type-tag"><Video size={14} /> Video Lessons</span>
-                        <span className="file-type-tag"><Image size={14} /> Graphics</span>
-                    </div>
-
-                    <button className="primary-btn" onClick={handleUploadClick}>
-                        <Upload size={20} />
-                        Upload New Material
-                    </button>
+        <div className="min-h-screen bg-[var(--bg-secondary)] text-[var(--text-primary)] transition-colors duration-300">
+            <TeacherNavbar />
+            
+            <main className="container mx-auto px-6 py-8 space-y-8">
+                {/* Header */}
+                <div className="bg-[var(--bg-primary)] p-8 rounded-2xl shadow-lg border border-[var(--border-color)]">
+                    <h1 className="text-3xl font-bold mb-2">Upload Materials</h1>
+                    <p className="text-[var(--text-secondary)]">
+                        Share learning resources with your students. Upload PDFs, videos, and other educational content.
+                    </p>
                 </div>
 
-                <div className="recent-uploads">
-                    <div className="section-title">
-                        Recent Uploads
-                        <span style={{ fontSize: '0.9rem', color: 'var(--primary-blue)', cursor: 'pointer' }}>View All</span>
-                    </div>
-                    <div className="file-list">
-                        {uploads.map((file, idx) => (
-                            <div key={idx} className="file-item">
-                                <div className="file-info">
-                                    <div className="file-icon">
-                                        {file.icon}
+                <div className="grid md:grid-cols-2 gap-8">
+                    {/* Upload Form */}
+                    <div className="bg-[var(--bg-primary)] p-6 rounded-2xl shadow-lg border border-[var(--border-color)]">
+                        <h2 className="text-xl font-bold mb-6">Upload New Material</h2>
+                        
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            {/* File Upload Area */}
+                            <div 
+                                className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
+                                    dragActive 
+                                        ? 'border-[var(--accent-primary)] bg-blue-50 dark:bg-blue-900/20' 
+                                        : 'border-[var(--border-color)] hover:border-[var(--accent-primary)]'
+                                }`}
+                                onDragEnter={handleDrag}
+                                onDragLeave={handleDrag}
+                                onDragOver={handleDrag}
+                                onDrop={handleDrop}
+                            >
+                                <Upload size={48} className="mx-auto mb-4 text-[var(--text-secondary)]" />
+                                <p className="text-lg font-semibold mb-2">Drop files here or click to browse</p>
+                                <p className="text-sm text-[var(--text-secondary)] mb-4">
+                                    Supports PDF, Video, Images, Word, PowerPoint
+                                </p>
+                                <input
+                                    type="file"
+                                    onChange={(e) => e.target.files[0] && handleFileSelect(e.target.files[0])}
+                                    className="hidden"
+                                    id="file-upload"
+                                    accept=".pdf,.mp4,.avi,.mov,.jpg,.jpeg,.png,.gif,.doc,.docx,.ppt,.pptx"
+                                />
+                                <label 
+                                    htmlFor="file-upload" 
+                                    className="inline-block px-6 py-2 bg-[var(--accent-primary)] text-white rounded-lg cursor-pointer hover:bg-blue-700 transition-colors"
+                                >
+                                    Choose File
+                                </label>
+                                
+                                {selectedFile && (
+                                    <div className="mt-4 p-3 bg-[var(--bg-secondary)] rounded-lg flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            {getFileIcon(type)}
+                                            <span className="text-sm font-medium">{selectedFile.name}</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedFile(null)}
+                                            className="text-red-500 hover:text-red-700"
+                                        >
+                                            <X size={16} />
+                                        </button>
                                     </div>
-                                    <div className="file-details">
-                                        <h4>{file.name}</h4>
-                                        <span>{file.size} • {file.date}</span>
+                                )}
+                            </div>
+
+                            {/* Form Fields */}
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Title</label>
+                                <input
+                                    type="text"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    className="w-full px-4 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
+                                    placeholder="Enter material title"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Description</label>
+                                <textarea
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    className="w-full px-4 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] h-24 resize-none"
+                                    placeholder="Brief description of the material"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Type</label>
+                                <select
+                                    value={type}
+                                    onChange={(e) => setType(e.target.value)}
+                                    className="w-full px-4 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
+                                >
+                                    <option value="pdf">PDF Document</option>
+                                    <option value="video">Video</option>
+                                    <option value="image">Image</option>
+                                    <option value="word">Word Document</option>
+                                    <option value="ppt">PowerPoint</option>
+                                </select>
+                            </div>
+
+                            {/* Status Message */}
+                            {uploadStatus && (
+                                <div className={`p-4 rounded-lg flex items-center gap-2 ${
+                                    uploadStatus.type === 'success' 
+                                        ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+                                        : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300'
+                                }`}>
+                                    {uploadStatus.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+                                    {uploadStatus.message}
+                                </div>
+                            )}
+
+                            {/* Submit Button */}
+                            <button
+                                type="submit"
+                                disabled={uploading || !selectedFile}
+                                className="w-full py-3 bg-[var(--accent-primary)] text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                {uploading ? 'Uploading...' : 'Upload Material'}
+                            </button>
+                        </form>
+                    </div>
+
+                    {/* Materials List */}
+                    <div className="bg-[var(--bg-primary)] p-6 rounded-2xl shadow-lg border border-[var(--border-color)]">
+                        <h2 className="text-xl font-bold mb-6">Uploaded Materials</h2>
+                        
+                        <div className="space-y-4 max-h-96 overflow-y-auto">
+                            {materials.length > 0 ? materials.map((material, index) => (
+                                <div key={index} className="p-4 border border-[var(--border-color)] rounded-lg hover:bg-[var(--bg-secondary)] transition-colors">
+                                    <div className="flex items-start gap-3">
+                                        {getFileIcon(material.type)}
+                                        <div className="flex-1">
+                                            <h3 className="font-semibold">{material.title}</h3>
+                                            {material.desc && (
+                                                <p className="text-sm text-[var(--text-secondary)] mt-1">{material.desc}</p>
+                                            )}
+                                            <div className="flex items-center gap-4 mt-2 text-xs text-[var(--text-secondary)]">
+                                                <span>Type: {material.type.toUpperCase()}</span>
+                                                <span>Date: {material.date}</span>
+                                                <span>Likes: {material.likes}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <CheckCircle size={20} color="var(--secondary-green)" />
-                            </div>
-                        ))}
+                            )) : (
+                                <div className="text-center py-8 text-[var(--text-secondary)]">
+                                    <File size={48} className="mx-auto mb-4 opacity-50" />
+                                    <p>No materials uploaded yet</p>
+                                    <p className="text-sm">Upload your first material to get started</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
+            </main>
         </div>
     );
-}
+};
+
+export default TeacherUpload;

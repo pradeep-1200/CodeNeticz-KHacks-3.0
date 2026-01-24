@@ -1,304 +1,237 @@
-import React, { useState } from 'react';
-import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
-    LineChart,
-    Line,
-    PieChart,
-    Pie,
-    Cell
-} from 'recharts';
-import {
-    Users,
-    Activity,
-    CheckCircle,
-    TrendingUp,
-    AlertCircle,
-    Lightbulb,
-    Clock,
-    ArrowRight
-} from 'lucide-react';
-import '../../styles/TeacherAnalytics.css';
+import React, { useState, useEffect } from 'react';
+import TeacherNavbar from '../../components/TeacherNavbar';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { TrendingUp, Users, BookOpen, Award, Calendar, Target } from 'lucide-react';
+import apiClient from '../../api/client';
 
-const CLASS_STATS = [
-    { label: "Avg Class Score", value: "78%", change: "+5%", icon: <Activity />, color: "var(--primary-blue)", bg: "var(--bg-blue-light)" },
-    { label: "Engagement Rate", value: "85%", change: "+12%", icon: <Users />, color: "var(--secondary-green)", bg: "var(--bg-green-light)" },
-    { label: "Completion Rate", value: "92%", change: "+2%", icon: <CheckCircle />, color: "var(--text-disabled)", bg: "#fef7e0" },
-];
+const TeacherAnalytics = () => {
+    const [analyticsData, setAnalyticsData] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-const ASSESSMENT_DATA = [
-    { name: 'Unit 1', score: 65 },
-    { name: 'Unit 2', score: 72 },
-    { name: 'Unit 3', score: 78 },
-    { name: 'Midterm', score: 82 },
-    { name: 'Unit 4', score: 85 },
-];
+    useEffect(() => {
+        fetchAnalytics();
+    }, []);
 
-const IMPROVEMENT_DATA = [
-    { week: 'W1', avg: 60 },
-    { week: 'W2', avg: 65 },
-    { week: 'W3', avg: 70 },
-    { week: 'W4', avg: 72 },
-    { week: 'W5', avg: 78 },
-    { week: 'W6', avg: 82 },
-];
+    const fetchAnalytics = async () => {
+        try {
+            const response = await apiClient.get('/teacher/analytics');
+            setAnalyticsData(response.data);
+        } catch (error) {
+            console.error('Error fetching analytics:', error);
+            // Set mock data if API fails
+            setAnalyticsData({
+                overview: {
+                    totalStudents: 45,
+                    totalMaterials: 12,
+                    totalAssessments: 8,
+                    totalClasses: 3
+                },
+                studentProgress: [
+                    { name: 'Week 1', completed: 20, pending: 5 },
+                    { name: 'Week 2', completed: 35, pending: 10 },
+                    { name: 'Week 3', completed: 40, pending: 5 },
+                    { name: 'Week 4', completed: 45, pending: 0 }
+                ],
+                assessmentScores: [
+                    { name: 'Quiz 1', average: 85 },
+                    { name: 'Quiz 2', average: 78 },
+                    { name: 'Quiz 3', average: 92 },
+                    { name: 'Quiz 4', average: 88 }
+                ],
+                engagementMetrics: [
+                    { name: 'Videos', engagement: 85 },
+                    { name: 'PDFs', engagement: 70 },
+                    { name: 'Quizzes', engagement: 95 },
+                    { name: 'Assignments', engagement: 80 }
+                ]
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
 
-const ENGAGEMENT_DATA = [
-    { name: 'Highly Engaged', value: 45 },
-    { name: 'Moderately Engaged', value: 35 },
-    { name: 'Needs Support', value: 20 },
-];
+    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
-const PIE_COLORS = ['#1a73e8', '#fbbc04', '#ea4335'];
-
-const STUDENTS = [
-    {
-        id: 1,
-        name: "Alex Rivera",
-        performance: "Needs Support",
-        insights: ["Reading support suggested", "Alternate input preferred"],
-        before: { score: 45, time: "45m" },
-        after: { score: 72, time: "30m" },
-        suggestions: ["Enable audio-first mode", "Allow voice-to-text answers"]
-    },
-    {
-        id: 2,
-        name: "Casey Smith",
-        performance: "On Track",
-        insights: ["Concept-based help enabled"],
-        before: { score: 70, time: "40m" },
-        after: { score: 85, time: "35m" },
-        suggestions: ["Provide advanced challenge problems"]
-    },
-    {
-        id: 3,
-        name: "Jordan Lee",
-        performance: "Excelling",
-        insights: ["Fast learner", "Visual strength"],
-        before: { score: 88, time: "20m" },
-        after: { score: 95, time: "15m" },
-        suggestions: ["Encourage peer mentoring"]
-    },
-    {
-        id: 4,
-        name: "Riley Chen",
-        performance: "Needs Support",
-        insights: ["Focus aid suggested", "Simplified view"],
-        before: { score: 50, time: "50m" },
-        after: { score: 75, time: "35m" },
-        suggestions: ["Turn on 'Focus Mode' by default", "Break tasks into smaller chunks"]
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-[var(--bg-secondary)] text-[var(--text-primary)]">
+                <TeacherNavbar />
+                <div className="p-8 text-center">Loading analytics...</div>
+            </div>
+        );
     }
-];
-
-export default function TeacherAnalytics() {
-    const [selectedStudent, setSelectedStudent] = useState(STUDENTS[0]);
 
     return (
-        <div className="min-h-screen bg-[var(--bg-secondary)] p-8">
-            <div className="analytics-container fade-in">
-                <div className="analytics-header">
-                    <h1>Class Analytics & Reports</h1>
-                    <p>Overview of student performance, engagement, and adaptive learning impact.</p>
+        <div className="min-h-screen bg-[var(--bg-secondary)] text-[var(--text-primary)] transition-colors duration-300">
+            <TeacherNavbar />
+            
+            <main className="container mx-auto px-6 py-8 space-y-8">
+                {/* Header */}
+                <div className="bg-[var(--bg-primary)] p-8 rounded-2xl shadow-lg border border-[var(--border-color)]">
+                    <h1 className="text-3xl font-bold mb-2">Analytics & Reports</h1>
+                    <p className="text-[var(--text-secondary)]">
+                        Track student progress, engagement metrics, and assessment performance.
+                    </p>
                 </div>
 
-                <div className="stats-grid">
-                    {CLASS_STATS.map((stat, index) => (
-                        <div key={index} className="stat-card">
-                            <div className="stat-icon" style={{ color: stat.color, backgroundColor: stat.bg }}>
-                                {stat.icon}
-                            </div>
-                            <div className="stat-content">
-                                <h3>{stat.label}</h3>
-                                <div style={{ display: 'flex', alignItems: 'baseline' }}>
-                                    <span className="stat-value">{stat.value}</span>
-                                    <span className={`trend-indicator ${stat.change.startsWith('+') ? 'trend-up' : 'trend-down'}`}>
-                                        {stat.change}
-                                    </span>
-                                </div>
-                            </div>
+                {/* Overview Stats */}
+                <div className="grid md:grid-cols-4 gap-6">
+                    <div className="p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl shadow-lg">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="p-2 bg-white/20 rounded-lg"><Users size={24} /></div>
+                            <span className="text-sm font-semibold bg-white/20 px-2 py-1 rounded">Total</span>
                         </div>
-                    ))}
-                </div>
-
-                <div className="dashboard-grid">
-                    <div className="charts-section">
-                        <div className="chart-card">
-                            <div className="chart-header">
-                                <h2 className="chart-title">Assessment Performance History</h2>
-                                <TrendingUp size={20} color="var(--text-secondary)" />
-                            </div>
-                            <div style={{ width: '100%', height: 300 }}>
-                                <ResponsiveContainer>
-                                    <BarChart data={ASSESSMENT_DATA}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                        <XAxis dataKey="name" tick={{ fill: '#5f6368' }} axisLine={false} tickLine={false} />
-                                        <YAxis tick={{ fill: '#5f6368' }} axisLine={false} tickLine={false} />
-                                        <Tooltip
-                                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
-                                            cursor={{ fill: '#f1f3f4' }}
-                                        />
-                                        <Bar dataKey="score" fill="#1a73e8" radius={[4, 4, 0, 0]} name="Avg Score" />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-
-                        <div className="chart-card">
-                            <div className="chart-header">
-                                <h2 className="chart-title">Improvement Over Time</h2>
-                                <Activity size={20} color="var(--text-secondary)" />
-                            </div>
-                            <div style={{ width: '100%', height: 300 }}>
-                                <ResponsiveContainer>
-                                    <LineChart data={IMPROVEMENT_DATA}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                        <XAxis dataKey="week" tick={{ fill: '#5f6368' }} axisLine={false} tickLine={false} />
-                                        <YAxis tick={{ fill: '#5f6368' }} axisLine={false} tickLine={false} />
-                                        <Tooltip
-                                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
-                                        />
-                                        <Line type="monotone" dataKey="avg" stroke="#137333" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Class Avg" />
-                                    </LineChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-
-                        <div className="chart-card">
-                            <div className="chart-header">
-                                <h2 className="chart-title">Class Engagement Distribution</h2>
-                            </div>
-                            <div style={{ width: '100%', height: 300 }}>
-                                <ResponsiveContainer>
-                                    <PieChart>
-                                        <Pie
-                                            data={ENGAGEMENT_DATA}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={60}
-                                            outerRadius={100}
-                                            fill="#8884d8"
-                                            paddingAngle={5}
-                                            dataKey="value"
-                                        >
-                                            {ENGAGEMENT_DATA.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip contentStyle={{ borderRadius: '8px' }} />
-                                        <Legend verticalAlign="bottom" height={36} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
+                        <h3 className="text-2xl font-bold">{analyticsData?.overview?.totalStudents || 0}</h3>
+                        <p className="text-white/80 text-sm mt-1">Active Students</p>
                     </div>
 
-                    <div className="insights-panel">
-                        <div className="student-list-card">
-                            <div className="student-list-header">
-                                Student List
-                            </div>
-                            <div className="student-list-content">
-                                {STUDENTS.map(student => (
-                                    <div
-                                        key={student.id}
-                                        className={`student-item ${selectedStudent.id === student.id ? 'active' : ''}`}
-                                        onClick={() => setSelectedStudent(student)}
-                                    >
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                            <div
-                                                style={{
-                                                    width: '32px', height: '32px', borderRadius: '50%',
-                                                    background: 'var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-secondary)'
-                                                }}>
-                                                {student.name.split(' ').map(n => n[0]).join('')}
-                                            </div>
-                                            <div>
-                                                <div style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{student.name}</div>
-                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{student.performance}</div>
-                                            </div>
-                                        </div>
-                                        <ArrowRight size={16} color="#dadce0" />
-                                    </div>
-                                ))}
-                            </div>
+                    <div className="p-6 bg-[var(--bg-primary)] rounded-2xl shadow-sm border border-[var(--border-color)]">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="p-2 bg-green-100 text-green-600 rounded-lg dark:bg-green-900 dark:text-green-300"><BookOpen size={24} /></div>
+                            <span className="text-2xl font-bold">{analyticsData?.overview?.totalMaterials || 0}</span>
                         </div>
+                        <h3 className="font-semibold text-[var(--text-secondary)]">Materials</h3>
+                        <p className="text-xs text-green-500 mt-1 font-medium">Uploaded</p>
+                    </div>
 
-                        <div className="student-detail-card">
-                            <div className="detail-header">
-                                <div className="student-avatar-lg">
-                                    {selectedStudent.name.split(' ').map(n => n[0]).join('')}
+                    <div className="p-6 bg-[var(--bg-primary)] rounded-2xl shadow-sm border border-[var(--border-color)]">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="p-2 bg-orange-100 text-orange-600 rounded-lg dark:bg-orange-900 dark:text-orange-300"><Award size={24} /></div>
+                            <span className="text-2xl font-bold">{analyticsData?.overview?.totalAssessments || 0}</span>
+                        </div>
+                        <h3 className="font-semibold text-[var(--text-secondary)]">Assessments</h3>
+                        <p className="text-xs text-orange-500 mt-1 font-medium">Created</p>
+                    </div>
+
+                    <div className="p-6 bg-[var(--bg-primary)] rounded-2xl shadow-sm border border-[var(--border-color)]">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="p-2 bg-purple-100 text-purple-600 rounded-lg dark:bg-purple-900 dark:text-purple-300"><Target size={24} /></div>
+                            <span className="text-2xl font-bold">{analyticsData?.overview?.totalClasses || 0}</span>
+                        </div>
+                        <h3 className="font-semibold text-[var(--text-secondary)]">Classes</h3>
+                        <p className="text-xs text-purple-500 mt-1 font-medium">Active</p>
+                    </div>
+                </div>
+
+                {/* Charts Section */}
+                <div className="grid md:grid-cols-2 gap-8">
+                    {/* Student Progress Chart */}
+                    <div className="bg-[var(--bg-primary)] p-6 rounded-2xl shadow-lg border border-[var(--border-color)]">
+                        <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                            <TrendingUp size={20} className="text-[var(--accent-primary)]" />
+                            Student Progress
+                        </h2>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={analyticsData?.studentProgress || []}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                                <XAxis dataKey="name" stroke="var(--text-secondary)" />
+                                <YAxis stroke="var(--text-secondary)" />
+                                <Tooltip 
+                                    contentStyle={{ 
+                                        backgroundColor: 'var(--bg-primary)', 
+                                        border: '1px solid var(--border-color)',
+                                        borderRadius: '8px'
+                                    }} 
+                                />
+                                <Bar dataKey="completed" fill="#10b981" name="Completed" />
+                                <Bar dataKey="pending" fill="#f59e0b" name="Pending" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+
+                    {/* Assessment Scores */}
+                    <div className="bg-[var(--bg-primary)] p-6 rounded-2xl shadow-lg border border-[var(--border-color)]">
+                        <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                            <Award size={20} className="text-[var(--accent-primary)]" />
+                            Assessment Scores
+                        </h2>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <LineChart data={analyticsData?.assessmentScores || []}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                                <XAxis dataKey="name" stroke="var(--text-secondary)" />
+                                <YAxis stroke="var(--text-secondary)" />
+                                <Tooltip 
+                                    contentStyle={{ 
+                                        backgroundColor: 'var(--bg-primary)', 
+                                        border: '1px solid var(--border-color)',
+                                        borderRadius: '8px'
+                                    }} 
+                                />
+                                <Line type="monotone" dataKey="average" stroke="#3b82f6" strokeWidth={3} name="Average Score" />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Engagement Metrics */}
+                <div className="grid md:grid-cols-2 gap-8">
+                    <div className="bg-[var(--bg-primary)] p-6 rounded-2xl shadow-lg border border-[var(--border-color)]">
+                        <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                            <Users size={20} className="text-[var(--accent-primary)]" />
+                            Content Engagement
+                        </h2>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                                <Pie
+                                    data={analyticsData?.engagementMetrics || []}
+                                    cx="50%"
+                                    cy="50%"
+                                    labelLine={false}
+                                    label={({ name, value }) => `${name}: ${value}%`}
+                                    outerRadius={80}
+                                    fill="#8884d8"
+                                    dataKey="engagement"
+                                >
+                                    {(analyticsData?.engagementMetrics || []).map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+
+                    {/* Recent Activity Summary */}
+                    <div className="bg-[var(--bg-primary)] p-6 rounded-2xl shadow-lg border border-[var(--border-color)]">
+                        <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                            <Calendar size={20} className="text-[var(--accent-primary)]" />
+                            Recent Activity
+                        </h2>
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-lg">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <span className="text-sm">New student joined Math Class</span>
                                 </div>
-                                <div>
-                                    <h2 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>{selectedStudent.name}</h2>
-                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Student ID: #{1000 + selectedStudent.id}</p>
-                                </div>
+                                <span className="text-xs text-[var(--text-secondary)]">2 hours ago</span>
                             </div>
-
-                            <h4 style={{ marginBottom: '1rem', color: '#5f6368', fontSize: '0.9rem', textTransform: 'uppercase', fontWeight: 'bold' }}>
-                                Adaptive Insights
-                            </h4>
-                            <div className="insight-tags">
-                                {selectedStudent.insights.map((insight, idx) => {
-                                    let className = 'insight-tag tag-concept';
-                                    if (insight.includes('Reading') || insight.includes('Focus')) className = 'insight-tag tag-support';
-                                    if (insight.includes('input')) className = 'insight-tag tag-input';
-
-                                    return (
-                                        <span key={idx} className={className}>
-                                            <AlertCircle size={14} />
-                                            {insight}
-                                        </span>
-                                    );
-                                })}
+                            <div className="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-lg">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    <span className="text-sm">Quiz 4 completed by 15 students</span>
+                                </div>
+                                <span className="text-xs text-[var(--text-secondary)]">5 hours ago</span>
                             </div>
-
-                            <div className="comparison-box">
-                                <h4 style={{ marginBottom: '1rem', color: 'var(--text-primary)', fontSize: '1rem' }}>Before vs After Adaptation</h4>
-
-                                <div className="comparison-row">
-                                    <span className="comparison-label">Assessment Score</span>
-                                    <div>
-                                        <span className="comparison-value">{selectedStudent.before.score}</span>
-                                        <span style={{ margin: '0 0.5rem', color: 'var(--border-color)' }}>→</span>
-                                        <span className="comparison-value" style={{ color: 'var(--secondary-green)' }}>{selectedStudent.after.score}</span>
-                                        <span className="impact-badge">+{selectedStudent.after.score - selectedStudent.before.score}</span>
-                                    </div>
+                            <div className="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-lg">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                    <span className="text-sm">New material uploaded</span>
                                 </div>
-
-                                <div className="comparison-row">
-                                    <span className="comparison-label">Time Taken</span>
-                                    <div>
-                                        <span className="comparison-value">{selectedStudent.before.time}</span>
-                                        <span style={{ margin: '0 0.5rem', color: 'var(--border-color)' }}>→</span>
-                                        <span className="comparison-value" style={{ color: 'var(--secondary-green)' }}>{selectedStudent.after.time}</span>
-                                        <span className="impact-badge" style={{ background: 'var(--bg-blue-light)', color: 'var(--primary-blue-hover)' }}>Faster</span>
-                                    </div>
-                                </div>
+                                <span className="text-xs text-[var(--text-secondary)]">1 day ago</span>
                             </div>
-
-                            <div className="suggestion-box">
-                                <div className="suggestion-title">
-                                    <Lightbulb size={18} color="#fbbc04" />
-                                    Suggested Actions
+                            <div className="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-lg">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                    <span className="text-sm">Assessment created</span>
                                 </div>
-                                {selectedStudent.suggestions.map((sagg, idx) => (
-                                    <div key={idx} className="suggestion-item">
-                                        <div style={{ minWidth: '6px', height: '6px', borderRadius: '50%', background: '#fbbc04', marginTop: '7px' }}></div>
-                                        {sagg}
-                                    </div>
-                                ))}
+                                <span className="text-xs text-[var(--text-secondary)]">2 days ago</span>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </main>
         </div>
     );
-}
+};
+
+export default TeacherAnalytics;

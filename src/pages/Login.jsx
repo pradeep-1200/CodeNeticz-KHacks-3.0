@@ -2,16 +2,30 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, GraduationCap, ArrowRight, ArrowLeft, Accessibility } from 'lucide-react';
 
+import { loginUser } from '../services/api';
+
 const Login = () => {
   const navigate = useNavigate();
   const [userType, setUserType] = useState('student');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setError('');
+    
     if (userType === 'student') {
-      navigate('/student/dashboard');
+      try {
+        const response = await loginUser(email, password);
+        if (response.success) {
+           navigate('/student/dashboard');
+        } else {
+           setError(response.message || 'Login failed');
+        }
+      } catch (err) {
+        setError('Login failed. Please check your connection.');
+      }
     } else {
       alert("Teacher dashboard not available in this demo.");
     }
@@ -62,6 +76,8 @@ const Login = () => {
         <div className="text-center mb-6 text-sm text-[var(--text-secondary)] italic">
            {userType === 'student' ? 'Access your lessons, assessments, and progress.' : 'Manage classes, track student progress, and assignments.'}
         </div>
+
+        {error && <div className="text-red-500 text-sm text-center mb-4 font-bold">{error}</div>}
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>

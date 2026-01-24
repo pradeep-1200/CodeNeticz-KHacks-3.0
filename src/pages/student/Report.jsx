@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { getReportData } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import InsightCard from '../../components/InsightCard';
@@ -11,19 +12,14 @@ import {
 
 const Report = () => {
     const navigate = useNavigate();
+    const [reportData, setReportData] = useState(null);
 
-    // Mock Data
-    const beforeStats = [
-        { label: "Reading Speed", value: 40, display: "Low" },
-        { label: "Accuracy", value: 65, display: "Medium" },
-        { label: "Confidence Level", value: 50, display: "Unsure" }
-    ];
+    useEffect(() => {
+        getReportData().then(setReportData);
+    }, []);
 
-    const afterStats = [
-        { label: "Reading Speed", value: 85, display: "Normal" },
-        { label: "Accuracy", value: 92, display: "High" },
-        { label: "Confidence Level", value: 95, display: "Very Confident" }
-    ];
+    const beforeStats = reportData?.beforeStats || [];
+    const afterStats = reportData?.afterStats || [];
 
   return (
     <div className="min-h-screen bg-[var(--bg-secondary)] text-[var(--text-primary)] transition-colors duration-300 font-sans">

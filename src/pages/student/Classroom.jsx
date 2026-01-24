@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getMaterials } from '../../services/api';
 import Navbar from '../../components/Navbar';
 import StudyMaterial from '../../components/StudyMaterial';
 import { 
@@ -24,40 +25,15 @@ const Classroom = () => {
     members: 34
   };
 
-  const materials = [
-    { 
-      id: 1, 
-      title: 'Introduction to Linked Lists', 
-      desc: 'Watch this animation to understand how nodes connect in memory compared to arrays.',
-      type: 'video', 
-      date: 'Oct 24', 
-      likes: 12 
-    },
-    { 
-      id: 2, 
-      title: 'Assignment 3: Stack Implementation', 
-      desc: 'Read the spec sheet carefully. You need to implement Push, Pop, and Peek functions.',
-      type: 'pdf', 
-      date: 'Oct 23', 
-      likes: 5 
-    },
-    { 
-      id: 3, 
-      title: 'Audio Lecture: Queue Real-world Examples', 
-      desc: 'Listen to how printer spools and CPU scheduling use queues.',
-      type: 'audio', 
-      date: 'Oct 22', 
-      likes: 8 
-    },
-    { 
-      id: 4, 
-      title: 'Simplified Notes: Linked Lists (Reading-Friendly)', 
-      desc: 'A simplified version of the lesson with shorter sentences, highlighted keywords, and optional audio support.',
-      type: 'reading-friendly', 
-      date: 'Oct 25', 
-      likes: 3 
-    },
-  ];
+  const [materials, setMaterials] = useState([]);
+
+  useEffect(() => {
+    const fetchMaterials = async () => {
+      const data = await getMaterials();
+      setMaterials(data);
+    };
+    fetchMaterials();
+  }, []);
 
   const feedItems = [
     { id: 1, text: "📢 Welcome to the Linked Lists module! Please check the study materials for new videos.", date: "Oct 24, 10:00 AM" },

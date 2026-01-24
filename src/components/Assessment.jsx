@@ -1,22 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getAssessmentQuestions } from '../../services/api';
 import { 
   Play, Pause, Mic, Volume2, ArrowRight, ArrowLeft, CheckCircle, 
   HelpCircle, Keyboard, Spline, Save 
 } from 'lucide-react';
 
-const questionsData = {
-  easy: [
-    { id: 1, type: 'mcq', question: "What comes next in the sequence: 2, 4, 6, _?", options: ["7", "8", "9", "10"], answer: "8", hint: "Add 2 to the previous number." },
-    { id: 2, type: 'text', question: "What is your favorite animal and why?", answer: "open", hint: "There is no wrong answer. Just describe it." },
-  ],
-  medium: [
-    { id: 101, type: 'mcq', question: "Which planet is known as the Red Planet?", options: ["Earth", "Mars", "Jupiter", "Venus"], answer: "Mars", hint: "It shares a name with a Roman god of war." },
-    { id: 102, type: 'text', question: "Explain why plants need sunlight.", answer: "open", hint: "Think about energy and food." },
-  ],
-  challenge: [
-    { id: 201, type: 'mcq', question: "Solve for x: 3x + 5 = 20", options: ["3", "4", "5", "6"], answer: "5", hint: "Subtract 5 from both sides first." },
-  ]
-};
+// questionsData removed in favor of API fetch
 
 const Assessment = () => {
   const [difficulty, setDifficulty] = useState('easy');
@@ -26,9 +15,31 @@ const Assessment = () => {
   const [isListening, setIsListening] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [answerMode, setAnswerMode] = useState('type'); // type, voice
+  
+  const [questionsData, setQuestionsData] = useState({ easy: [], medium: [], challenge: [] });
+  const [questionsLoaded, setQuestionsLoaded] = useState(false);
 
-  const questions = questionsData[difficulty] || questionsData.easy;
-  const currentQ = questions[currentStep] || questions[0];
+  useEffect(() => {
+    const fetchQ = async () => {
+        const data = await getAssessmentQuestions();
+        if (data && data.length > 0) {
+             const grouped = {
+                 easy: data.filter(q => q.difficulty === 'easy'),
+                 medium: data.filter(q => q.difficulty === 'medium'),
+                 challenge: data.filter(q => q.difficulty === 'challenge')
+             };
+             setQuestionsData(grouped);
+        }
+        setQuestionsLoaded(true);
+    };
+    fetchQ();
+  }, []);
+
+  const questions = questionsData[difficulty]?.length > 0 ? questionsData[difficulty] : [];
+  const currentQ = questions[currentStep] || { question: "Loading...", options: [], type: 'mcq' };
+
+  if (!questionsLoaded) return <div className="p-8 text-center">Loading Assessment...</div>;
+  if (questions.length === 0) return <div className="p-8 text-center">No questions found for this level.</div>;
 
   const handleSpeech = (text) => {
     if ('speechSynthesis' in window) {

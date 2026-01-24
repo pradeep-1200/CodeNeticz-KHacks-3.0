@@ -1,9 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import { BookOpen, Bell, Star, TrendingUp, ArrowRight, CheckCircle, Clock, Accessibility, BarChart2, ClipboardCheck } from 'lucide-react';
+import { getDashboardData } from '../../services/api';
 
 const Dashboard = () => {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+       const result = await getDashboardData();
+       setData(result);
+    };
+    loadData();
+  }, []);
+
+  const profile = data?.profile || { level: 5, levelTitle: "Intermediate", xp: 0, streak: 0 };
+  const stats = data?.stats || { activeClasses: 0, pendingInvites: 0, weeklyGoal: 0 };
+  const recentActivity = data?.recentActivity || [];
+  const dailyTip = data?.dailyTip || { title: "Daily Tip", content: "Loading..." };
   return (
     <div className="min-h-screen bg-[var(--bg-secondary)] text-[var(--text-primary)] transition-colors duration-300">
       <Navbar />
@@ -25,12 +40,12 @@ const Dashboard = () => {
            <div className="p-6 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl shadow-lg">
               <div className="flex justify-between items-start mb-4">
                  <div className="p-2 bg-white/20 rounded-lg"><Star size={24} /></div>
-                 <span className="text-sm font-semibold bg-white/20 px-2 py-1 rounded">Level 5</span>
+                 <span className="text-sm font-semibold bg-white/20 px-2 py-1 rounded">Level {profile.level}</span>
               </div>
-              <h3 className="text-2xl font-bold">Intermediate</h3>
+              <h3 className="text-2xl font-bold">{profile.levelTitle}</h3>
               <p className="text-white/80 text-sm mt-1">You’re improving step by step.</p>
               <div className="w-full bg-black/20 h-2 rounded-full mt-4 overflow-hidden">
-                 <div className="bg-yellow-400 h-full w-[70%]"></div>
+                 <div className="bg-yellow-400 h-full" style={{ width: `${(profile.xp / (profile.xp + profile.xpToNextLevel || 100)) * 100}%` }}></div>
               </div>
            </div>
 
@@ -38,7 +53,7 @@ const Dashboard = () => {
            <div className="p-6 bg-[var(--bg-primary)] rounded-2xl shadow-sm border border-[var(--border-color)] hover:shadow-md transition-shadow">
                <div className="flex justify-between items-start mb-4">
                  <div className="p-2 bg-blue-100 text-blue-600 rounded-lg dark:bg-blue-900 dark:text-blue-300"><BookOpen size={24} /></div>
-                 <span className="text-2xl font-bold">4</span>
+                 <span className="text-2xl font-bold">{stats.activeClasses}</span>
               </div>
               <h3 className="font-semibold text-[var(--text-secondary)]">Active Classes</h3>
               <p className="text-xs text-[var(--accent-primary)] mt-1 font-medium">+1 new material</p>
@@ -48,7 +63,7 @@ const Dashboard = () => {
            <div className="p-6 bg-[var(--bg-primary)] rounded-2xl shadow-sm border border-[var(--border-color)] hover:shadow-md transition-shadow">
                <div className="flex justify-between items-start mb-4">
                  <div className="p-2 bg-orange-100 text-orange-600 rounded-lg dark:bg-orange-900 dark:text-orange-300"><Bell size={24} /></div>
-                 <span className="text-2xl font-bold">2</span>
+                 <span className="text-2xl font-bold">{stats.pendingInvites}</span>
               </div>
               <h3 className="font-semibold text-[var(--text-secondary)]">Pending Invites</h3>
               <p className="text-xs text-orange-500 mt-1 font-medium">Action required</p>
@@ -58,7 +73,7 @@ const Dashboard = () => {
            <div className="p-6 bg-[var(--bg-primary)] rounded-2xl shadow-sm border border-[var(--border-color)] hover:shadow-md transition-shadow">
                <div className="flex justify-between items-start mb-4">
                  <div className="p-2 bg-green-100 text-green-600 rounded-lg dark:bg-green-900 dark:text-green-300"><TrendingUp size={24} /></div>
-                 <span className="text-2xl font-bold">85%</span>
+                 <span className="text-2xl font-bold">{stats.weeklyGoal}%</span>
               </div>
               <h3 className="font-semibold text-[var(--text-secondary)]">Weekly Goal</h3>
               <p className="text-xs text-green-500 mt-1 font-medium">On track</p>
@@ -109,19 +124,19 @@ const Dashboard = () => {
                <div className="bg-[var(--bg-primary)] p-6 rounded-2xl shadow-lg border border-[var(--border-color)]">
                   <h2 className="text-xl font-bold mb-4 flex items-center gap-2">Recent Activity</h2>
                   <div className="space-y-4">
-                     {[1, 2].map((i) => (
+                     {recentActivity.length > 0 ? recentActivity.map((activity, i) => (
                         <div key={i} className="flex items-center gap-4 p-3 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors">
                            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center dark:bg-slate-800">
                               <CheckCircle size={18} className="text-green-500"/>
                            </div>
                            <div className="flex-1">
                               <h4 className="font-bold text-[var(--text-primary)]">
-                                 {i === 1 ? "Completed Assessment: Science" : "Joined Class: Mathematics"}
+                                 {activity.title}
                               </h4>
-                              <p className="text-xs text-[var(--text-secondary)]">Yesterday</p>
+                              <p className="text-xs text-[var(--text-secondary)]">{activity.time || 'Recently'}</p>
                            </div>
                         </div>
-                     ))}
+                     )) : <p className="text-center text-[var(--text-secondary)]">No recent activity.</p>}
                   </div>
                </div>
            </div>
@@ -131,9 +146,9 @@ const Dashboard = () => {
               
               {/* Daily Tip */}
               <div className="bg-gradient-to-br from-green-50 to-blue-50 p-6 rounded-2xl shadow-lg border border-green-100 dark:from-slate-800 dark:to-slate-700">
-                 <h2 className="text-xl font-bold mb-4 text-green-800 dark:text-green-300">Daily Tip 💡</h2>
+                 <h2 className="text-xl font-bold mb-4 text-green-800 dark:text-green-300">{dailyTip.title || 'Daily Tip'} 💡</h2>
                  <p className="text-slate-700 mb-4 text-sm dark:text-slate-300">
-                    Taking breaks improves focus! Try the "20-20-20" rule.
+                    {dailyTip.content || dailyTip.tip || "Keep learning every day!"}
                  </p>
               </div>
 

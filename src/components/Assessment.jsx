@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAssessmentQuestions } from '../../services/api';
+import { getAssessmentQuestions } from '../services/api';
 import { 
   Play, Pause, Mic, Volume2, ArrowRight, ArrowLeft, CheckCircle, 
   HelpCircle, Keyboard, Spline, Save 

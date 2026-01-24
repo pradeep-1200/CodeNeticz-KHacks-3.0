@@ -16,7 +16,7 @@ const Dashboard = () => {
   }, []);
 
   const profile = data?.profile || { level: 5, levelTitle: "Intermediate", xp: 0, streak: 0 };
-  const stats = data?.stats || { activeClasses: 0, pendingInvites: 0, weeklyGoal: 0 };
+  const stats = data?.stats || { activeClasses: { count: 0 }, pendingInvites: { count: 0 }, weeklyGoal: { progress: 0 } };
   const recentActivity = data?.recentActivity || [];
   const dailyTip = data?.dailyTip || { title: "Daily Tip", content: "Loading..." };
   return (
@@ -53,7 +53,7 @@ const Dashboard = () => {
            <div className="p-6 bg-[var(--bg-primary)] rounded-2xl shadow-sm border border-[var(--border-color)] hover:shadow-md transition-shadow">
                <div className="flex justify-between items-start mb-4">
                  <div className="p-2 bg-blue-100 text-blue-600 rounded-lg dark:bg-blue-900 dark:text-blue-300"><BookOpen size={24} /></div>
-                 <span className="text-2xl font-bold">{stats.activeClasses}</span>
+                 <span className="text-2xl font-bold">{stats.activeClasses?.count || 0}</span>
               </div>
               <h3 className="font-semibold text-[var(--text-secondary)]">Active Classes</h3>
               <p className="text-xs text-[var(--accent-primary)] mt-1 font-medium">+1 new material</p>
@@ -63,7 +63,7 @@ const Dashboard = () => {
            <div className="p-6 bg-[var(--bg-primary)] rounded-2xl shadow-sm border border-[var(--border-color)] hover:shadow-md transition-shadow">
                <div className="flex justify-between items-start mb-4">
                  <div className="p-2 bg-orange-100 text-orange-600 rounded-lg dark:bg-orange-900 dark:text-orange-300"><Bell size={24} /></div>
-                 <span className="text-2xl font-bold">{stats.pendingInvites}</span>
+                 <span className="text-2xl font-bold">{stats.pendingInvites?.count || 0}</span>
               </div>
               <h3 className="font-semibold text-[var(--text-secondary)]">Pending Invites</h3>
               <p className="text-xs text-orange-500 mt-1 font-medium">Action required</p>
@@ -73,7 +73,7 @@ const Dashboard = () => {
            <div className="p-6 bg-[var(--bg-primary)] rounded-2xl shadow-sm border border-[var(--border-color)] hover:shadow-md transition-shadow">
                <div className="flex justify-between items-start mb-4">
                  <div className="p-2 bg-green-100 text-green-600 rounded-lg dark:bg-green-900 dark:text-green-300"><TrendingUp size={24} /></div>
-                 <span className="text-2xl font-bold">{stats.weeklyGoal}%</span>
+                 <span className="text-2xl font-bold">{stats.weeklyGoal?.progress || 0}%</span>
               </div>
               <h3 className="font-semibold text-[var(--text-secondary)]">Weekly Goal</h3>
               <p className="text-xs text-green-500 mt-1 font-medium">On track</p>

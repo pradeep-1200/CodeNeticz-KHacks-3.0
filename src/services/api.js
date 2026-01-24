@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = 'http://localhost:3001/api';
 
 export const loginUser = async (email, password) => {
     try {
@@ -7,7 +7,7 @@ export const loginUser = async (email, password) => {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ email, password, type: 'student' }), // Defaulting to student for now as per Login.jsx
+            body: JSON.stringify({ email, password }),
         });
         return await response.json();
     } catch (error) {

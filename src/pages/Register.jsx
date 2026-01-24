@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, GraduationCap, ArrowRight, CheckCircle, ShieldCheck, ArrowLeft } from 'lucide-react';
-import { registerUser } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const Register = () => {
     const navigate = useNavigate();
-    const [role, setRole] = useState(null); // 'student' | 'teacher'
+    const { register, login } = useAuth();
+    const [role, setRole] = useState(null);
     const [error, setError] = useState('');
     const [formData, setFormData] = useState({
         name: '',
@@ -25,7 +26,7 @@ const Register = () => {
         setError('');
 
         try {
-            const response = await registerUser({
+            const response = await register({
                 name: formData.name,
                 email: formData.email,
                 password: formData.password,
@@ -33,7 +34,20 @@ const Register = () => {
             });
 
             if (response.success) {
-                navigate('/student/dashboard');
+                // Auto-login after registration
+                const loginResult = await login(formData.email, formData.password);
+                if (loginResult.success) {
+                    const storedUser = localStorage.getItem('activeUser');
+                    const userData = JSON.parse(storedUser);
+                    
+                    if (userData.role === 'teacher') {
+                        navigate('/teacher/dashboard');
+                    } else {
+                        navigate('/student/dashboard');
+                    }
+                } else {
+                    navigate('/login');
+                }
             } else {
                 setError(response.message || "Registration failed");
             }

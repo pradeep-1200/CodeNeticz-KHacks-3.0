@@ -58,8 +58,8 @@ const Landing = () => {
           
           <div className="flex flex-wrap gap-4 pt-4">
              <Link 
-              to="/login"
-              className="px-8 py-4 bg-blue-600 text-white text-lg rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2"
+               to="/login"
+               className="px-8 py-4 bg-blue-600 text-white text-lg rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2"
             >
               Get Started <ArrowRight />
             </Link>

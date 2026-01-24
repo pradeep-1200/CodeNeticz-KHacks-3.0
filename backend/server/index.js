@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 3001;
 require('dotenv').config();
 const connectDB = require('./config/dbConn');
 
@@ -15,13 +15,14 @@ app.use(express.json());
 const studentRoutes = require('./routes/student');
 const authRoutes = require('./routes/auth');
 const materialRoutes = require('./routes/material');
-
+const classroomRoutes = require('./routes/classroom');
 const sttRoutes = require('./routes/stt');
 
 // Use Routes
 app.use('/api/student', studentRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/materials', materialRoutes);
+app.use('/api/class', classroomRoutes);
 app.use('/api/stt', sttRoutes);
 
 app.get('/', (req, res) => {

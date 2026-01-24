@@ -29,12 +29,21 @@ const importData = async () => {
             name: db.studentProfile.name,
             email: "student@example.com",
             password: "12345", // Default password
+            role: "student",
             level: db.studentProfile.level,
             levelTitle: db.studentProfile.levelTitle,
             xp: db.studentProfile.xp,
             nextLevelXp: db.studentProfile.nextLevelXp,
             streak: db.studentProfile.streak,
             badges: db.studentProfile.badges
+        });
+
+        // Create Teacher User
+        const teacher = await User.create({
+            name: "Teacher Demo",
+            email: "teacher@example.com",
+            password: "12345",
+            role: "teacher"
         });
 
         // Create Stats

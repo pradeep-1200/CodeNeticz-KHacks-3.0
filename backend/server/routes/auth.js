@@ -3,28 +3,24 @@ const router = express.Router();
 const User = require('../models/User');
 
 router.post('/login', async (req, res) => {
-    const { email, password, type } = req.body;
+    const { email, password } = req.body;
     try {
-        // In a real app, hash passwords. Here we compare plain text as per demo requirements/simplicity
         const user = await User.findOne({ email });
 
         if (user && user.password === password) {
             res.json({
-                success: true,
-                user: {
-                    id: user._id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role
-                },
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
                 token: "mock-jwt-token-12345"
             });
         } else {
-            res.status(401).json({ success: false, message: "Invalid credentials" });
+            res.status(401).json({ message: "Invalid credentials" });
         }
     } catch (err) {
         console.error(err);
-        res.status(500).json({ success: false, message: "Server Error" });
+        res.status(500).json({ message: "Server Error" });
     }
 });
 
@@ -37,7 +33,7 @@ router.post('/register', async (req, res) => {
     try {
         let user = await User.findOne({ email });
         if (user) {
-            return res.status(400).json({ success: false, message: "User already exists" });
+            return res.status(400).json({ message: "User already exists" });
         }
 
         user = new User({
@@ -71,18 +67,15 @@ router.post('/register', async (req, res) => {
         });
 
         res.json({
-            success: true,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role
-            },
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
             token: "mock-jwt-token-12345"
         });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ success: false, message: "Server Error" });
+        res.status(500).json({ message: "Server Error" });
     }
 });
 

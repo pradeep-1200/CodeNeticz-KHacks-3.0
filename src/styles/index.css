@@ -33,7 +33,9 @@
 
 body {
     font-family: 'Inter', 'Roboto', 'Segoe UI', sans-serif;
-    background-color: var(--bg-light);
+    font-family: 'Inter', 'Roboto', 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #f6f9fc 0%, #eef2f5 100%);
+    min-height: 100vh;
     color: var(--text-primary);
     line-height: 1.6;
 }

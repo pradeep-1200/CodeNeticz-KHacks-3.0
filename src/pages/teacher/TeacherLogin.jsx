@@ -2,16 +2,24 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import '../../styles/TeacherLogin.css';
 
+import { useAuth } from '../../context/AuthContext';
+
 export default function TeacherLogin() {
     const navigate = useNavigate();
+    const { login } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
-        // Mock login - in a real app, this would call an API
-        console.log('Logging in with:', { email, password });
-        navigate('/teacher/dashboard');
+
+        const result = await login(email, password);
+
+        if (result.success) {
+            navigate('/teacher/dashboard');
+        } else {
+            alert(result.message);
+        }
     };
 
     return (

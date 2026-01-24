@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
     Layout,
@@ -10,18 +10,50 @@ import {
     Clock
 } from 'lucide-react';
 import '../../styles/TeacherDashboard.css';
+import { useAuth } from '../../context/AuthContext';
+import apiClient from '../../api/client';
 
 export default function TeacherDashboard() {
+    const { user } = useAuth();
+    const [classrooms, setClassrooms] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchClassrooms = async () => {
+            try {
+                const response = await apiClient.get('/class/my-classes');
+                setClassrooms(response.data);
+            } catch (error) {
+                console.error("Error fetching classrooms:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (user) {
+            fetchClassrooms();
+        }
+    }, [user]);
+
+    const activeClassId = classrooms.length > 0 ? classrooms[0]._id : null;
+    const classCount = classrooms.length;
+
+    // Calculate total students across all classrooms (if we had that data)
+    // For now, iterate and sum logic if students array is populated, or just mock
+    const totalStudents = classrooms.reduce((acc, cls) => acc + (cls.students?.length || 0), 0);
+
     const cards = [
         {
-            title: "My Classroom",
-            description: "Manage students, view materials, and facilitate discussions for Grade 10 Mathematics.",
+            title: classCount > 1 ? "My Classrooms" : "My Classroom",
+            description: classCount > 0
+                ? `Manage students and materials for your ${classCount} active classroom${classCount > 1 ? 's' : ''}.`
+                : "Create your first classroom to get started.",
             icon: <Layout size={28} color="#1a73e8" />,
             iconBg: "#e8f0fe",
-            link: "/teacher/classroom/1",
+            link: activeClassId ? `/teacher/classroom/${activeClassId}` : "/teacher/create-class", // TODO: Create class route
             stats: [
-                { value: "24", label: "Students" },
-                { value: "3", label: "Pending" }
+                { value: totalStudents.toString(), label: "Students" },
+                { value: classrooms.length.toString(), label: "Classes" }
             ]
         },
         {
@@ -59,14 +91,19 @@ export default function TeacherDashboard() {
         }
     ];
 
+    if (loading) return <div className="dashboard-container"><p>Loading dashboard...</p></div>;
+
     return (
         <div className="dashboard-container fade-in">
             <div className="dashboard-header">
                 <div>
                     <h1>Teacher Dashboard</h1>
-                    <p>Welcome back, Sarah. Here's what's happening today.</p>
+                    <p>Welcome back, {user?.name?.split(' ')[0] || 'Teacher'}. Here's what's happening today.</p>
                 </div>
                 <div className="dashboard-actions">
+                    <Link to="/student/exploration" className="primary-btn" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        Launch Exploration Round
+                    </Link>
                     <button className="nav-btn" style={{ backgroundColor: 'white', color: 'var(--primary-blue)', border: '1px solid var(--border-color)' }}>
                         View Calendar
                     </button>

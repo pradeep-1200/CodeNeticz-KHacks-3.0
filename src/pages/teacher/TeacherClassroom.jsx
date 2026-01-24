@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     BookOpen,
     MessageSquare,
@@ -9,99 +9,69 @@ import {
     MoreVertical,
     Copy,
     CheckCircle,
-    Clock
+    Clock,
+    Share2
 } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import apiClient from '../../api/client';
 import '../../styles/TeacherClassroom.css';
 
-// --- Dummy Data ---
-
-const MOCK_CLASS_INFO = {
-    name: "Mathematics - Grade 10",
-    code: "MATH-10-2024-X",
-    subject: "Mathematics",
-    teacher: "Sarah Johnson"
+// --- Default Data for Loading State ---
+const LOADING_CLASS_INFO = {
+    name: "Loading...",
+    code: "...",
+    subject: "...",
+    teacher: "..."
 };
 
-const MOCK_MATERIALS = [
-    {
-        id: 1,
-        title: "Introduction to Calculus",
-        type: "PDF",
-        subject: "Math",
-        topic: "Calculus",
-        difficulty: "Medium",
-        date: "2024-03-15",
-        accessibility: {
-            simplified: true,
-            readAloud: true,
-            highContrast: false
-        }
-    },
-    {
-        id: 2,
-        title: "Algebra Fundamentals",
-        type: "Video",
-        subject: "Math",
-        topic: "Algebra",
-        difficulty: "Easy",
-        date: "2024-03-10",
-        accessibility: {
-            simplified: true,
-            readAloud: true,
-            highContrast: true
-        }
-    },
-    {
-        id: 3,
-        title: "Geometry Practice Sheet",
-        type: "Worksheet",
-        subject: "Math",
-        topic: "Geometry",
-        difficulty: "Hard",
-        date: "2024-03-12",
-        accessibility: {
-            simplified: false,
-            readAloud: false,
-            highContrast: true
-        }
-    }
-];
-
-const MOCK_DISCUSSIONS = [
-    {
-        id: 1,
-        author: "Sarah Johnson",
-        isTeacher: true,
-        content: "Welcome to the new semester! Please check the materials tab for the syllabus.",
-        date: "2 days ago",
-        replies: []
-    },
-    {
-        id: 2,
-        author: "Alex Rivera",
-        isTeacher: false,
-        content: "When is the first assessment due?",
-        date: "1 day ago",
-        replies: []
-    }
-];
-
-const MOCK_STUDENTS = [
-    { id: 1, name: "Alex Rivera", status: "Joined", progress: 75 },
-    { id: 2, name: "Casey Smith", status: "Joined", progress: 45 },
-    { id: 3, name: "Jordan Lee", status: "Joined", progress: 90 },
-    { id: 4, name: "Riley Chen", status: "Pending", progress: 0 },
-    { id: 5, name: "Taylor Kim", status: "Joined", progress: 60 },
-];
-
 export default function TeacherClassroom() {
+    const { id } = useParams();
     const [activeTab, setActiveTab] = useState('materials');
-    const [materials, setMaterials] = useState(MOCK_MATERIALS);
+    const [classInfo, setClassInfo] = useState(LOADING_CLASS_INFO);
+    const [materials, setMaterials] = useState([]);
+    const [students, setStudents] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchClassroomData = async () => {
+            // If ID is 1 (from mock dashboard), don't fetch or handle gracefully
+            if (id === '1') {
+                // Keep mock for id 1 if needed, or better, user should have clicked a real class
+                // For now, let's try to fetch invalid ID and handle error, or just return
+            }
+
+            try {
+                const response = await apiClient.get(`/class/${id}`);
+                const data = response.data;
+                setClassInfo({
+                    name: data.className,
+                    code: data.joinCode,
+                    subject: "General", // Schema adjustment might be needed
+                    teacher: data.teacherId?.name || "Teacher",
+                    joinLink: data.joinLink
+                });
+                setMaterials([]); // TODO: Fetch materials for class
+                setStudents(data.students?.map(s => ({
+                    id: s._id,
+                    name: s.name,
+                    status: 'Joined',
+                    progress: 0
+                })) || []);
+            } catch (error) {
+                console.error("Error fetching class:", error);
+                // If failed, maybe fallback to mock if user clicked the "My Classroom" card
+                // which currently hardcodes /classroom/1. 
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (id) fetchClassroomData();
+    }, [id]);
 
     // Handlers
     const handleCopyCode = () => {
-        navigator.clipboard.writeText(MOCK_CLASS_INFO.code);
-        alert(`Class code ${MOCK_CLASS_INFO.code} copied to clipboard`);
+        navigator.clipboard.writeText(classInfo.code);
+        alert(`Class code ${classInfo.code} copied to clipboard`);
     };
 
     const handleToggleAccessibility = (materialId, setting) => {
@@ -122,12 +92,6 @@ export default function TeacherClassroom() {
     // Render Functions
     const renderMaterials = () => (
         <div className="tab-content fade-in">
-            <div className="materials-actions">
-                <button className="upload-btn" aria-label="Upload new material">
-                    <Plus size={20} />
-                    <span>Upload Material</span>
-                </button>
-            </div>
 
             <div className="materials-grid">
                 {materials.map(material => (
@@ -222,50 +186,61 @@ export default function TeacherClassroom() {
                 </div>
 
                 <div className="comment-list">
-                    {MOCK_DISCUSSIONS.map(post => (
-                        <div key={post.id} className="comment-card">
-                            <div className="comment-header">
-                                <div className="avatar" style={{ backgroundColor: post.isTeacher ? 'var(--primary-blue)' : '#e37400' }}>
-                                    {post.author.split(' ').map(n => n[0]).join('')}
-                                </div>
-                                <div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <span className="author-name">{post.author}</span>
-                                        {post.isTeacher && <span className="teacher-badge">Teacher</span>}
-                                    </div>
-                                    <span className="comment-date">{post.date}</span>
-                                </div>
-                            </div>
-                            <p className="comment-body">{post.content}</p>
-                            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #f1f3f4' }}>
-                                <input
-                                    type="text"
-                                    placeholder="Add class comment..."
-                                    style={{
-                                        width: '100%',
-                                        padding: '0.75rem',
-                                        border: '1px solid var(--border-color)',
-                                        borderRadius: '20px',
-                                        outline: 'none'
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    ))}
+                    {/* Discussions TODO */}
+                    <p>No discussions yet.</p>
                 </div>
             </div>
         </div>
     );
 
+    const [newStudentEmail, setNewStudentEmail] = useState('');
+
+    const handleAddStudent = async (e) => {
+        e.preventDefault();
+        try {
+            const response = await apiClient.post(`/class/${id}/add-student`, { email: newStudentEmail });
+            const addedStudent = response.data.student;
+            setStudents([...students, {
+                id: addedStudent._id,
+                name: addedStudent.name,
+                status: 'Joined',
+                progress: 0
+            }]);
+            setNewStudentEmail('');
+            alert('Student added successfully');
+        } catch (error) {
+            console.error("Error adding student:", error);
+            alert(error.response?.data?.message || "Failed to add student");
+        }
+    };
+
     const renderStudents = () => (
         <div className="tab-content fade-in">
+            <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: 'var(--bg-light)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                <h3 style={{ fontSize: '1rem', marginBottom: '10px' }}>Add Student Manually</h3>
+                <form onSubmit={handleAddStudent} style={{ display: 'flex', gap: '10px' }}>
+                    <input
+                        type="email"
+                        placeholder="Student Email Address"
+                        className="form-input"
+                        style={{ flex: 1, padding: '8px' }}
+                        value={newStudentEmail}
+                        onChange={(e) => setNewStudentEmail(e.target.value)}
+                        required
+                    />
+                    <button type="submit" className="primary-btn" style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
+                        <Plus size={16} style={{ marginRight: '4px' }} /> Add
+                    </button>
+                </form>
+            </div>
+
             <div className="student-list">
                 <div style={{ padding: '1rem 1.5rem', background: 'var(--bg-light)', borderBottom: '1px solid var(--border-color)', display: 'flex' }}>
                     <span style={{ flex: 1, fontWeight: 'bold', color: 'var(--text-secondary)' }}>Name</span>
                     <span style={{ width: '150px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>Status</span>
                     <span style={{ width: '150px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>Progress</span>
                 </div>
-                {MOCK_STUDENTS.map(student => (
+                {students.map(student => (
                     <div key={student.id} className="student-row">
                         <div className="student-info">
                             <div className="avatar" style={{ width: '32px', height: '32px', fontSize: '0.8rem', backgroundColor: 'var(--text-secondary)' }}>
@@ -315,10 +290,10 @@ export default function TeacherClassroom() {
         <div className="classroom-container">
             {/* Header Section */}
             <header className="class-header">
-                <h1 className="class-title">{MOCK_CLASS_INFO.name}</h1>
+                <h1 className="class-title">{classInfo.name}</h1>
                 <div className="class-code">
                     <span>Class Code:</span>
-                    <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>{MOCK_CLASS_INFO.code}</span>
+                    <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>{classInfo.code}</span>
                     <button
                         className="copy-btn"
                         onClick={handleCopyCode}
@@ -326,6 +301,26 @@ export default function TeacherClassroom() {
                         title="Copy Class Code"
                     >
                         <Copy size={18} style={{ marginLeft: '0.5rem' }} />
+                    </button>
+                    <button
+                        className="copy-btn"
+                        onClick={() => {
+                            if (navigator.share) {
+                                navigator.share({
+                                    title: `Join ${classInfo.name}`,
+                                    text: `Join my class on ACLC using code: ${classInfo.code}`,
+                                    url: classInfo.joinLink || window.location.href // Fallback if joinLink not fetched yet
+                                });
+                            } else {
+                                navigator.clipboard.writeText(classInfo.joinLink || `Join code: ${classInfo.code}`);
+                                alert('Join link copied to clipboard!');
+                            }
+                        }}
+                        aria-label="Share class"
+                        title="Share Class Link"
+                        style={{ marginLeft: '0.5rem', color: 'var(--primary-blue)' }}
+                    >
+                        <Share2 size={18} />
                     </button>
                 </div>
             </header>
@@ -342,16 +337,7 @@ export default function TeacherClassroom() {
                     <BookOpen size={20} />
                     Materials
                 </button>
-                <button
-                    className={`tab-button ${activeTab === 'assessments' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('assessments')}
-                    role="tab"
-                    aria-selected={activeTab === 'assessments'}
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                >
-                    <FileText size={20} />
-                    Assessments
-                </button>
+                {/* Assessments tab removed as per request */}
                 <button
                     className={`tab-button ${activeTab === 'discussions' ? 'active' : ''}`}
                     onClick={() => setActiveTab('discussions')}
@@ -377,7 +363,6 @@ export default function TeacherClassroom() {
             {/* Content Area */}
             <main className="content-area">
                 {activeTab === 'materials' && renderMaterials()}
-                {activeTab === 'assessments' && renderAssessments()}
                 {activeTab === 'discussions' && renderDiscussions()}
                 {activeTab === 'students' && renderStudents()}
             </main>

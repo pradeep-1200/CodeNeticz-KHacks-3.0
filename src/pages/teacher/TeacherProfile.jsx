@@ -11,24 +11,76 @@ import {
 } from 'lucide-react';
 import '../../styles/TeacherProfile.css';
 
+import { useAuth } from '../../context/AuthContext';
+import apiClient from '../../api/client'; // Import API client
+
 export default function TeacherProfile() {
+    const { user, login } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
+    const [loading, setLoading] = useState(true);
+
     const [profile, setProfile] = useState({
-        firstName: "Sarah",
-        lastName: "Johnson",
-        email: "sarah.johnson@school.edu",
-        role: "Senior Math Teacher",
-        subject: "Mathematics",
-        school: "Lincoln High School",
-        phone: "+1 (555) 123-4567",
-        bio: "Passionate about making mathematics accessible to all students through adaptive learning technologies. Over 10 years of experience in secondary education."
+        firstName: "",
+        lastName: "",
+        email: "",
+        role: "Teacher",
+        subject: "",
+        school: "",
+        phone: "",
+        bio: ""
     });
 
-    const handleSave = () => {
-        setIsEditing(false);
-        // Api call to save profile would go here
-        alert("Profile updated successfully!");
+    React.useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const response = await apiClient.get('/auth/profile');
+                const p = response.data;
+                const names = p.name ? p.name.split(' ') : ["", ""];
+                setProfile({
+                    firstName: names[0] || "",
+                    lastName: names.slice(1).join(' ') || "",
+                    email: p.email || "",
+                    role: p.role || "Teacher",
+                    subject: p.subject || "",
+                    school: p.school || "",
+                    phone: p.phone || "",
+                    bio: p.bio || ""
+                });
+            } catch (error) {
+                console.error("Failed to fetch profile:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchProfile();
+    }, []);
+
+    const handleSave = async () => {
+        try {
+            const updatedData = {
+                name: `${profile.firstName} ${profile.lastName}`.trim(),
+                email: profile.email,
+                // role: profile.role, // Typically role isn't editable by user directly
+                school: profile.school,
+                subject: profile.subject,
+                phone: profile.phone,
+                bio: profile.bio
+            };
+
+            const response = await apiClient.put('/auth/profile', updatedData);
+
+            // Update context
+            login(response.data);
+
+            setIsEditing(false);
+            alert("Profile updated successfully!");
+        } catch (error) {
+            console.error(error);
+            alert(error.response?.data?.message || "Failed to update profile");
+        }
     };
+
+    if (loading) return <div className="profile-container"><p>Loading profile...</p></div>;
 
     return (
         <div className="profile-container fade-in">
@@ -36,7 +88,8 @@ export default function TeacherProfile() {
                 <div className="profile-cover"></div>
                 <div className="profile-avatar-section">
                     <div className="profile-avatar">
-                        {profile.firstName[0]}{profile.lastName[0]}
+                        {profile.firstName ? profile.firstName.charAt(0) : ''}
+                        {profile.lastName ? profile.lastName.charAt(0) : ''}
                     </div>
                     <div className="profile-title">
                         <h1>{profile.firstName} {profile.lastName}</h1>

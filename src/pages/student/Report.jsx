@@ -1,161 +1,217 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
+import InsightCard from '../../components/InsightCard';
 import { 
-  Award, TrendingUp, BookOpen, Mic, Type, 
-  ArrowRight, Sparkles, Brain, Layout 
+  TrendingUp, ArrowRight, Sparkles, 
+  Headphones, Type, CheckCircle2, 
+  MoveRight, BookOpen, Brain, 
+  ArrowUp, ArrowDown 
 } from 'lucide-react';
 
 const Report = () => {
+    const navigate = useNavigate();
+
+    // Mock Data
+    const beforeStats = [
+        { label: "Reading Speed", value: 40, display: "Low" },
+        { label: "Accuracy", value: 65, display: "Medium" },
+        { label: "Confidence Level", value: 50, display: "Unsure" }
+    ];
+
+    const afterStats = [
+        { label: "Reading Speed", value: 85, display: "Normal" },
+        { label: "Accuracy", value: 92, display: "High" },
+        { label: "Confidence Level", value: 95, display: "Very Confident" }
+    ];
+
   return (
-    <div className="min-h-screen bg-[var(--bg-secondary)] text-[var(--text-primary)] transition-colors duration-300">
+    <div className="min-h-screen bg-[var(--bg-secondary)] text-[var(--text-primary)] transition-colors duration-300 font-sans">
       <Navbar />
 
       <main className="container mx-auto px-4 md:px-6 py-8 space-y-8 max-w-5xl">
-         
-         {/* A - Student Overview */}
-         <section className="bg-[var(--bg-primary)] p-8 rounded-2xl shadow-sm border border-[var(--border-color)] flex flex-col md:flex-row items-center justify-between gap-6">
+
+         {/* 1. OVERVIEW HEADER */}
+         <section className="bg-[var(--bg-primary)] p-8 rounded-2xl shadow-sm border border-[var(--border-color)] flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in-up">
             <div className="flex items-center gap-6">
-                <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-4xl border-4 border-white dark:border-slate-800 shadow-lg">
-                   🎓
+                <div className="w-20 h-20 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center text-4xl border-4 border-white dark:border-slate-800 shadow-lg">
+                   🌱
                 </div>
                 <div>
-                   <h1 className="text-2xl font-bold mb-1">Student</h1>
-                   <p className="text-[var(--text-secondary)]">Class 5-B • Assessment Level 2</p>
+                   <h1 className="text-3xl font-bold mb-2">Your learning journey is improving</h1>
+                   <div className="flex flex-wrap gap-4 text-[var(--text-secondary)] text-sm">
+                       <span className="flex items-center gap-1"><span className="font-semibold text-[var(--text-primary)]">Student:</span> Alex Johnson</span>
+                       <span className="hidden md:inline">•</span>
+                       <span className="flex items-center gap-1"><span className="font-semibold text-[var(--text-primary)]">Class:</span> 5-B</span>
+                       <span className="hidden md:inline">•</span>
+                       <span className="flex items-center gap-1"><span className="font-semibold text-[var(--text-primary)]">Level:</span> 4 (Advanced)</span>
+                   </div>
                 </div>
-            </div>
-            <div className="text-right">
-               <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full font-bold border border-green-200">
-                  <Award size={18} /> You’re making steady progress. Keep going! 👍
-               </div>
             </div>
          </section>
 
-         {/* B - Learning Progress (Before vs After) */}
+         {/* 2. BEFORE vs AFTER SNAPSHOT */}
          <section className="bg-[var(--bg-primary)] p-8 rounded-2xl shadow-lg border border-[var(--border-color)]">
-             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <TrendingUp className="text-blue-600"/> Improvement with Adaptive Support
+             <h2 className="text-xl font-bold mb-8 flex items-center gap-2">
+                <TrendingUp className="text-blue-600"/> Impact of Your Tools
              </h2>
-             
-             <div className="grid md:grid-cols-2 gap-12">
-                {/* Before */}
-                <div className="space-y-4 opacity-70">
-                   <h3 className="font-bold text-[var(--text-secondary)] uppercase text-xs tracking-wider">Before Support Enabled</h3>
-                   
-                   <div>
-                      <div className="flex justify-between text-sm mb-1">
-                         <span>Reading Comfort</span>
-                         <span>Low</span>
-                      </div>
-                      <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
-                         <div className="w-[30%] h-full bg-gray-400"></div>
-                      </div>
-                   </div>
 
-                   <div>
-                      <div className="flex justify-between text-sm mb-1">
-                         <span>Concept Clarity</span>
-                         <span>Medium</span>
-                      </div>
-                      <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
-                         <div className="w-[50%] h-full bg-gray-400"></div>
-                      </div>
-                   </div>
+             <div className="grid md:grid-cols-2 gap-8 md:gap-16 relative">
+                {/* Connector on desktop */}
+                <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-blue-50 dark:bg-slate-700 rounded-full items-center justify-center z-10">
+                    <MoveRight className="text-blue-500" size={20} />
                 </div>
 
-                {/* After */}
-                <div className="space-y-4">
-                   <h3 className="font-bold text-green-600 uppercase text-xs tracking-wider flex items-center gap-2">
-                      <Sparkles size={14}/> Current Progress
-                   </h3>
-                   
-                   <div>
-                      <div className="flex justify-between text-sm mb-1 font-bold">
-                         <span>Reading Comfort</span>
-                         <span className="text-green-600">High</span>
-                      </div>
-                      <div className="h-4 bg-gray-100 rounded-full overflow-hidden border border-green-100">
-                         <div className="w-[85%] h-full bg-gradient-to-r from-green-400 to-green-600"></div>
-                      </div>
-                   </div>
+                {/* BEFORE */}
+                <div className="space-y-6 grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+                    <div className="flex items-center gap-2 mb-4 border-b border-[var(--border-color)] pb-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Before Support</span>
+                    </div>
 
-                   <div>
-                      <div className="flex justify-between text-sm mb-1 font-bold">
-                         <span>Concept Clarity</span>
-                         <span className="text-green-600">Very High</span>
-                      </div>
-                      <div className="h-4 bg-gray-100 rounded-full overflow-hidden border border-green-100">
-                         <div className="w-[92%] h-full bg-gradient-to-r from-green-400 to-green-600"></div>
-                      </div>
-                   </div>
+                    {beforeStats.map((stat, idx) => (
+                        <div key={idx}>
+                             <div className="flex justify-between text-sm mb-2">
+                                <span>{stat.label}</span>
+                                <span className="text-[var(--text-secondary)]">{stat.display}</span>
+                             </div>
+                             <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                 <div 
+                                    className="h-full bg-slate-400" 
+                                    style={{ width: `${stat.value}%` }}
+                                    role="progressbar"
+                                    aria-valuenow={stat.value}
+                                    aria-valuemin="0"
+                                    aria-valuemax="100"
+                                    aria-label={`${stat.label} before support`}
+                                 ></div>
+                             </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* AFTER */}
+                <div className="space-y-6">
+                    <div className="flex items-center gap-2 mb-4 border-b border-green-200 dark:border-green-800 pb-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-green-600 dark:text-green-400 flex items-center gap-2"> 
+                            After Support <Sparkles size={14}/> 
+                        </span>
+                    </div>
+
+                    {afterStats.map((stat, idx) => (
+                        <div key={idx}>
+                             <div className="flex justify-between text-sm mb-2 font-semibold">
+                                <span>{stat.label}</span>
+                                <span className="text-green-700 dark:text-green-400">{stat.display}</span>
+                             </div>
+                             <div className="h-3 bg-green-50 dark:bg-green-900/30 rounded-full overflow-hidden border border-green-100 dark:border-green-900">
+                                 <div 
+                                    className="h-full bg-gradient-to-r from-green-400 to-green-600 relative overflow-hidden" 
+                                    style={{ width: `${stat.value}%` }}
+                                    role="progressbar"
+                                    aria-valuenow={stat.value}
+                                    aria-valuemin="0"
+                                    aria-valuemax="100"
+                                    aria-label={`${stat.label} after support`}
+                                 >
+                                      <div className="absolute inset-0 bg-white/30 animate-pulse-slow"></div>
+                                 </div>
+                             </div>
+                             <div className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                                <ArrowUp size={12}/> Improved by {stat.value - beforeStats[idx].value}%
+                             </div>
+                        </div>
+                    ))}
                 </div>
              </div>
          </section>
 
-         {/* C - Learning Preferences & Supports */}
+         {/* 3. LEARNING COMFORT INSIGHTS */}
          <section>
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2 px-2">
-               <Brain className="text-purple-600"/> Your Learning Style
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2 px-1">
+               <Brain className="text-purple-600"/> Learning Comfort Insights
             </h2>
             <div className="grid md:grid-cols-3 gap-6">
-                <div className="p-6 bg-white dark:bg-slate-800 rounded-xl border border-[var(--border-color)] shadow-sm hover:translate-y-[-2px] transition-transform">
-                   <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center mb-4">
-                      <Layout size={24}/>
-                   </div>
-                   <h3 className="font-bold mb-2">Visual Learner</h3>
-                   <p className="text-sm text-[var(--text-secondary)]">
-                      You prefer simplified text layouts and clear spacing.
-                   </p>
-                </div>
-
-                <div className="p-6 bg-white dark:bg-slate-800 rounded-xl border border-[var(--border-color)] shadow-sm hover:translate-y-[-2px] transition-transform">
-                   <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center mb-4">
-                      <Mic size={24}/>
-                   </div>
-                   <h3 className="font-bold mb-2">Voice Active</h3>
-                   <p className="text-sm text-[var(--text-secondary)]">
-                      You frequently use speech-to-text for answering.
-                   </p>
-                </div>
-
-                <div className="p-6 bg-white dark:bg-slate-800 rounded-xl border border-[var(--border-color)] shadow-sm hover:translate-y-[-2px] transition-transform">
-                   <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center mb-4">
-                      <Type size={24}/>
-                   </div>
-                   <h3 className="font-bold mb-2">Large Text</h3>
-                   <p className="text-sm text-[var(--text-secondary)]">
-                      You learn better with 120% text scale enabled.
-                   </p>
-                </div>
+                <InsightCard 
+                    icon={Headphones}
+                    title="Audio Support"
+                    description="Audio support helped comprehension significantly during long reading passages."
+                    bgClass="bg-purple-100 dark:bg-purple-900/30"
+                    colorClass="text-purple-600 dark:text-purple-300"
+                />
+                <InsightCard 
+                    icon={CheckCircle2}
+                    title="Question Format"
+                    description="Breakdown of complex questions into smaller steps reduced error rate by 40%."
+                    bgClass="bg-blue-100 dark:bg-blue-900/30"
+                    colorClass="text-blue-600 dark:text-blue-300"
+                />
+                <InsightCard 
+                    icon={Type}
+                    title="Visual Clarity"
+                    description="Increasing text spacing and font size improved reading speed and focus."
+                    bgClass="bg-orange-100 dark:bg-orange-900/30"
+                    colorClass="text-orange-600 dark:text-orange-300"
+                />
             </div>
          </section>
 
-         {/* D - Next-Step Suggestions */}
-         <section className="bg-gradient-to-br from-indigo-900 to-blue-900 rounded-2xl p-8 text-white">
-             <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                <div>
-                   <h2 className="text-2xl font-bold mb-2">Recommended Next Steps</h2>
-                   <p className="text-indigo-200 max-w-xl">
-                      Based on your recent activity, we suggest focusing on these areas to keep your momentum going.
-                   </p>
-                </div>
-                <button className="px-6 py-3 bg-white text-indigo-900 rounded-xl font-bold hover:bg-indigo-50 transition-colors flex items-center gap-2 whitespace-nowrap">
-                   Continue Learning <ArrowRight size={20}/>
-                </button>
-             </div>
+         {/* 4. NEXT RECOMMENDED ACTIONS */}
+         <section className="bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 rounded-3xl p-8 md:p-10 text-white shadow-xl overflow-hidden relative">
+             {/* Background Decoration */}
+             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
 
-             <div className="grid md:grid-cols-3 gap-6 mt-8">
-                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/10">
-                   <span className="text-xs font-bold text-indigo-300 uppercase">Suggested Focus</span>
-                   <p className="font-semibold text-lg mt-1">Short reading passages with audio support</p>
-                </div>
-                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/10">
-                   <span className="text-xs font-bold text-indigo-300 uppercase">Practice Mode</span>
-                   <p className="font-semibold text-lg mt-1">Concept-based questions instead of timed tests</p>
-                </div>
-                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/10">
-                   <span className="text-xs font-bold text-indigo-300 uppercase">Try This</span>
-                   <p className="font-semibold text-lg mt-1">Use voice answers for detailed explanations</p>
-                </div>
+             <div className="grid md:grid-cols-2 gap-12 relative z-10 w-full">
+                 <div className="space-y-6">
+                    <div>
+                        <h2 className="text-2xl font-bold mb-2">Recommended for You 🚀</h2>
+                        <p className="text-indigo-200">
+                           Based on your progress, here are the best ways to continue improving.
+                        </p>
+                    </div>
+
+                    <div className="space-y-3">
+                         <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 flex items-start gap-3">
+                            <BookOpen className="text-cyan-300 mt-1" size={20}/>
+                            <div>
+                                <h4 className="font-bold text-sm">Try Simplified Study Materials</h4>
+                                <p className="text-xs text-indigo-200 mt-1">Focus on core concepts with removed distractions.</p>
+                            </div>
+                         </div>
+                         <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 flex items-start gap-3">
+                            <Headphones className="text-pink-300 mt-1" size={20}/>
+                            <div>
+                                <h4 className="font-bold text-sm">Use Audio-First Learning</h4>
+                                <p className="text-xs text-indigo-200 mt-1">Listen to lessons before reading to boost retention.</p>
+                            </div>
+                         </div>
+                         <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 flex items-start gap-3">
+                            <Brain className="text-emerald-300 mt-1" size={20}/>
+                            <div>
+                                <h4 className="font-bold text-sm">Practice Concept-Based Questions</h4>
+                                <p className="text-xs text-indigo-200 mt-1">Reinforce your understanding with targeted questions.</p>
+                            </div>
+                         </div>
+                    </div>
+                 </div>
+
+                 <div className="flex flex-col justify-center items-center md:items-start space-y-4">
+                     <p className="font-semibold text-lg text-center md:text-left mb-2">Ready to move forward?</p>
+                     
+                     <div className="flex flex-col sm:flex-row gap-4 w-full">
+                        <button 
+                            onClick={() => navigate('/student/classroom')}
+                            className="flex-1 px-6 py-4 bg-white text-indigo-900 rounded-xl font-bold hover:bg-indigo-50 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 shadow-lg"
+                        >
+                            <BookOpen size={20}/> Go to Classroom
+                        </button>
+                        <button 
+                            onClick={() => navigate('/student/assessment')}
+                            className="flex-1 px-6 py-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-500 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 shadow-lg border border-indigo-500"
+                        >
+                            <CheckCircle2 size={20}/> Start Practice Test
+                        </button>
+                     </div>
+                 </div>
              </div>
          </section>
 

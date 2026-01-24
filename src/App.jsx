@@ -7,7 +7,9 @@ import Login from './pages/Login';
 import Dashboard from './pages/student/Dashboard';
 import Classroom from './pages/student/Classroom';
 import AssessmentPage from './pages/student/AssessmentPage';
+
 import Report from './pages/student/Report';
+import Profile from './pages/student/Profile';
 
 // Import Global Styles
 import './index.css';
@@ -35,19 +37,21 @@ function App() {
       <TitleUpdater />
       {/* Global Accessibility Toolbar - Always Visible */}
       <AccessibilityToolbar />
-      
+
       <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] transition-colors duration-300 font-sans">
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          
+
           {/* Student Routes */}
           <Route path="/student/dashboard" element={<Dashboard />} />
           <Route path="/student/classroom" element={<Classroom />} />
           <Route path="/student/assessment" element={<AssessmentPage />} />
+
           <Route path="/student/report" element={<Report />} />
-          
+          <Route path="/student/profile" element={<Profile />} />
+
           {/* Fallback */}
           <Route path="*" element={<Landing />} />
         </Routes>

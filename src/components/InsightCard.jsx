@@ -6,8 +6,8 @@ const InsightCard = ({ icon: Icon, title, description, colorClass = "text-blue-6
       <div className={`w-12 h-12 ${bgClass} ${colorClass} rounded-lg flex items-center justify-center mb-4`}>
         {Icon && <Icon size={24} />}
       </div>
-      <h3 className="font-bold mb-2 text-lg">{title}</h3>
-      <p className="text-sm text-[var(--text-secondary)] flex-grow">
+      <h3 className="font-bold mb-2 text-lg text-gray-900 dark:text-white">{title}</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-300 flex-grow">
         {description}
       </p>
     </div>

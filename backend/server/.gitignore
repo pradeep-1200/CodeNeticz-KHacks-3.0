@@ -1,0 +1,13 @@
+node_modules/
+.env
+.DS_Store
+# Python / Transformers
+__pycache__/
+*.pyc
+models/
+cache/
+*.bin
+*.safetensors
+*.h5
+*.pt
+*.ckpt

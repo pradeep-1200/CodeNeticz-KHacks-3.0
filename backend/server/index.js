@@ -16,10 +16,13 @@ const studentRoutes = require('./routes/student');
 const authRoutes = require('./routes/auth');
 const materialRoutes = require('./routes/material');
 
+const sttRoutes = require('./routes/stt');
+
 // Use Routes
 app.use('/api/student', studentRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/materials', materialRoutes);
+app.use('/api/stt', sttRoutes);
 
 app.get('/', (req, res) => {
     res.send('ACLC Backend API is running');

@@ -63,7 +63,9 @@ const importData = async () => {
             improvementData: db.reports.improvementData,
             skillData: db.reports.skillData,
             strengths: db.reports.strengths,
-            areasToExplore: db.reports.areasToExplore
+            areasToExplore: db.reports.areasToExplore,
+            submissionHistory: db.reports.submissionHistory,
+            problemStats: db.reports.problemStats
         });
 
         // Create Assessment

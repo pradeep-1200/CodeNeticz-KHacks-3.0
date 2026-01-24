@@ -10,7 +10,7 @@ const studentProfile = {
   xp: 3800,
   nextLevelXp: 5000,
   xpToNextLevel: 1200,
-  streak: 5, // days
+  streak: 0, // days
   badges: ["Early Bird", "Math Whiz", "Science Star"]
 };
 
@@ -32,46 +32,46 @@ const dailyTip = {
 };
 
 const materials = [
-  { 
-    id: 1, 
-    title: 'Introduction to Linked Lists', 
+  {
+    id: 1,
+    title: 'Introduction to Linked Lists',
     desc: 'Watch this animation to understand how nodes connect in memory compared to arrays.',
-    type: 'video', 
-    date: 'Oct 24', 
-    likes: 12 
+    type: 'video',
+    date: 'Oct 24',
+    likes: 12
   },
-  { 
-    id: 2, 
-    title: 'Assignment 3: Stack Implementation', 
+  {
+    id: 2,
+    title: 'Assignment 3: Stack Implementation',
     desc: 'Read the spec sheet carefully. You need to implement Push, Pop, and Peek functions.',
-    type: 'pdf', 
-    date: 'Oct 23', 
-    likes: 5 
+    type: 'pdf',
+    date: 'Oct 23',
+    likes: 5
   },
-  { 
-    id: 3, 
-    title: 'Audio Lecture: Queue Real-world Examples', 
+  {
+    id: 3,
+    title: 'Audio Lecture: Queue Real-world Examples',
     desc: 'Listen to how printer spools and CPU scheduling use queues.',
-    type: 'audio', 
-    date: 'Oct 22', 
-    likes: 8 
+    type: 'audio',
+    date: 'Oct 22',
+    likes: 8
   },
-  { 
-    id: 4, 
-    title: 'Simplified Notes: Linked Lists (Reading-Friendly)', 
+  {
+    id: 4,
+    title: 'Simplified Notes: Linked Lists (Reading-Friendly)',
     desc: 'A simplified version of the lesson with shorter sentences, highlighted keywords, and optional audio support.',
-    type: 'reading-friendly', 
-    date: 'Oct 25', 
-    likes: 3 
+    type: 'reading-friendly',
+    date: 'Oct 25',
+    likes: 3
   },
 ];
 
 const reports = {
   improvementData: [
-    { subject: 'Math', score: 65, improved: 85 },
-    { subject: 'Science', score: 70, improved: 75 },
-    { subject: 'History', score: 60, improved: 80 },
-    { subject: 'English', score: 75, improved: 88 },
+    { subject: 'Math', score: 0, improved: 0 },
+    { subject: 'Science', score: 0, improved: 0 },
+    { subject: 'History', score: 0, improved: 0 },
+    { subject: 'English', score: 0, improved: 0 },
   ],
   skillData: [
     { name: 'Week 1', progress: 40 },
@@ -89,63 +89,70 @@ const reports = {
     "Complex Arithmetic"
   ],
   beforeStats: [
-      { label: "Reading Speed", value: 40, display: "Low" },
-      { label: "Accuracy", value: 65, display: "Medium" },
-      { label: "Confidence Level", value: 50, display: "Unsure" }
+    { label: "Reading Speed", value: 40, display: "Low" },
+    { label: "Accuracy", value: 65, display: "Medium" },
+    { label: "Confidence Level", value: 50, display: "Unsure" }
   ],
   afterStats: [
-      { label: "Reading Speed", value: 85, display: "Normal" },
-      { label: "Accuracy", value: 92, display: "High" },
-      { label: "Confidence Level", value: 95, display: "Very Confident" }
-  ]
+    { label: "Reading Speed", value: 40, display: "Low" },
+    { label: "Accuracy", value: 65, display: "Medium" },
+    { label: "Confidence Level", value: 50, display: "Unsure" }
+  ],
+  submissionHistory: [],
+  problemStats: {
+    easy: { solved: 0, total: 100 },
+    medium: { solved: 0, total: 80 },
+    hard: { solved: 0, total: 30 },
+    total: { solved: 0, total: 210 }
+  }
 };
 
 const assessmentQuestions = [
   // Easy
-  { 
-    id: 1, 
-    type: 'mcq', 
-    question: "What comes next in the sequence: 2, 4, 6, _?", 
-    options: ["7", "8", "9", "10"], 
-    correctAnswer: "8", 
+  {
+    id: 1,
+    type: 'mcq',
+    question: "What comes next in the sequence: 2, 4, 6, _?",
+    options: ["7", "8", "9", "10"],
+    correctAnswer: "8",
     hint: "Add 2 to the previous number.",
     difficulty: 'easy'
   },
-  { 
-    id: 2, 
-    type: 'text', 
-    question: "What is your favorite animal and why?", 
+  {
+    id: 2,
+    type: 'text',
+    question: "What is your favorite animal and why?",
     options: [],
-    correctAnswer: "open", 
+    correctAnswer: "open",
     hint: "There is no wrong answer. Just describe it.",
     difficulty: 'easy'
   },
   // Medium
-  { 
-    id: 101, 
-    type: 'mcq', 
-    question: "Which planet is known as the Red Planet?", 
-    options: ["Earth", "Mars", "Jupiter", "Venus"], 
-    correctAnswer: "Mars", 
+  {
+    id: 101,
+    type: 'mcq',
+    question: "Which planet is known as the Red Planet?",
+    options: ["Earth", "Mars", "Jupiter", "Venus"],
+    correctAnswer: "Mars",
     hint: "It shares a name with a Roman god of war.",
     difficulty: 'medium'
   },
-  { 
-    id: 102, 
-    type: 'text', 
-    question: "Explain why plants need sunlight.", 
+  {
+    id: 102,
+    type: 'text',
+    question: "Explain why plants need sunlight.",
     options: [],
-    correctAnswer: "open", 
+    correctAnswer: "open",
     hint: "Think about energy and food.",
     difficulty: 'medium'
   },
   // Challenge
-  { 
-    id: 201, 
-    type: 'mcq', 
-    question: "Solve for x: 3x + 5 = 20", 
-    options: ["3", "4", "5", "6"], 
-    correctAnswer: "5", 
+  {
+    id: 201,
+    type: 'mcq',
+    question: "Solve for x: 3x + 5 = 20",
+    options: ["3", "4", "5", "6"],
+    correctAnswer: "5",
     hint: "Subtract 5 from both sides first.",
     difficulty: 'challenge'
   },

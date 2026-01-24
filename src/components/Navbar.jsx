@@ -14,9 +14,11 @@ const Navbar = () => {
 
   return (
     <nav className="sticky top-0 z-40 bg-[var(--bg-primary)] border-b border-[var(--border-color)] shadow-sm px-4 md:px-6 py-3 flex items-center justify-between">
-       <div className="flex items-center gap-2 font-bold text-xl text-[var(--accent-primary)]">
-          <BookOpen size={28}/>
-          <span className="hidden md:inline">ACLC</span>
+       <div className="flex items-center gap-2 font-bold text-xl">
+          <BookOpen size={28} className="text-blue-600"/>
+          <span className="hidden lg:inline text-blue-600">Adaptive Cognitive Learning</span>
+          <span className="hidden lg:inline text-green-600">Classroom</span>
+          <span className="lg:hidden text-blue-600">ACLC</span>
        </div>
 
        <div className="flex items-center gap-2 md:gap-6 overflow-x-auto">

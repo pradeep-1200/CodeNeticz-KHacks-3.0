@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { User, GraduationCap, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { User, GraduationCap, ArrowRight, Accessibility } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -27,7 +27,7 @@ const Login = () => {
         </div>
 
         {/* User Type Toggle */}
-        <div className="flex p-1 bg-[var(--bg-secondary)] rounded-xl mb-6">
+        <div className="flex p-1 bg-[var(--bg-secondary)] rounded-xl mb-2">
           <button
             type="button"
             onClick={() => setUserType('student')}
@@ -50,6 +50,11 @@ const Login = () => {
           >
             I am a Teacher
           </button>
+        </div>
+        
+        {/* Role Explanation */}
+        <div className="text-center mb-6 text-sm text-[var(--text-secondary)] italic">
+           {userType === 'student' ? 'Access your lessons, assessments, and progress.' : 'Manage classes, track student progress, and assignments.'}
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
@@ -88,13 +93,20 @@ const Login = () => {
           </button>
         </form>
 
-        <div className="mt-6 pt-6 border-t border-[var(--border-color)] text-center">
+        <div className="mt-6 pt-6 border-t border-[var(--border-color)] text-center space-y-4">
           <button 
              onClick={() => navigate('/')}
              className="text-[var(--text-secondary)] hover:text-[var(--accent-primary)] font-semibold flex items-center justify-center gap-2 w-full py-2"
           >
              Continue as Guest (Read Only) <ArrowRight size={16} />
           </button>
+          <p className="text-xs text-[var(--text-secondary)]">
+             You can explore the platform before logging in.
+          </p>
+          
+          <div className="flex items-center justify-center gap-2 text-xs text-[var(--text-secondary)] bg-[var(--bg-secondary)] p-2 rounded-lg">
+             <Accessibility size={14} /> All features support voice and visual adjustments.
+          </div>
         </div>
 
       </div>

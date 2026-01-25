@@ -380,34 +380,34 @@ def print_comparison(original, simplified):
 # MAIN
 # --------------------------------------------------
 
-print("="*70)
-print(" " * 12 + "ACCURATE TEXT SIMPLIFIER")
-print("="*70)
-print("Accuracy > Simplification | Uses verified word replacements")
-print("+ API fallback for uncommon words\n")
-
-user_text = input("Enter text to simplify:\n> ")
-
-simplifier = AccurateTextSimplifier()
-simplified_text = simplifier.simplify(user_text)
-
-print("\n" + "="*70)
-print("ORIGINAL TEXT")
-print("="*70)
-print(user_text)
-
-print("\n" + "="*70)
-print("SIMPLIFIED TEXT")
-print("="*70)
-print(simplified_text)
-print("="*70)
-
-print_comparison(user_text, simplified_text)
-
-print("\n✅ All replacements are accuracy-checked!")
-print("💾 Results cached in 'word_cache.json'")
-
-
 def simplify_text(text):
     simplifier = AccurateTextSimplifier()
     return simplifier.simplify(text)
+
+if __name__ == "__main__":
+    print("="*70)
+    print(" " * 12 + "ACCURATE TEXT SIMPLIFIER")
+    print("="*70)
+    print("Accuracy > Simplification | Uses verified word replacements")
+    print("+ API fallback for uncommon words\n")
+
+    user_text = input("Enter text to simplify:\n> ")
+
+    simplifier = AccurateTextSimplifier()
+    simplified_text = simplifier.simplify(user_text)
+
+    print("\n" + "="*70)
+    print("ORIGINAL TEXT")
+    print("="*70)
+    print(user_text)
+
+    print("\n" + "="*70)
+    print("SIMPLIFIED TEXT")
+    print("="*70)
+    print(simplified_text)
+    print("="*70)
+
+    print_comparison(user_text, simplified_text)
+
+    print("\n✅ All replacements are accuracy-checked!")
+    print("💾 Results cached in 'word_cache.json'")

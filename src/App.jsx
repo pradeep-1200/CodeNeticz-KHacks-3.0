@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/student/Dashboard';
 import Classroom from './pages/student/Classroom';
 import AssessmentPage from './pages/student/AssessmentPage';
+import DyscalculiaTool from './pages/student/DyscalculiaTool';
 
 import Report from './pages/student/Report';
 import Profile from './pages/student/Profile';
@@ -65,7 +66,9 @@ function App() {
               <Route path="/student/classroom" element={<Classroom />} />
               <Route path="/student/assessment" element={<AssessmentPage />} />
               <Route path="/student/learn-path" element={<LevelMap />} />
+              <Route path="/student/learn-path" element={<LevelMap />} />
               <Route path="/student/play/:levelId" element={<PlayLevel />} />
+              <Route path="/dyscalculia-tool" element={<DyscalculiaTool />} />
 
               {/* Staff Routes */}
               <Route path="/staff/dashboard" element={<StaffDashboard />} />

@@ -13,18 +13,13 @@ const PlayLevel = () => {
     const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
     const [levelCompleted, setLevelCompleted] = useState(false);
 
-    // State to hold the level data fetched from API
     const [level, setLevel] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Fetch level data from API based on ID
     useEffect(() => {
         const fetchLevel = async () => {
-            // If ID is small/mock (1,2), use mock, else fetch from DB. 
-            // For hackathon, assume if ID length > 10 it's MongoID, else Mock.
             if (levelId.length < 5) {
-                // Fallback Mock Data for testing
                 const MOCK_LEVELS = [
                     {
                         id: 1,
@@ -53,16 +48,9 @@ const PlayLevel = () => {
                 }
             }
 
-            // Real API Fetch
             try {
                 const res = await fetch(`http://localhost:5000/api/levels/${levelId}`);
                 if (!res.ok) throw new Error(`Status: ${res.status}`);
-
-                const contentType = res.headers.get("content-type");
-                if (!contentType || !contentType.includes("application/json")) {
-                    throw new Error("Invalid server response");
-                }
-
                 const data = await res.json();
                 if (data.success) {
                     setLevel(data.level);
@@ -86,7 +74,7 @@ const PlayLevel = () => {
         if (currentTaskIndex < level.tasks.length - 1) {
             setCurrentTaskIndex(currentTaskIndex + 1);
         } else {
-            completeLevel(level._id || level.id, level.xpReward); // Use _id for DB levels
+            completeLevel(level._id || level.id, level.xpReward);
             setLevelCompleted(true);
         }
     };
@@ -104,12 +92,8 @@ const PlayLevel = () => {
                             <Trophy size={64} className="text-yellow-700" />
                         </div>
                     </div>
-
                     <h1 className="text-4xl font-black text-gray-900 mb-2">Level Complete!</h1>
-                    <p className="text-xl text-gray-500 font-bold mb-8">
-                        You've mastered {level.title}
-                    </p>
-
+                    <p className="text-xl text-gray-500 font-bold mb-8">You've mastered {level.title}</p>
                     <div className="bg-blue-50 p-6 rounded-3xl mb-10 flex justify-around">
                         <div className="text-center">
                             <div className="text-3xl font-black text-blue-600">+{level.xpReward || 500}</div>
@@ -120,12 +104,8 @@ const PlayLevel = () => {
                             <div className="text-sm font-bold text-blue-400 uppercase">Accuracy</div>
                         </div>
                     </div>
-
                     <div className="flex gap-4">
-                        <button
-                            onClick={() => navigate('/student/dashboard')}
-                            className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold text-lg hover:bg-gray-200 transition-all border-b-4 border-gray-300"
-                        >
+                        <button onClick={() => navigate('/student/dashboard')} className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold text-lg hover:bg-gray-200 transition-all border-b-4 border-gray-300">
                             <Home className="inline mr-2" /> Dashboard
                         </button>
                     </div>
@@ -141,30 +121,26 @@ const PlayLevel = () => {
             <div className="max-w-4xl mx-auto">
                 {/* Game Header */}
                 <div className="flex items-center justify-between mb-8 gap-4">
-                    <button
-                        onClick={() => navigate('/student/dashboard')}
-                        className="p-3 text-gray-400 hover:text-gray-600 transition-colors"
-                    >
+                    <button onClick={() => navigate('/student/dashboard')} className="p-3 text-gray-400 hover:text-gray-600 transition-colors">
                         <ArrowLeft size={32} />
                     </button>
-
-                    {/* Progress Bar */}
                     <div className="flex-1 h-4 bg-gray-200 dark:bg-slate-800 rounded-full overflow-hidden border-2 border-[var(--border-color)]">
-                        <div
-                            className="h-full bg-[var(--game-primary)] transition-all duration-500"
-                            style={{ width: `${((currentTaskIndex + 1) / level.tasks.length) * 100}%` }}
-                        />
+                        <div className="h-full bg-[var(--game-primary)] transition-all duration-500" style={{ width: `${((currentTaskIndex + 1) / level.tasks.length) * 100}%` }} />
                     </div>
-
                     <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-4 py-2 rounded-2xl shadow-sm border border-[var(--border-color)]">
                         <Heart size={20} className="text-red-500 fill-red-500" />
                         <span className="font-black text-gray-700 dark:text-gray-200">5</span>
                     </div>
-
                     <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-4 py-2 rounded-2xl shadow-sm border border-[var(--border-color)]">
                         <Star size={20} className="text-yellow-500 fill-yellow-500" />
                         <span className="font-black text-gray-700 dark:text-gray-200">{stats.xp}</span>
                     </div>
+                </div>
+
+                {/* Tools - Visible in Game */}
+                <div className="flex justify-end gap-2 mb-4">
+                    <button onClick={() => window.open('/dyslexia', '_blank')} className="flex items-center gap-2 px-3 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-xl text-xs font-bold hover:bg-purple-200"><img src="/icons/dyslexia.png" alt="" className="w-4 h-4 object-contain" onError={(e) => e.target.style.display = 'none'} /> Dyslexia Assistant</button>
+                    <button onClick={() => window.open('/dyscalculia-tool', '_blank')} className="flex items-center gap-2 px-3 py-2 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-xl text-xs font-bold hover:bg-orange-200"><img src="/icons/math.png" alt="" className="w-4 h-4 object-contain" onError={(e) => e.target.style.display = 'none'} /> Math Helper</button>
                 </div>
 
                 {/* Task Container */}
@@ -176,10 +152,7 @@ const PlayLevel = () => {
 
                 {/* Footer Controls */}
                 <div className="mt-12 flex justify-end">
-                    <button
-                        onClick={handleNext}
-                        className="px-12 py-4 bg-blue-600 text-white rounded-2xl font-black text-xl hover:bg-blue-700 shadow-xl border-b-8 border-blue-800 active:border-b-0 active:translate-y-2 transition-all"
-                    >
+                    <button onClick={handleNext} className="px-12 py-4 bg-blue-600 text-white rounded-2xl font-black text-xl hover:bg-blue-700 shadow-xl border-b-8 border-blue-800 active:border-b-0 active:translate-y-2 transition-all">
                         CONTINUE
                     </button>
                 </div>

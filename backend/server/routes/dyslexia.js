@@ -8,13 +8,12 @@ const fs = require('fs');
 const MOCK_MODE = false;
 
 // Path to virtual environment Python (fallback to system python if venv doesn't exist)
-const venvPython = path.join(__dirname, '../../../Dyslexia/venv/Scripts/python.exe');
-const pythonCommand = fs.existsSync(venvPython) ? venvPython : 'python';
+// FORCE SYSTEM PYTHON to avoid Raghul_Sekar path issues
+const pythonCommand = 'python';
 
 console.log('Dyslexia Routes - Mock Mode:', MOCK_MODE);
 if (!MOCK_MODE) {
-    console.log('Python command:', pythonCommand);
-    console.log('Venv exists:', fs.existsSync(venvPython));
+    console.log('Python command (FORCED):', pythonCommand);
 }
 
 // POST /api/dyslexia/summarize
@@ -56,9 +55,24 @@ router.post('/summarize', async (req, res) => {
             console.log(`Python process exited with code ${code}`);
             if (code !== 0) {
                 console.error('Summarization error output:', errorOutput);
-                return res.status(500).json({ error: 'Summarization failed', details: errorOutput || 'Unknown error' });
+                // Send the actual error message back to the frontend!
+                return res.status(500).json({
+                    error: 'Summarization failed',
+                    details: errorOutput || 'Unknown error',
+                    code: code
+                });
             }
-            res.json({ summary: output.trim() });
+            try {
+                // Ensure output is valid JSON if expected, or just text
+                // Check if the output is just the summary string or a JSON object
+                // The python script for BART prints just the text
+                const result = output.trim();
+                if (!result) throw new Error("Empty output from Python script");
+                res.json({ summary: result });
+            } catch (e) {
+                console.error("Error parsing Python output:", e);
+                res.status(500).json({ error: "Invalid output from AI model", details: output });
+            }
         });
 
         python.stdin.write(text);
@@ -90,32 +104,37 @@ router.post('/simplify', async (req, res) => {
 
         // REAL MODE - Use Python script
         const pythonScript = path.join(__dirname, '../../../Dyslexia/simplify_wrapper.py');
-        console.log('Spawning Python for Simplification:', pythonCommand, pythonScript);
+        console.log(`[Simplify] Spawning Python: ${pythonCommand} ${pythonScript}`);
+
         const python = spawn(pythonCommand, [pythonScript]);
 
         let output = '';
         let errorOutput = '';
 
         python.stdout.on('data', (data) => {
-            console.log(`Python stdout: ${data}`);
+            console.log(`[Simplify] stdout: ${data}`);
             output += data.toString();
         });
 
         python.stderr.on('data', (data) => {
-            console.error(`Python stderr: ${data}`);
+            console.error(`[Simplify] stderr: ${data}`);
             errorOutput += data.toString();
         });
 
         python.on('error', (err) => {
-            console.error('Failed to start Python process:', err);
+            console.error('[Simplify] Spawn Error:', err);
             res.status(500).json({ error: 'Failed to start Python process', details: err.message });
         });
 
         python.on('close', (code) => {
-            console.log(`Python process exited with code ${code}`);
+            console.log(`[Simplify] process exited with code ${code}`);
             if (code !== 0) {
-                console.error('Simplification error output:', errorOutput);
-                return res.status(500).json({ error: 'Simplification failed', details: errorOutput || 'Unknown error' });
+                console.error('[Simplify] Error output:', errorOutput);
+                return res.status(500).json({
+                    error: 'Simplification failed',
+                    details: errorOutput || 'Unknown error',
+                    code: code
+                });
             }
             res.json({ simplified: output.trim() });
         });

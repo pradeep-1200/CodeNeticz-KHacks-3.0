@@ -138,7 +138,7 @@ const Report = () => {
                             </h2>
 
                             {/* Line Chart */}
-                            <div className="h-48 w-full mb-6">
+                            <div className="w-full mb-6" style={{ height: 200 }}>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={reportData.submissionHistory}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
@@ -181,7 +181,7 @@ const Report = () => {
                                 <TrendingUp className="text-purple-500" /> Performance Trend
                             </h2>
 
-                            <div className="h-64 w-full">
+                            <div className="w-full" style={{ height: 250 }}>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart
                                         data={reportData.improvementData || []}

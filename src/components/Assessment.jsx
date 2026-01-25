@@ -342,8 +342,15 @@ const Assessment = () => {
 
                      {/* DYSCALCULIA: Placeholder */}
                      {learningMode === 'dyscalculia' && (
-                        <div className="col-span-2 md:col-span-4 text-center text-slate-400 text-sm py-2">
-                           Visual math aids coming soon
+                        <div className="col-span-2 md:col-span-4 flex justify-center">
+                           <a
+                              href="/dyscalculia-tool"
+                              target="_blank"
+                              className="bg-white text-orange-600 py-3 px-6 rounded-lg font-bold text-sm hover:bg-orange-50 transition-all flex items-center gap-2"
+                           >
+                              <Spline size={20} />
+                              <span>Open Dyscalculia Math Assistant</span>
+                           </a>
                         </div>
                      )}
                   </div>

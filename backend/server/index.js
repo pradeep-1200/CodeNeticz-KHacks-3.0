@@ -27,6 +27,9 @@ app.use('/api/levels', require('./routes/levels'));
 app.use('/api/classes', require('./routes/classes'));
 app.use('/api/stt', sttRoutes);
 app.use('/api/dyslexia', dyslexiaRoutes);
+app.use('/api/dyscalculia', require('./routes/dyscalculia'));
+app.use('/api/assignments', require('./routes/assignments'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 app.get('/', (req, res) => {
     res.send('ACLC Backend API is running');

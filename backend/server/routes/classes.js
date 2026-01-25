@@ -3,6 +3,8 @@ const router = express.Router();
 const Class = require('../models/Class');
 const User = require('../models/User');
 const Invitation = require('../models/Invitation');
+const Notification = require('../models/Notification');
+const mongoose = require('mongoose');
 const crypto = require('crypto');
 
 // Helper to generate 6-char code
@@ -67,8 +69,13 @@ router.post('/join', async (req, res) => {
 router.post('/invite', async (req, res) => {
     const { email, classId, teacherId } = req.body;
     try {
-        const student = await User.findOne({ email, role: 'student' });
-        if (!student) return res.status(404).json({ success: false, message: "Student email not found" });
+        // Case-insensitive lookup using Regex
+        const student = await User.findOne({
+            email: { $regex: new RegExp(`^${email.trim()}$`, 'i') },
+            role: 'student'
+        });
+
+        if (!student) return res.status(404).json({ success: false, message: `Student with email '${email}' not found.` });
 
         const cls = await Class.findById(classId);
         if (!cls) return res.status(404).json({ success: false, message: "Class not found" });
@@ -158,6 +165,19 @@ router.post('/assign-level', async (req, res) => {
 
         cls.assessments.push(levelId);
         await cls.save();
+
+        // Notify Students
+        if (cls.students.length > 0) {
+            const level = await mongoose.model('Level').findById(levelId); // Assuming Level model exists or populate
+            // Actually simpler: just say "New Gamified Task Assigned"
+            const notifications = cls.students.map(studentId => ({
+                userId: studentId,
+                message: `New Gamified Task Assigned`,
+                type: 'assignment',
+                link: `/classroom/${classId}`
+            }));
+            await Notification.insertMany(notifications);
+        }
 
         res.json({ success: true, message: "Level assigned successfully", class: cls });
     } catch (err) {

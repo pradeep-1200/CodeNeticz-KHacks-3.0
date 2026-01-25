@@ -1,0 +1,40 @@
+const express = require('express');
+const cors = require('cors');
+const app = express();
+const port = process.env.PORT || 5000;
+require('dotenv').config();
+const connectDB = require('./config/dbConn');
+
+// Connect to MongoDB
+connectDB();
+
+app.use(cors());
+app.use(express.json());
+
+// Import Routes
+const studentRoutes = require('./routes/student');
+const authRoutes = require('./routes/auth');
+const materialRoutes = require('./routes/material');
+
+const sttRoutes = require('./routes/stt');
+const dyslexiaRoutes = require('./routes/dyslexia');
+
+// Use Routes
+app.use('/api/student', studentRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/materials', materialRoutes);
+app.use('/api/levels', require('./routes/levels'));
+app.use('/api/classes', require('./routes/classes'));
+app.use('/api/stt', sttRoutes);
+app.use('/api/dyslexia', dyslexiaRoutes);
+app.use('/api/dyscalculia', require('./routes/dyscalculia'));
+app.use('/api/assignments', require('./routes/assignments'));
+app.use('/api/notifications', require('./routes/notifications'));
+
+app.get('/', (req, res) => {
+    res.send('ACLC Backend API is running');
+});
+
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+});

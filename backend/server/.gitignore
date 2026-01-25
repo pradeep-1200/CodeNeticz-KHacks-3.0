@@ -1,0 +1,36 @@
+# ======================
+# Node.js
+# ======================
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# ======================
+# Python
+# ======================
+venv/
+.env/
+__pycache__/
+*.pyc
+*.pyo
+
+# ======================
+# OS junk
+# ======================
+.DS_Store
+Thumbs.db
+
+# ======================
+# ML / AI artifacts (generated, not source)
+# ======================
+cache/
+models/*.bin
+models/*.safetensors
+models/*.h5
+models/*.pt
+models/*.ckpt
+
+# ======================
+# User uploads (runtime data)
+# ======================
+uploads/

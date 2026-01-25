@@ -1,0 +1,129 @@
+:root {
+  /* Sticky Note Palette */
+  --note-yellow: #fff9c4;
+  --note-blue: #e3f2fd;
+  --note-pink: #fce4ec;
+  --note-green: #e8f5e9;
+  --note-purple: #f3e5f5;
+
+  /* Game UI Tokens */
+  --game-primary: #58cc02;
+  /* Duolingo Green */
+  --game-secondary: #1cb0f6;
+  --game-accent: #ff4b4b;
+  --game-bg: #ffffff;
+  --game-card-shadow: 0 8px 0px rgba(0, 0, 0, 0.1);
+  --game-button-push: 0 4px 0px;
+
+  /* Pinned State Colors */
+  --pinned-glow: 0 0 15px rgba(28, 176, 246, 0.4);
+
+  --text-scale: 1;
+  --line-height-scale: 1.5;
+  --word-spacing: normal;
+  --letter-spacing: normal;
+  --cursor-type: auto;
+
+  /* Default Light Theme (Calm colors: blue/green/neutral) */
+  --bg-primary: #f8fafc;
+  /* Very Light Gray */
+  --bg-secondary: #ffffff;
+  /* White */
+  --text-primary: #0f172a;
+  /* Dark Slate Blue */
+  --text-secondary: #334155;
+  /* Slate 700 */
+  --accent-primary: #2563eb;
+  /* Calm Blue */
+  --accent-hover: #1d4ed8;
+  /* Darker Blue */
+  --border-color: #e2e8f0;
+  /* Slate 200 */
+  --success-color: #16a34a;
+  /* Success Green */
+  --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.dark,
+[data-theme="dark"] {
+  --note-yellow: #3e3a1a;
+  --note-blue: #1a2a3a;
+  --note-pink: #3a1a25;
+  --note-green: #1a3a20;
+  --note-purple: #2a1a3a;
+
+  /* Dark Theme */
+  --bg-primary: #0f172a;
+  /* Slate 900 */
+  --bg-secondary: #1e293b;
+  /* Slate 800 */
+  --text-primary: #f8fafc;
+  /* Slate 50 */
+  --text-secondary: #cbd5e1;
+  /* Slate 300 */
+  --accent-primary: #38bdf8;
+  /* Sky 400 */
+  --accent-hover: #7dd3fc;
+  /* Sky 300 */
+  --border-color: #334155;
+  /* Slate 700 */
+  --success-color: #4ade80;
+  /* Green 400 */
+  --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+}
+
+[data-theme="high-contrast"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #000000;
+  --text-primary: #000000;
+  --text-secondary: #ffff00;
+  /* Yellow on Black for contrast in secondary blocks */
+  --accent-primary: #0000ff;
+  --accent-hover: #000080;
+  --border-color: #000000;
+  --success-color: #008000;
+  --card-shadow: none;
+  border: 2px solid black;
+}
+
+[data-invert="true"] {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+[data-links-highlight="true"] a,
+[data-links-highlight="true"] button {
+  background-color: #fef08a !important;
+  /* Yellow 200 */
+  color: #000000 !important;
+  text-decoration: underline !important;
+  font-weight: 700 !important;
+  border: 2px solid #000 !important;
+}
+
+/* Custom Cursor Sizes */
+[data-cursor="large"] {
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewport='0 0 48 48' style='fill:black;stroke:white;stroke-width:2px;'><path d='M0,0 L0,36 L8,26 L18,48 L22,46 L14,24 L30,24 Z'/></svg>"), auto !important;
+}
+
+[data-cursor="large"] a,
+[data-cursor="large"] button {
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewport='0 0 48 48' style='fill:black;stroke:white;stroke-width:2px;'><path d='M0,0 L0,36 L8,26 L18,48 L22,46 L14,24 L30,24 Z'/></svg>"), pointer !important;
+}
+
+body {
+  font-size: calc(1rem * var(--text-scale));
+  line-height: var(--line-height-scale);
+  word-spacing: var(--word-spacing);
+  letter-spacing: var(--letter-spacing);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+/* Global Transition for Accessbility Controls */
+*,
+*::before,
+*::after {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 200ms;
+}

@@ -82,7 +82,7 @@ export const completeActivity = async (type, difficulty) => {
         const response = await fetch(`${BASE_URL}/student/complete-activity`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type, difficulty })
+            body: JSON.stringify({ type, difficulty, accuracy })
         });
         return await response.json();
     } catch (error) {

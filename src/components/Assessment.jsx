@@ -133,8 +133,15 @@ const Assessment = () => {
          setSimplifiedText('');
          setSummarizedText('');
       } else {
+         // Calculate Accuracy
+         let correctCount = 0;
+         questions.forEach((q, idx) => {
+            if (answers[idx] === q.correctAnswer) correctCount++;
+         });
+         const accuracy = Math.round((correctCount / questions.length) * 100);
+
          setCompleted(true);
-         completeActivity('assessment', difficulty);
+         completeActivity('assessment', difficulty, accuracy);
       }
    };
 
@@ -193,8 +200,32 @@ const Assessment = () => {
       setAssistantLoading(false);
    };
 
-   const handleOCR = () => {
-      alert('Word Extraction - Coming soon! This will extract key words from the text.');
+   const handleOCR = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      setAssistantLoading(true);
+      try {
+         const response = await fetch('http://localhost:5000/api/ocr/scan', {
+            method: 'POST',
+            body: formData
+         });
+         const data = await response.json();
+         if (data.success) {
+            setAssistantText(data.text);
+            // Also trigger a simplification automatically if the student wants
+            setSimplifiedText('Text extracted from image. You can now use the Simplifier or Summarizer.');
+         } else {
+            alert(data.message || 'OCR failed');
+         }
+      } catch (error) {
+         console.error('OCR error:', error);
+         alert('OCR failed: Backend not reachable');
+      }
+      setAssistantLoading(false);
    };
 
    const handleTTS = () => {
@@ -310,12 +341,20 @@ const Assessment = () => {
                               <span>Summarizer</span>
                            </button>
                            <button
-                              onClick={handleOCR}
-                              className="bg-white text-purple-700 py-3 px-4 rounded-lg font-bold text-sm hover:bg-purple-50 transition-all flex flex-col items-center gap-2"
+                              onClick={() => document.getElementById('ocr-upload').click()}
+                              disabled={assistantLoading}
+                              className="bg-white text-purple-700 py-3 px-4 rounded-lg font-bold text-sm hover:bg-purple-50 transition-all flex flex-col items-center gap-2 disabled:opacity-50"
                            >
                               <Eye size={20} />
-                              <span>Word Extraction</span>
+                              <span>{assistantLoading ? 'Scanning...' : 'OCR Scanner'}</span>
                            </button>
+                           <input
+                              type="file"
+                              id="ocr-upload"
+                              hidden
+                              accept="image/*"
+                              onChange={handleOCR}
+                           />
                            <button
                               onClick={handleTTS}
                               className={`py-3 px-4 rounded-lg font-bold text-sm transition-all flex flex-col items-center gap-2 ${isPlaying

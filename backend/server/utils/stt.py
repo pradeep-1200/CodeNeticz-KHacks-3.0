@@ -18,9 +18,9 @@ def speech_to_text(audio_path):
         import os
         
         # Load the Whisper model
-        # 'base' is significantly more stable than 'tiny' for multilingual support
-        # but still very fast on modern CPUs.
-        model_name = os.environ.get('WHISPER_MODEL', 'base')
+        # 'small' is significantly more accurate than 'base' while remaining performant on CPUs.
+        # 'base' can be set via WHISPER_MODEL env var if resources are extremely limited.
+        model_name = os.environ.get('WHISPER_MODEL', 'small')
         model = whisper.load_model(model_name)
         
         # Transcribe with aggressive parameters to eliminate hallucinations:

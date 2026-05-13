@@ -18,6 +18,7 @@ const materialRoutes = require('./routes/material');
 
 const sttRoutes = require('./routes/stt');
 const dyslexiaRoutes = require('./routes/dyslexia');
+const ocrRoutes = require('./routes/ocr');
 
 // Use Routes
 app.use('/api/student', studentRoutes);
@@ -27,6 +28,7 @@ app.use('/api/levels', require('./routes/levels'));
 app.use('/api/classes', require('./routes/classes'));
 app.use('/api/stt', sttRoutes);
 app.use('/api/dyslexia', dyslexiaRoutes);
+app.use('/api/ocr', ocrRoutes);
 app.use('/api/dyscalculia', require('./routes/dyscalculia'));
 app.use('/api/assignments', require('./routes/assignments'));
 app.use('/api/notifications', require('./routes/notifications'));

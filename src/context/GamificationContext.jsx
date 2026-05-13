@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { completeActivity } from '../services/api';
 
 const GamificationContext = createContext();
 
@@ -57,14 +58,21 @@ export const GamificationProvider = ({ children }) => {
         });
     };
 
-    const completeLevel = (levelId, score = 0) => {
+    const completeLevel = async (levelId, xpReward = 500, accuracy = 100) => {
         if (!stats.completedLevels.includes(levelId)) {
             setStats(prev => ({
                 ...prev,
                 completedLevels: [...prev.completedLevels, levelId]
             }));
-            addXP(500); // Standard XP for completing a level
+            addXP(xpReward);
             updateStreak();
+
+            // Sync with backend report
+            try {
+                await completeActivity('game', 'medium', accuracy);
+            } catch (err) {
+                console.error("Failed to sync level completion to backend", err);
+            }
         }
     };
 

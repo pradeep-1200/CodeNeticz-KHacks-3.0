@@ -171,7 +171,7 @@ router.post('/complete-activity', async (req, res) => {
         // If mocked, we can't save to DB easily without user, but let's assume valid user
         if (!user) return res.status(400).json({ success: false, message: "No active user found" });
 
-        const { type, difficulty } = req.body; // type: 'assessment', 'material'
+        const { type, difficulty, accuracy } = req.body; // type: 'assessment', 'material'
 
         // 1. Update Streak
         user.streak += 1;
@@ -201,9 +201,11 @@ router.post('/complete-activity', async (req, res) => {
 
             // Simulate "After Support" improvement
             if (report.afterStats && report.afterStats.length > 0) {
-                // Slowly increase values
+                // Use provided accuracy or fallback to small increase
+                const accValue = accuracy !== undefined ? accuracy : (report.afterStats[1].value + 3);
+                
                 report.afterStats[0].value = Math.min(100, report.afterStats[0].value + 5); // Speed
-                report.afterStats[1].value = Math.min(100, report.afterStats[1].value + 3); // Accuracy
+                report.afterStats[1].value = Math.min(100, accValue); // Accuracy
                 report.afterStats[2].value = Math.min(100, report.afterStats[2].value + 5); // Confidence
             }
 

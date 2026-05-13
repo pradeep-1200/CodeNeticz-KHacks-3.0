@@ -12,6 +12,8 @@ const PlayLevel = () => {
     const { stats, completeLevel } = useGamification();
     const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
     const [levelCompleted, setLevelCompleted] = useState(false);
+    const [correctTasks, setCorrectTasks] = useState(0);
+    const [finalAccuracy, setFinalAccuracy] = useState(100);
 
     const [level, setLevel] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -68,13 +70,19 @@ const PlayLevel = () => {
         fetchLevel();
     }, [levelId]);
 
-    const handleNext = () => {
+    const handleTaskComplete = (isCorrect = true) => {
+        if (isCorrect) setCorrectTasks(prev => prev + 1);
+        
         if (!level || !level.tasks) return;
 
         if (currentTaskIndex < level.tasks.length - 1) {
             setCurrentTaskIndex(currentTaskIndex + 1);
         } else {
-            completeLevel(level._id || level.id, level.xpReward);
+            const finalCorrect = isCorrect ? correctTasks + 1 : correctTasks;
+            const accuracy = Math.round((finalCorrect / level.tasks.length) * 100);
+            setFinalAccuracy(accuracy);
+            
+            completeLevel(level._id || level.id, level.xpReward, accuracy);
             setLevelCompleted(true);
         }
     };
@@ -100,7 +108,7 @@ const PlayLevel = () => {
                             <div className="text-sm font-bold text-blue-400 uppercase">XP Gained</div>
                         </div>
                         <div className="text-center">
-                            <div className="text-3xl font-black text-blue-600">Perfect</div>
+                            <div className="text-3xl font-black text-blue-600">{finalAccuracy}%</div>
                             <div className="text-sm font-bold text-blue-400 uppercase">Accuracy</div>
                         </div>
                     </div>
@@ -152,7 +160,7 @@ const PlayLevel = () => {
 
                 {/* Footer Controls */}
                 <div className="mt-12 flex justify-end">
-                    <button onClick={handleNext} className="px-12 py-4 bg-blue-600 text-white rounded-2xl font-black text-xl hover:bg-blue-700 shadow-xl border-b-8 border-blue-800 active:border-b-0 active:translate-y-2 transition-all">
+                    <button onClick={() => handleTaskComplete(true)} className="px-12 py-4 bg-blue-600 text-white rounded-2xl font-black text-xl hover:bg-blue-700 shadow-xl border-b-8 border-blue-800 active:border-b-0 active:translate-y-2 transition-all">
                         CONTINUE
                     </button>
                 </div>

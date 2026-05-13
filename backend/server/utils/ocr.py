@@ -28,7 +28,15 @@ def extract_text(image_path):
             return {"error": "Missing dependencies. Please install: pip install pytesseract pillow"}
 
         # Attempt OCR
+        # On Windows, Tesseract path often needs to be set explicitly
+        tesseract_path = os.environ.get('TESSERACT_CMD')
+        if tesseract_path:
+            pytesseract.pytesseract.tesseract_cmd = tesseract_path
+
         text = pytesseract.image_to_string(Image.open(image_path))
+        
+        if not text.strip():
+            return {"error": "No text detected in the image. Try a clearer image.", "success": False}
         
         return {"text": text.strip(), "success": True}
 

@@ -7,13 +7,12 @@ const fs = require('fs');
 // MOCK MODE - Set to true to test without Python
 const MOCK_MODE = false;
 
-// Path to virtual environment Python (fallback to system python if venv doesn't exist)
-// FORCE SYSTEM PYTHON to avoid Raghul_Sekar path issues
-const pythonCommand = 'python';
+
+const pythonCommand = process.env.PYTHON_EXECUTABLE || 'python';
 
 console.log('Dyslexia Routes - Mock Mode:', MOCK_MODE);
 if (!MOCK_MODE) {
-    console.log('Python command (FORCED):', pythonCommand);
+    console.log('Using Python command:', pythonCommand);
 }
 
 // POST /api/dyslexia/summarize

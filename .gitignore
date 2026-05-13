@@ -49,3 +49,5 @@ cache/
 *.njsproj
 *.sln
 *.sw?
+
+TECHNICAL_OVERVIEW.md

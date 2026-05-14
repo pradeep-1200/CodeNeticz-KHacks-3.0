@@ -4,6 +4,7 @@ import {
    Play, Pause, Mic, Volume2, ArrowRight, ArrowLeft, CheckCircle,
    HelpCircle, Keyboard, Spline, Save, Trash2, Square, Eye, FileText, MessageSquare, Headphones
 } from 'lucide-react';
+import { useAdaptive } from '../context/AdaptiveContext';
 
 const Assessment = () => {
    const [difficulty, setDifficulty] = useState('easy');
@@ -12,8 +13,9 @@ const Assessment = () => {
    const [isPlaying, setIsPlaying] = useState(false);
    const [isListening, setIsListening] = useState(false);
    const [completed, setCompleted] = useState(false);
-   const [answerMode, setAnswerMode] = useState('type');
-   const [learningMode, setLearningMode] = useState('default'); // default, dyslexia, dyscalculia, dysgraphia
+   const { profile } = useAdaptive();
+   const [answerMode, setAnswerMode] = useState(profile === 'DYSGRAPHIA' ? 'voice' : 'type');
+   const [learningMode, setLearningMode] = useState(profile !== 'DEFAULT' ? profile.toLowerCase() : 'default');
    const [assistantLoading, setAssistantLoading] = useState(false);
    const [simplifiedText, setSimplifiedText] = useState('');
    const [summarizedText, setSummarizedText] = useState('');

@@ -4,10 +4,14 @@ import Navbar from '../../components/Navbar';
 import { useGamification } from '../../context/GamificationContext';
 import { BookOpen, Bell, Star, TrendingUp, ArrowRight, CheckCircle, Clock, Accessibility, BarChart2, ClipboardCheck, Flame, Trophy, Play } from 'lucide-react';
 import { getDashboardData } from '../../services/api';
+import { useNavigate } from 'react-router-dom';
+import { useAdaptive } from '../../context/AdaptiveContext';
 
 const Dashboard = () => {
    const [data, setData] = useState(null);
    const { stats } = useGamification();
+   const { isPrelimsCompleted, profile } = useAdaptive();
+   const navigate = useNavigate();
    const gStats = stats || { xp: 0, level: 1, streak: 0, completedLevels: [] };
 
    useEffect(() => {
@@ -30,6 +34,20 @@ const Dashboard = () => {
          <Navbar />
 
          <main className="container mx-auto px-6 py-8 space-y-8">
+            {!isPrelimsCompleted && (
+               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-2xl shadow-lg border border-blue-400 flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div>
+                     <h2 className="text-2xl font-bold mb-1 flex items-center gap-2">🎯 Set Up Your Learning Environment</h2>
+                     <p className="text-blue-100 font-medium">Take the quick Cognitive Prelims Assessment to personalize your dashboard layout and accessibility tools.</p>
+                  </div>
+                  <button 
+                     onClick={() => navigate('/student/prelims')}
+                     className="px-6 py-3 bg-white text-blue-700 font-bold rounded-xl shadow-md hover:bg-blue-50 hover:scale-105 transition-all whitespace-nowrap"
+                  >
+                     Start Assessment
+                  </button>
+               </div>
+            )}
 
             {/* Welcome & Gamified Progress Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -175,17 +193,63 @@ const Dashboard = () => {
                      <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-4 dark:bg-indigo-900 dark:text-indigo-200">
                         <Accessibility size={20} />
                      </div>
-                     <h3 className="font-bold text-lg mb-2">Learn Your Way</h3>
-                     <p className="text-sm text-[var(--text-secondary)]">
-                        You can listen instead of read, speak instead of type, and learn your way.
+                     <h3 className="font-bold text-lg mb-2">Accessibility Toolbar</h3>
+                     <p className="text-sm text-[var(--text-secondary)] mb-4">
+                        Access universal tools like text-to-speech and contrast toggles.
                      </p>
                      <button
                         onClick={() => window.dispatchEvent(new Event('open-a11y-toolbar'))}
-                        className="mt-4 text-sm font-bold text-[var(--accent-primary)] hover:underline"
+                        className="text-sm font-bold text-[var(--accent-primary)] hover:underline"
                      >
-                        Open Tools
+                        Open Toolbar
                      </button>
                   </div>
+
+                  {/* Adaptive Cognitive Tools Based on Profile */}
+                  {profile === 'DYSLEXIA' && (
+                     <div className="bg-gradient-to-br from-purple-500 to-indigo-600 p-6 rounded-2xl shadow-lg border border-purple-400 text-white">
+                        <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mb-4">
+                           <BookOpen size={20} />
+                        </div>
+                        <h3 className="font-bold text-lg mb-2">Immersive Reader</h3>
+                        <p className="text-sm text-purple-100 mb-4">
+                           Use our specialized reading tool designed for Dyslexia, featuring bionic reading and highlighted tracking.
+                        </p>
+                        <button onClick={() => window.dispatchEvent(new Event('open-a11y-toolbar'))} className="px-4 py-2 bg-white text-purple-700 font-bold rounded-lg hover:bg-purple-50 transition-colors text-sm w-full">
+                           Launch Reader
+                        </button>
+                     </div>
+                  )}
+
+                  {profile === 'DYSGRAPHIA' && (
+                     <div className="bg-gradient-to-br from-blue-500 to-cyan-600 p-6 rounded-2xl shadow-lg border border-blue-400 text-white">
+                        <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mb-4">
+                           <Mic size={20} />
+                        </div>
+                        <h3 className="font-bold text-lg mb-2">Voice Dictation Hub</h3>
+                        <p className="text-sm text-blue-100 mb-4">
+                           Skip the typing. Use advanced Speech-to-Text to complete your assignments entirely via voice.
+                        </p>
+                        <Link to="/student/classroom" className="block text-center px-4 py-2 bg-white text-blue-700 font-bold rounded-lg hover:bg-blue-50 transition-colors text-sm w-full">
+                           Start Dictating
+                        </Link>
+                     </div>
+                  )}
+
+                  {profile === 'DYSCALCULIA' && (
+                     <div className="bg-gradient-to-br from-orange-400 to-red-500 p-6 rounded-2xl shadow-lg border border-orange-300 text-white">
+                        <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mb-4">
+                           <BarChart2 size={20} />
+                        </div>
+                        <h3 className="font-bold text-lg mb-2">Math Visualizer</h3>
+                        <p className="text-sm text-orange-100 mb-4">
+                           Struggling with numbers? Use our spatial math visualizer to convert equations into interactive objects.
+                        </p>
+                        <Link to="/student/learn-path" className="block text-center px-4 py-2 bg-white text-orange-600 font-bold rounded-lg hover:bg-orange-50 transition-colors text-sm w-full">
+                           Open Visualizer
+                        </Link>
+                     </div>
+                  )}
                </div>
             </div>
          </main>

@@ -21,23 +21,25 @@ router.get('/dashboard', async (req, res) => {
     try {
         let user = await getDemoUser();
 
-        // Fallback for Demo
         if (!user) {
-            const mockProfile = db.studentProfile;
             return res.json({
                 profile: {
                     id: "demo_id",
-                    name: mockProfile.name,
-                    email: mockProfile.email,
-                    level: mockProfile.level,
-                    levelTitle: mockProfile.levelTitle,
-                    xp: mockProfile.xp,
-                    streak: mockProfile.streak, // Now 0
-                    xpToNextLevel: mockProfile.nextLevelXp - mockProfile.xp
+                    name: "Demo Student",
+                    email: "demo@example.com",
+                    level: 1,
+                    levelTitle: "Beginner",
+                    xp: 0,
+                    streak: 0,
+                    xpToNextLevel: 1000
                 },
-                stats: db.dashboardStats,
-                recentActivity: db.recentActivity,
-                dailyTip: db.dailyTip
+                stats: {
+                    activeClasses: { count: 0, newMaterial: 0 },
+                    pendingInvites: { count: 0, actionRequired: false },
+                    weeklyGoal: { progress: 0, status: 'Not Started' }
+                },
+                recentActivity: [],
+                dailyTip: null
             });
         }
 
@@ -111,8 +113,7 @@ router.get('/classroom', async (req, res) => {
     }
 });
 
-const db = require('../data/db'); // Fallback data
-
+// const db = require('../data/db'); // Removed mock data
 // Report Data
 router.get('/report', async (req, res) => {
     try {
@@ -127,39 +128,52 @@ router.get('/report', async (req, res) => {
             // Create a fresh report for this user if one doesn't exist
             report = await Report.create({
                 userId: user._id,
-                improvementData: db.reports.improvementData,
-                skillData: db.reports.skillData,
-                strengths: db.reports.strengths,
-                areasToExplore: db.reports.areasToExplore,
-                beforeStats: db.reports.beforeStats,
-                afterStats: db.reports.afterStats,
+                improvementData: [],
+                skillData: [],
+                strengths: [],
+                areasToExplore: [],
+                beforeStats: [],
+                afterStats: [],
                 submissionHistory: [],
-                problemStats: { ...db.reports.problemStats }
+                problemStats: { easy: { solved: 0 }, medium: { solved: 0 }, hard: { solved: 0 }, total: { solved: 0 } }
             });
             // Re-fetch to populate
             report = await Report.findById(report._id).populate('userId', 'name email level levelTitle streak');
         }
 
         if (!report) {
-            // Absolute last resort fallback
+            // Absolute last resort fallback with NO mock data
             report = {
                 userId: {
-                    name: "Student",
+                    name: "Unknown Student",
                     levelTitle: "Beginner",
                     streak: 0,
                     email: "student@example.com"
                 },
-                ...db.reports
+                improvementData: [],
+                skillData: [],
+                strengths: [],
+                areasToExplore: [],
+                beforeStats: [],
+                afterStats: [],
+                submissionHistory: [],
+                problemStats: { easy: { solved: 0 }, medium: { solved: 0 }, hard: { solved: 0 }, total: { solved: 0 } }
             };
         }
 
         res.json(report);
     } catch (err) {
         console.error(err);
-        // Serve fallback on error too
         res.json({
-            userId: { name: "Fallback User", levelTitle: "Beginner" },
-            ...db.reports
+            userId: { name: "Error User", levelTitle: "Beginner" },
+            improvementData: [],
+            skillData: [],
+            strengths: [],
+            areasToExplore: [],
+            beforeStats: [],
+            afterStats: [],
+            submissionHistory: [],
+            problemStats: { easy: { solved: 0 }, medium: { solved: 0 }, hard: { solved: 0 }, total: { solved: 0 } }
         });
     }
 });

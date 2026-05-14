@@ -10,7 +10,10 @@ const userSchema = new mongoose.Schema({
     xp: { type: Number, default: 0 },
     nextLevelXp: { type: Number, default: 1000 },
     streak: { type: Number, default: 0 },
-    badges: [String]
+    badges: [String],
+    learningProfile: { type: String, enum: ['DEFAULT', 'DYSLEXIA', 'DYSCALCULIA', 'DYSGRAPHIA'], default: 'DEFAULT' },
+    isPrelimsCompleted: { type: Boolean, default: false },
+    prelimsScore: { type: Number, default: 0 }
 }, { timestamps: true });
 
 // Virtual to calculate xpToNextLevel if needed, but the frontend expects it directly.

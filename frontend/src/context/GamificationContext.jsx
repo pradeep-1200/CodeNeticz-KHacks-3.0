@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { completeActivity } from '../services/api';
+import { completeActivity, getDashboardData } from '../services/api';
 
 const GamificationContext = createContext();
 
@@ -16,6 +16,26 @@ export const GamificationProvider = ({ children }) => {
             completedLevels: []
         };
     });
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                // We use getDashboardData to get the real profile stats
+                const data = await getDashboardData();
+                if (data && data.profile) {
+                    setStats(prev => ({
+                        ...prev,
+                        xp: data.profile.xp,
+                        level: data.profile.level,
+                        streak: data.profile.streak
+                    }));
+                }
+            } catch (err) {
+                console.error("Failed to load gamification stats from backend", err);
+            }
+        };
+        fetchStats();
+    }, []);
 
     useEffect(() => {
         localStorage.setItem('aclc_game_stats', JSON.stringify(stats));

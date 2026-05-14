@@ -6,7 +6,7 @@ import os
 # Import from Dyslexia folder if possible
 try:
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    dyslexia_path = os.path.abspath(os.path.join(current_dir, '../../../Dyslexia'))
+    dyslexia_path = os.path.abspath(os.path.join(current_dir, '../../../cognitive_disability/dyslexia'))
     sys.path.append(dyslexia_path)
     
     # Check if we can use any specific extraction tools from there

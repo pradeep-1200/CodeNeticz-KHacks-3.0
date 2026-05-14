@@ -21,7 +21,11 @@ import StaffReports from './pages/staff/StaffReports';
 
 import { StickyProvider } from './context/StickyContext';
 import { GamificationProvider } from './context/GamificationContext';
+import { AdaptiveProvider } from './context/AdaptiveContext';
 import StickyContainer from './components/sticky/StickyContainer';
+
+import PrelimsTest from './pages/student/PrelimsTest';
+import PrelimsManager from './pages/staff/PrelimsManager';
 
 // Import Global Styles
 import './index.css';
@@ -47,7 +51,8 @@ function App() {
   return (
     <GamificationProvider>
       <StickyProvider>
-        <BrowserRouter>
+        <AdaptiveProvider>
+          <BrowserRouter>
           <TitleUpdater />
           {/* Global Accessibility Toolbar - Always Visible */}
           <AccessibilityToolbar />
@@ -62,6 +67,7 @@ function App() {
               <Route path="/register" element={<Register />} />
 
               {/* Student Routes */}
+              <Route path="/student/prelims" element={<PrelimsTest />} />
               <Route path="/student/dashboard" element={<Dashboard />} />
               <Route path="/student/classroom" element={<Classroom />} />
               <Route path="/student/assessment" element={<AssessmentPage />} />
@@ -74,6 +80,7 @@ function App() {
               <Route path="/staff/dashboard" element={<StaffDashboard />} />
               <Route path="/staff/classes" element={<ClassManager />} />
               <Route path="/staff/upload-material" element={<UploadMaterial />} />
+              <Route path="/staff/prelims" element={<PrelimsManager />} />
 
               <Route path="/staff/create-level" element={<TeacherLevelBuilder />} />
               <Route path="/staff/reports" element={<StaffReports />} />
@@ -85,7 +92,8 @@ function App() {
               <Route path="*" element={<Landing />} />
             </Routes>
           </div>
-        </BrowserRouter>
+          </BrowserRouter>
+        </AdaptiveProvider>
       </StickyProvider>
     </GamificationProvider>
   );

@@ -43,6 +43,17 @@ export const getDashboardData = async () => {
     }
 };
 
+export const getStaffDashboardData = async () => {
+    try {
+        const response = await fetch(`${BASE_URL}/staff/dashboard`);
+        if (!response.ok) throw new Error('Failed to fetch staff dashboard data');
+        return await response.json();
+    } catch (error) {
+        console.error("Staff Dashboard fetch failed:", error);
+        return null;
+    }
+};
+
 export const getMaterials = async () => {
     try {
         const response = await fetch(`${BASE_URL}/student/classroom`);
@@ -109,5 +120,59 @@ export const transcribeAudio = async (audioBlob) => {
     } catch (error) {
         console.error("STT failed:", error);
         return { success: false, message: error.message };
+    }
+};
+
+export const getPrelimsQuestions = async () => {
+    try {
+        const response = await fetch(`${BASE_URL}/prelims/questions`);
+        if (!response.ok) throw new Error('Failed to fetch prelims questions');
+        return await response.json();
+    } catch (error) {
+        console.error("Prelims fetch failed:", error);
+        throw error;
+    }
+};
+
+export const addPrelimsQuestion = async (questionData) => {
+    try {
+        const response = await fetch(`${BASE_URL}/prelims/questions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(questionData)
+        });
+        if (!response.ok) throw new Error('Failed to add prelims question');
+        return await response.json();
+    } catch (error) {
+        console.error("Add prelims question failed:", error);
+        throw error;
+    }
+};
+
+export const deletePrelimsQuestion = async (id) => {
+    try {
+        const response = await fetch(`${BASE_URL}/prelims/questions/${id}`, {
+            method: 'DELETE',
+        });
+        if (!response.ok) throw new Error('Failed to delete prelims question');
+        return await response.json();
+    } catch (error) {
+        console.error("Delete prelims question failed:", error);
+        throw error;
+    }
+};
+
+export const submitPrelimsTest = async (userId, answers) => {
+    try {
+        const response = await fetch(`${BASE_URL}/prelims/submit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, answers })
+        });
+        if (!response.ok) throw new Error('Failed to submit prelims test');
+        return await response.json();
+    } catch (error) {
+        console.error("Submit prelims test failed:", error);
+        throw error;
     }
 };

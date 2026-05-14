@@ -9,11 +9,40 @@ const TeacherLevelBuilder = () => {
         title: '',
         description: '',
         difficulty: 'easy',
+        targetProfile: 'DEFAULT',
         xpReward: 500,
         tasks: []
     });
 
     const [isSaving, setIsSaving] = useState(false);
+    
+    const autoGenerateTask = (type) => {
+        const newTask = {
+            id: Date.now(),
+            type,
+            props: {}
+        };
+
+        if (type === 'quiz') {
+            newTask.props = {
+                question: level.targetProfile === 'DYSLEXIA' ? 'Which word is spelled correctly?' : 'What is the answer?',
+                options: ['Option 1', 'Option 2', 'Option 3', 'Option 4'],
+                correctAnswer: 'Option 1',
+                hint: 'AI generated hint'
+            };
+        } else if (type === 'jumbled') {
+            newTask.props = {
+                sentence: 'The quick brown fox jumps'
+            };
+        } else if (type === 'speech') {
+            newTask.props = {
+                promptText: 'Read the following aloud: I am ready to learn.',
+                expectedKeywords: ['ready', 'learn']
+            };
+        }
+
+        setLevel({ ...level, tasks: [...level.tasks, newTask] });
+    };
 
     const addTask = (type) => {
         const newTask = {
@@ -122,11 +151,11 @@ const TeacherLevelBuilder = () => {
                                 onChange={(e) => setLevel({ ...level, description: e.target.value })}
                             />
                         </div>
-                        <div className="flex gap-4">
+                        <div className="flex flex-col md:flex-row gap-4">
                             <div className="flex-1">
                                 <label className="block text-sm font-bold text-slate-500 mb-2 uppercase">Difficulty</label>
                                 <select
-                                    className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl font-bold"
+                                    className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl font-bold transition-all hover:border-blue-400"
                                     value={level.difficulty}
                                     onChange={(e) => setLevel({ ...level, difficulty: e.target.value })}
                                 >
@@ -136,10 +165,23 @@ const TeacherLevelBuilder = () => {
                                 </select>
                             </div>
                             <div className="flex-1">
+                                <label className="block text-sm font-bold text-slate-500 mb-2 uppercase">Target Profile</label>
+                                <select
+                                    className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl font-bold transition-all hover:border-purple-400"
+                                    value={level.targetProfile}
+                                    onChange={(e) => setLevel({ ...level, targetProfile: e.target.value })}
+                                >
+                                    <option value="DEFAULT">General Learning</option>
+                                    <option value="DYSLEXIA">Dyslexia Support</option>
+                                    <option value="DYSCALCULIA">Dyscalculia Support</option>
+                                    <option value="DYSGRAPHIA">Dysgraphia Support</option>
+                                </select>
+                            </div>
+                            <div className="flex-1">
                                 <label className="block text-sm font-bold text-slate-500 mb-2 uppercase">XP Reward</label>
                                 <input
                                     type="number"
-                                    className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl font-bold"
+                                    className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl font-bold transition-all hover:border-green-400"
                                     value={level.xpReward}
                                     onChange={(e) => setLevel({ ...level, xpReward: parseInt(e.target.value) })}
                                 />
@@ -149,7 +191,7 @@ const TeacherLevelBuilder = () => {
                         <button
                             onClick={saveLevel}
                             disabled={isSaving}
-                            className="w-full py-4 bg-green-600 text-white rounded-xl font-black text-xl shadow-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2"
+                            className="w-full py-4 bg-green-600 text-white rounded-xl font-black text-xl shadow-lg hover:bg-green-700 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
                         >
                             {isSaving ? "Saving..." : <><Save size={20} /> PUBLISH LEVEL</>}
                         </button>
@@ -158,16 +200,22 @@ const TeacherLevelBuilder = () => {
                     {/* Right Column: Task Builder */}
                     <div className="lg:col-span-2 space-y-6">
                         {/* Task Type Selector */}
-                        <div className="grid grid-cols-3 gap-4">
-                            <button onClick={() => addTask('quiz')} className="p-4 bg-white border-2 border-slate-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all font-bold text-slate-600 flex flex-col items-center gap-2">
-                                <span className="text-2xl">❓</span> Quiz
-                            </button>
-                            <button onClick={() => addTask('jumbled')} className="p-4 bg-white border-2 border-slate-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all font-bold text-slate-600 flex flex-col items-center gap-2">
-                                <span className="text-2xl">🧩</span> Jumbled
-                            </button>
-                            <button onClick={() => addTask('speech')} className="p-4 bg-white border-2 border-slate-200 rounded-xl hover:border-pink-500 hover:bg-pink-50 transition-all font-bold text-slate-600 flex flex-col items-center gap-2">
-                                <span className="text-2xl">🗣️</span> Speech
-                            </button>
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="font-bold text-slate-700">Add Task Manually</h2>
+                                <button onClick={() => autoGenerateTask('quiz')} className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-bold text-sm hover:bg-purple-200 transition-colors">✨ Auto-Generate via AI</button>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <button onClick={() => addTask('quiz')} className="p-4 bg-slate-50 border-2 border-slate-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 hover:scale-105 transition-all font-bold text-slate-600 flex flex-col items-center gap-2">
+                                    <span className="text-2xl">❓</span> Quiz
+                                </button>
+                                <button onClick={() => addTask('jumbled')} className="p-4 bg-slate-50 border-2 border-slate-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 hover:scale-105 transition-all font-bold text-slate-600 flex flex-col items-center gap-2">
+                                    <span className="text-2xl">🧩</span> Jumbled
+                                </button>
+                                <button onClick={() => addTask('speech')} className="p-4 bg-slate-50 border-2 border-slate-200 rounded-xl hover:border-pink-500 hover:bg-pink-50 hover:scale-105 transition-all font-bold text-slate-600 flex flex-col items-center gap-2">
+                                    <span className="text-2xl">🗣️</span> Speech
+                                </button>
+                            </div>
                         </div>
 
                         {/* Task List */}

@@ -32,6 +32,8 @@ app.use('/api/ocr', ocrRoutes);
 app.use('/api/dyscalculia', require('./routes/dyscalculia'));
 app.use('/api/assignments', require('./routes/assignments'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/prelims', require('./routes/prelims'));
+app.use('/api/staff', require('./routes/staff'));
 
 app.get('/', (req, res) => {
     res.send('ACLC Backend API is running');

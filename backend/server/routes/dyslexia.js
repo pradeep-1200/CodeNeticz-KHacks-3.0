@@ -28,7 +28,7 @@ router.post('/summarize', async (req, res) => {
         }
 
         // REAL MODE - Use Python script
-        const pythonScript = path.join(__dirname, '../../../Dyslexia/bart_summarization.py');
+        const pythonScript = path.join(__dirname, '../../../cognitive_disability/dyslexia/bart_summarization.py');
         console.log('Spawning Python for Summarization:', pythonCommand, pythonScript);
         const python = spawn(pythonCommand, [pythonScript]);
 
@@ -102,7 +102,7 @@ router.post('/simplify', async (req, res) => {
         }
 
         // REAL MODE - Use Python script
-        const pythonScript = path.join(__dirname, '../../../Dyslexia/simplify_wrapper.py');
+        const pythonScript = path.join(__dirname, '../../../cognitive_disability/dyslexia/simplify_wrapper.py');
         console.log(`[Simplify] Spawning Python: ${pythonCommand} ${pythonScript}`);
 
         const python = spawn(pythonCommand, [pythonScript]);

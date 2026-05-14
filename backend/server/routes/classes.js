@@ -33,7 +33,7 @@ router.get('/teacher/:teacherId', async (req, res) => {
     try {
         // demo: just return all classes for simplicity if id not matching, or exact match
         const classes = await Class.find({ teacherId: req.params.teacherId })
-            .populate('students', 'name email')
+            .populate('students', 'name email prelimsScore learningProfile')
             .populate('assessments', 'title difficulty xpReward')
             .populate('materials');
         res.json({ success: true, classes });

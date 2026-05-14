@@ -9,10 +9,8 @@ const ClassManager = () => {
     const [copiedId, setCopiedId] = useState(null);
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [inviteEmail, setInviteEmail] = useState('');
-    const [showMaterialModal, setShowMaterialModal] = useState(false);
-    const [materialFile, setMaterialFile] = useState(null);
-    const [materialTitle, setMaterialTitle] = useState('');
-    const [isUploading, setIsUploading] = useState(false);
+    const [showPrelimsModal, setShowPrelimsModal] = useState(false);
+    const [prelimQuestion, setPrelimQuestion] = useState({ question: '', type: 'text', correctAnswer: '', disabilityMarker: 'DEFAULT' });
     const [selectedClassId, setSelectedClassId] = useState(null);
     const [showAssessModal, setShowAssessModal] = useState(false);
     const [availableLevels, setAvailableLevels] = useState([]);
@@ -105,23 +103,17 @@ const ClassManager = () => {
         } catch (err) { alert("Error sending invitation"); }
     };
 
-    const handleUploadMaterial = async () => {
-        if (!materialFile || !selectedClassId) return alert("Select a file");
-        setIsUploading(true);
-        const formData = new FormData();
-        formData.append('file', materialFile);
-        formData.append('title', materialTitle || materialFile.name);
-        formData.append('classId', selectedClassId);
+    const handlePostPrelims = async () => {
+        if (!prelimQuestion.question || !prelimQuestion.correctAnswer) return alert("Please fill all fields");
         try {
-            const res = await fetch('http://localhost:5000/api/materials/upload', { method: 'POST', body: formData });
-            const data = await res.json();
-            if (data.success) {
-                alert("Material uploaded!");
-                setShowMaterialModal(false);
-                fetchClasses();
-            } else alert(data.message);
-        } catch (e) { alert("Upload error"); }
-        setIsUploading(false);
+            const { addPrelimsQuestion } = await import('../../services/api');
+            await addPrelimsQuestion(prelimQuestion);
+            alert("Prelims Question Posted!");
+            setShowPrelimsModal(false);
+            setPrelimQuestion({ question: '', type: 'text', correctAnswer: '', disabilityMarker: 'DEFAULT' });
+        } catch (e) {
+            alert("Error posting prelims question");
+        }
     };
 
     const handleAssignLevel = async (levelId) => {
@@ -250,10 +242,10 @@ const ClassManager = () => {
                                     <div className="text-sm text-slate-600 flex justify-between"><span>Games Assigned:</span> <b>{cls.assessments?.length || 0}</b></div>
                                 </div>
                                 <div className="border-t border-slate-100 pt-3 grid grid-cols-3 gap-2">
-                                    <button onClick={() => { setSelectedClassId(cls._id); setShowMaterialModal(true); }} className="col-span-1 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold flex flex-col items-center"><BookOpen size={16} /> Post</button>
-                                    <button onClick={() => { setSelectedClassId(cls._id); setShowAssessModal(true); }} className="col-span-1 py-2 bg-green-50 text-green-600 rounded-lg text-xs font-bold flex flex-col items-center"><Trophy size={16} /> Game</button>
-                                    <button onClick={() => { setSelectedClassId(cls._id); setShowInviteModal(true); }} className="col-span-1 py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold flex flex-col items-center"><Mail size={16} /> Invite</button>
-                                    <button onClick={() => { setSelectedClassId(cls._id); setShowAssignModal(true); }} className="col-span-3 mt-1 py-2 bg-purple-50 text-purple-600 rounded-lg text-xs font-bold flex items-center justify-center gap-2"><FileText size={16} /> Create Assignment</button>
+                                    <button onClick={() => { setSelectedClassId(cls._id); setShowPrelimsModal(true); }} className="col-span-1 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:scale-105 transition-all rounded-lg text-xs font-bold flex flex-col items-center shadow-sm"><BookOpen size={16} /> Post Prelims</button>
+                                    <button onClick={() => { setSelectedClassId(cls._id); setShowAssessModal(true); }} className="col-span-1 py-2 bg-green-50 text-green-600 hover:bg-green-100 hover:scale-105 transition-all rounded-lg text-xs font-bold flex flex-col items-center shadow-sm"><Trophy size={16} /> Game</button>
+                                    <button onClick={() => { setSelectedClassId(cls._id); setShowInviteModal(true); }} className="col-span-1 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:scale-105 transition-all rounded-lg text-xs font-bold flex flex-col items-center shadow-sm"><Mail size={16} /> Invite</button>
+                                    <button onClick={() => { setSelectedClassId(cls._id); setShowAssignModal(true); }} className="col-span-3 mt-1 py-2 bg-purple-50 text-purple-600 hover:bg-purple-100 hover:scale-[1.02] transition-all rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-sm"><FileText size={16} /> Create Assignment</button>
                                 </div>
                             </div>
                         </div>
@@ -285,14 +277,31 @@ const ClassManager = () => {
                                     {selectedDetailedClass.students.length === 0 ? <div className="text-center py-10 text-slate-400">No students enrolled yet.</div> :
                                         selectedDetailedClass.students.map(student => (
                                             <div key={student._id} className="bg-white p-4 rounded-xl shadow-sm border flex justify-between items-center">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">{student.name[0]}</div>
-                                                    <div>
-                                                        <h3 className="font-bold text-slate-800">{student.name}</h3>
-                                                        <p className="text-xs text-slate-500">{student.email}</p>
+                                                <div className="flex flex-col sm:flex-row gap-4 sm:items-center w-full justify-between">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">{student.name[0]}</div>
+                                                        <div>
+                                                            <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                                                                {student.name}
+                                                                {student.learningProfile && student.learningProfile !== 'DEFAULT' && (
+                                                                    <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full uppercase font-bold">
+                                                                        {student.learningProfile}
+                                                                    </span>
+                                                                )}
+                                                            </h3>
+                                                            <p className="text-xs text-slate-500">{student.email}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="flex flex-col items-end">
+                                                            <span className="text-xs font-bold text-slate-400 uppercase">Prelims</span>
+                                                            <span className={`font-black ${student.prelimsScore >= 80 ? 'text-green-600' : student.prelimsScore >= 50 ? 'text-blue-600' : 'text-orange-600'}`}>
+                                                                {student.prelimsScore !== undefined ? `${student.prelimsScore}%` : 'N/A'}
+                                                            </span>
+                                                        </div>
+                                                        <div className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold whitespace-nowrap">Enrolled</div>
                                                     </div>
                                                 </div>
-                                                <div className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">Enrolled</div>
                                             </div>
                                         ))}
                                 </div>
@@ -349,8 +358,51 @@ const ClassManager = () => {
                 </div>
             )}
 
-            {/* Other modals (Create, Invite, Assess, Assign, LevelCreator) - kept same */}
-            {/* ... (Existing modals logic) ... */}
+            {/* Other modals (Create, Invite, Assess, Assign, LevelCreator, Prelims) */}
+            
+            {showPrelimsModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+                    <div className="bg-white p-8 rounded-3xl w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
+                        <h2 className="text-2xl font-black mb-6 text-slate-800 flex items-center gap-2">
+                            <BookOpen className="text-indigo-600" /> Post Prelims Question
+                        </h2>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-slate-500 mb-1 uppercase">Question Text</label>
+                                <input className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="E.g. Spell 'Accommodation'" value={prelimQuestion.question} onChange={e => setPrelimQuestion({ ...prelimQuestion, question: e.target.value })} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-500 mb-1 uppercase">Target</label>
+                                    <select className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl outline-none" value={prelimQuestion.disabilityMarker} onChange={e => setPrelimQuestion({ ...prelimQuestion, disabilityMarker: e.target.value })}>
+                                        <option value="DEFAULT">General Knowledge</option>
+                                        <option value="DYSLEXIA">Spelling/Reading</option>
+                                        <option value="DYSGRAPHIA">Writing Speed</option>
+                                        <option value="DYSCALCULIA">Math/Logic</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-500 mb-1 uppercase">Type</label>
+                                    <select className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl outline-none" value={prelimQuestion.type} onChange={e => setPrelimQuestion({ ...prelimQuestion, type: e.target.value })}>
+                                        <option value="text">Short Text</option>
+                                        <option value="math">Math Expression</option>
+                                        <option value="voice">Voice/Listening</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-500 mb-1 uppercase">Correct Answer</label>
+                                <input className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="Exact text expected" value={prelimQuestion.correctAnswer} onChange={e => setPrelimQuestion({ ...prelimQuestion, correctAnswer: e.target.value })} />
+                            </div>
+                        </div>
+                        <div className="flex gap-3 mt-8">
+                            <button onClick={() => setShowPrelimsModal(false)} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors">Cancel</button>
+                            <button onClick={handlePostPrelims} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 hover:scale-[1.02] transition-all">Post Question</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {showCreateModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white p-6 rounded-2xl w-full max-w-md">

@@ -10,7 +10,8 @@ import {
    getLevels, 
    getTeacherClasses, 
    inviteStudent, 
-   getAssignmentsByClass, 
+   getAssignmentsByClass,
+   getClassSubmissions,
    createAssignment, 
    assignLevelToClass,
    getAnnouncementsByClass,
@@ -48,6 +49,11 @@ const ClassManager = () => {
     // Detailed Class Assignments & Submissions
     const [detailedAssignments, setDetailedAssignments] = useState([]);
     const [expandedAssignmentId, setExpandedAssignmentId] = useState(null);
+
+    // Rich Submissions (with student names) — loaded when Grades tab opens
+    // WHY separate: This hits /submissions endpoint which batch-fetches student names
+    const [richSubmissions, setRichSubmissions] = useState([]);
+    const [submissionsLoading, setSubmissionsLoading] = useState(false);
 
     // Toast State
     const [toast, setToast] = useState(null);
@@ -94,6 +100,7 @@ const ClassManager = () => {
     const openClassroom = async (cls) => {
         setActiveClass(cls);
         setActiveTab('stream');
+        setRichSubmissions([]);
         fetchClassStreamData(cls._id);
     };
 
@@ -107,6 +114,23 @@ const ClassManager = () => {
             const assignData = await getAssignmentsByClass(classId);
             setDetailedAssignments(assignData.assignments || assignData || []);
         } catch (e) { setDetailedAssignments([]); }
+    };
+
+    // fetchRichSubmissions: called only when Grades tab is opened.
+    // WHY lazy load: avoids fetching student info on every tab switch.
+    // The /submissions route does a batch User lookup for all studentIds —
+    // so we get names + emails in 2 DB queries total (not N+1).
+    const fetchRichSubmissions = async (classId) => {
+        setSubmissionsLoading(true);
+        try {
+            const data = await getClassSubmissions(classId);
+            setRichSubmissions(data.assignments || []);
+        } catch (e) {
+            console.error('Failed to fetch submissions:', e);
+            setRichSubmissions([]);
+        } finally {
+            setSubmissionsLoading(false);
+        }
     };
 
     const handleCreateClass = async (e) => {
@@ -392,10 +416,10 @@ const ClassManager = () => {
                                     People ({(activeClass.students || []).length})
                                 </button>
                                 <button 
-                                    onClick={() => setActiveTab('grades')} 
+                                    onClick={() => { setActiveTab('grades'); fetchRichSubmissions(activeClass._id); }} 
                                     className={`flex-1 py-3 text-center rounded-xl transition-all ${activeTab === 'grades' ? 'bg-purple-600 text-white shadow-md' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
                                 >
-                                    Grades & Submissions
+                                    Grades &amp; Submissions
                                 </button>
                             </div>
 
@@ -590,55 +614,150 @@ const ClassManager = () => {
                                             </div>
                                          ))}
                                          {(!activeClass.students || activeClass.students.length === 0) && (
-                                            <p className="text-xs text-[var(--text-secondary)] italic py-4">No students enrolled yet. Click "Invite Student" to send email invitations.</p>
-                                         )}
+                                             <p className="text-xs text-[var(--text-secondary)] italic py-4">No students enrolled yet. Click "Invite Student" to send email invitations.</p>
+                                          )}
+                                       </div>
+                                    </div>
+
+                                 </div>
+                             )}
+                            {activeTab === 'grades' && (
+                                <div className="space-y-4">
+                                   {/* Header */}
+                                   <div className="flex items-center justify-between bg-white dark:bg-[var(--bg-surface)] p-5 rounded-2xl border border-[var(--border-color)] shadow-sm">
+                                      <div>
+                                         <h2 className="text-base font-black tracking-tight text-[var(--text-primary)]">Grades &amp; Submissions</h2>
+                                         <p className="text-[11px] text-[var(--text-secondary)] font-medium mt-0.5">All student work turned in — click Open Document to view the file directly.</p>
                                       </div>
+                                      <button
+                                         onClick={() => fetchRichSubmissions(activeClass._id)}
+                                         className="px-4 py-2 text-xs font-extrabold bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-colors flex items-center gap-2"
+                                      >
+                                         ↻ Refresh
+                                      </button>
                                    </div>
 
-                                </div>
-                            )}
+                                   {/* Loading state */}
+                                   {submissionsLoading && (
+                                      <div className="flex items-center justify-center py-16">
+                                         <div className="flex flex-col items-center gap-3">
+                                            <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                                            <p className="text-xs font-bold text-[var(--text-secondary)]">Loading student submissions…</p>
+                                         </div>
+                                      </div>
+                                   )}
 
-                            {/* ── TAB 4: GRADES & SUBMISSIONS ─────────────────────────────────── */}
-                            {activeTab === 'grades' && (
-                                <div className="bg-white dark:bg-[var(--bg-surface)] p-6 rounded-2xl border border-[var(--border-color)] shadow-sm space-y-4">
-                                   <h2 className="text-lg font-black tracking-tight text-[var(--text-primary)] border-b border-[var(--border-color)] pb-3">Student Submissions & Response Records</h2>
-                                   <div className="space-y-4">
-                                      {(detailedAssignments || []).map(assign => (
-                                         <div key={assign._id} className="border border-[var(--border-color)] rounded-2xl p-4 space-y-3">
-                                            <h3 className="font-extrabold text-sm text-[var(--text-primary)] flex items-center justify-between">
-                                               <span>{assign.title}</span>
-                                               <span className="text-xs font-bold text-purple-600 font-mono">{(assign.submissions || []).length} Turned In</span>
-                                            </h3>
-                                            <div className="space-y-2">
-                                               {(assign.submissions || []).map((sub, i) => {
-                                                  const st = (activeClass.students || []).find(s => s._id === sub.studentId);
-                                                  return (
-                                                     <div key={i} className="bg-[var(--bg-base)] p-3 rounded-xl border border-[var(--border-color)] text-xs flex justify-between items-start">
-                                                        <div className="space-y-1.5 flex-1">
-                                                           <div className="font-extrabold text-[var(--text-primary)]">{st?.name || 'Enrolled Student'} ({st?.email || 'Student'})</div>
-                                                           <div className="bg-white dark:bg-[var(--bg-surface)] p-2.5 rounded-lg font-mono text-[11px] border border-[var(--border-color)] text-[var(--text-primary)]">{sub.content}</div>
-                                                           {sub.attachment && (
-                                                              <a 
-                                                                 href={`http://localhost:5000${sub.attachment}`} 
-                                                                 target="_blank" 
-                                                                 rel="noreferrer" 
-                                                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-[11px] font-extrabold shadow-sm hover:bg-purple-700 transition-colors"
-                                                              >
-                                                                 <Download size={12} /> Open Document Attachment
-                                                              </a>
-                                                           )}
-                                                        </div>
-                                                        <span className="text-[10px] text-[var(--text-secondary)] font-semibold whitespace-nowrap ml-3">{sub.submittedAt ? new Date(sub.submittedAt).toLocaleDateString() : 'Recently'}</span>
-                                                     </div>
-                                                  );
-                                               })}
-                                               {(!assign.submissions || assign.submissions.length === 0) && (
-                                                  <p className="text-xs text-[var(--text-secondary)] italic">No student submissions turned in yet.</p>
+                                   {/* Assignments with submissions */}
+                                   {!submissionsLoading && (richSubmissions || []).map(assign => {
+                                      const submissionCount = (assign.submissions || []).length;
+                                      const lateCount = (assign.submissions || []).filter(s => s.status === 'late').length;
+                                      return (
+                                         <div key={assign._id} className="bg-white dark:bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl overflow-hidden shadow-sm">
+                                            {/* Assignment Header */}
+                                            <div className="bg-gradient-to-r from-purple-700 to-indigo-700 px-5 py-4 flex items-center justify-between">
+                                               <div>
+                                                  <h3 className="font-extrabold text-sm text-white">{assign.title}</h3>
+                                                  <p className="text-[11px] text-purple-200 mt-0.5">
+                                                     Due: {assign.deadline ? new Date(assign.deadline).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : 'No deadline'}
+                                                  </p>
+                                               </div>
+                                               <div className="flex gap-2">
+                                                  <span className="bg-white/20 text-white text-[11px] font-extrabold px-3 py-1 rounded-full">
+                                                     {submissionCount} Turned In
+                                                  </span>
+                                                  {lateCount > 0 && (
+                                                     <span className="bg-red-500/80 text-white text-[11px] font-extrabold px-3 py-1 rounded-full">
+                                                        {lateCount} Late
+                                                     </span>
+                                                  )}
+                                               </div>
+                                            </div>
+
+                                            {/* Submissions List */}
+                                            <div className="divide-y divide-[var(--border-color)]">
+                                               {submissionCount === 0 && (
+                                                  <div className="p-8 text-center text-xs text-[var(--text-secondary)] italic">No submissions turned in yet for this assignment.</div>
                                                )}
+                                               {(assign.submissions || []).map((sub, i) => (
+                                                  <div key={i} className="p-4 flex gap-4 items-start hover:bg-purple-50/30 dark:hover:bg-purple-500/5 transition-colors">
+                                                     {/* Student Avatar */}
+                                                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-black text-sm flex items-center justify-center flex-shrink-0">
+                                                        {(sub.studentName || 'S')[0].toUpperCase()}
+                                                     </div>
+
+                                                     {/* Submission Details */}
+                                                     <div className="flex-1 min-w-0 space-y-2">
+                                                        {/* Student identity row */}
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                           <span className="font-extrabold text-sm text-[var(--text-primary)]">{sub.studentName || 'Unknown Student'}</span>
+                                                           <span className="text-[11px] text-[var(--text-secondary)]">{sub.studentEmail}</span>
+                                                           {sub.learningProfile && sub.learningProfile !== 'DEFAULT' && (
+                                                              <span className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                                                                 {sub.learningProfile}
+                                                              </span>
+                                                           )}
+                                                           <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                                                              sub.status === 'graded' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                                                              sub.status === 'late'   ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                                                              'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                                           }`}>
+                                                              {sub.status === 'turned_in' ? '✓ Turned In' : sub.status === 'late' ? '⚠ Late' : '★ Graded'}
+                                                           </span>
+                                                           <span className="text-[10px] text-[var(--text-secondary)] ml-auto whitespace-nowrap">
+                                                              {sub.submittedAt ? new Date(sub.submittedAt).toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' }) : 'Recently'}
+                                                           </span>
+                                                        </div>
+
+                                                        {/* Document attachment resolution */}
+                                                        {(() => {
+                                                           let rawUrl = sub.attachmentUrl || sub.attachment || (typeof sub.content === 'string' && (sub.content.startsWith('http') || sub.content.includes('/uploads/')) ? sub.content : null);
+                                                           let docUrl = rawUrl;
+                                                           if (docUrl && !docUrl.startsWith('http://') && !docUrl.startsWith('https://')) {
+                                                              docUrl = `http://localhost:5000${docUrl.startsWith('/') ? '' : '/'}${docUrl}`;
+                                                           }
+                                                           const isContentUrl = typeof sub.content === 'string' && (sub.content.startsWith('http') || sub.content.includes('/uploads/'));
+                                                           return (
+                                                              <>
+                                                                 {sub.content && !isContentUrl && (
+                                                                    <div className="bg-gray-50 dark:bg-[var(--bg-base)] border border-[var(--border-color)] rounded-xl p-3 text-[11px] text-[var(--text-primary)] font-mono leading-relaxed max-h-24 overflow-y-auto">
+                                                                       {sub.content}
+                                                                    </div>
+                                                                 )}
+
+                                                                 {docUrl && (
+                                                                    <div className="flex items-center gap-3 mt-1.5">
+                                                                       <a
+                                                                          href={docUrl}
+                                                                          target="_blank"
+                                                                          rel="noreferrer"
+                                                                          className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-[11px] font-extrabold shadow-md hover:shadow-purple-500/30 transition-all cursor-pointer"
+                                                                       >
+                                                                          <Download size={14} />
+                                                                          Open Document
+                                                                       </a>
+                                                                       <span className="text-[10px] text-[var(--text-secondary)] font-mono truncate max-w-xs">
+                                                                          {sub.attachmentName || (docUrl.split('/').pop()) || 'Attached Document'}
+                                                                       </span>
+                                                                    </div>
+                                                                 )}
+                                                              </>
+                                                           );
+                                                        })()}
+                                                     </div>
+                                                  </div>
+                                               ))}
                                             </div>
                                          </div>
-                                      ))}
-                                   </div>
+                                      );
+                                   })}
+                                   {/* Empty state — no assignments at all */}
+                                   {!submissionsLoading && richSubmissions.length === 0 && (
+                                      <div className="text-center py-20 bg-white dark:bg-[var(--bg-surface)] rounded-3xl border border-[var(--border-color)]">
+                                         <ClipboardCheck size={48} className="mx-auto mb-4 text-purple-500/40" />
+                                         <h3 className="text-base font-extrabold text-[var(--text-primary)] mb-2">No Assignments Yet</h3>
+                                         <p className="text-xs text-[var(--text-secondary)]">Create an assignment in the Classwork tab. Student submissions will appear here.</p>
+                                      </div>
+                                   )}
                                 </div>
                             )}
 

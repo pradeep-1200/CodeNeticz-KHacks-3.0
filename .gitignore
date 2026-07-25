@@ -1,12 +1,12 @@
 # ============================================================
 #  ACLC — CodeNeticz KHacks 3.0
-#  .gitignore  (root — covers ALL sub-projects)
+#  Root .gitignore (covers all sub-projects)
 # ============================================================
 
-# ── 🔐 SECRETS & ENV (NEVER commit these) ──────────────────
+# ── 🔐 SECRETS & ENV ───────────────────────────────────────
 .env
 .env.*
-!.env.example        # keep the template
+!.env.example
 
 # ── 📦 NODE / NPM ──────────────────────────────────────────
 node_modules/
@@ -14,15 +14,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
 .pnp
 .pnp.js
-.yarn/cache
-.yarn/unplugged
-.yarn/build-state.yml
-.yarn/install-state.gz
 
 # ── ⚡ VITE / BUILD OUTPUT ──────────────────────────────────
+.vite/
 dist/
 dist-ssr/
 build/
@@ -40,14 +36,9 @@ __pycache__/
 .Python
 pip-wheel-metadata/
 .pytest_cache/
+word_cache.json
 
-# Specific venv paths used in the project
-cognitive_disability/dyslexia/venv/
-cognitive_disability/dyscalculia/venv/
-backend/ML/Dyslexia/venv/
-
-# ── 🤖 ML / AI MODEL FILES (too large for Git) ─────────────
-# HuggingFace cached models
+# ── 🤖 ML / AI MODEL CACHES ──────────────────────────────
 cache/
 models/
 *.bin
@@ -57,64 +48,24 @@ models/
 *.ckpt
 *.onnx
 
-# Word / embedding caches generated at runtime
-word_cache.json
-
-# ── 🗄️ DATABASE ────────────────────────────────────────────
-*.sqlite
-*.sqlite3
-*.db
-
-# Prisma generated client (regenerated from schema)
-backend/server/node_modules/.prisma/
-
-# ── 📁 UPLOADS (runtime user data, not source) ─────────────
+# ── 📁 UPLOADS & RUNTIME LOGS ──────────────────────────────
 uploads/
 backend/server/uploads/
 backend/public/
-
-# ── 📋 LOGS ────────────────────────────────────────────────
 logs/
 *.log
-backend/server/logs/
 
-# ── 🖥️ EDITOR & IDE ────────────────────────────────────────
+# ── 🖥️ IDE & OS JUNK ──────────────────────────────────────
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
 .idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# ── 🖼️ OS JUNK ─────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 desktop.ini
 ehthumbs.db
 
-# ── 🔧 MISC ────────────────────────────────────────────────
-# Large binary system files
-*.dll
-*.so
-*.dylib
-*.exe
-*.lib
-*.a
-*.obj
-*.o
-
-# Coverage reports
-coverage/
-*.lcov
-.nyc_output/
-
-# TypeScript build info
-*.tsbuildinfo
-
-# ── 📄 INTERNAL / GENERATED DOCS (not for public repo) ────
+# ── 📄 INTERNAL DOCS & SCRIPTS ──────────────────────────────
+create_p0_frontend.ps1
 TECHNICAL_OVERVIEW.md
-Deployment_Playbook/
 GIT_LARGE_FILES_FIX.md

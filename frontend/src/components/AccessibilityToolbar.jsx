@@ -4,8 +4,10 @@ import {
   AlignJustify, MoveHorizontal, Contrast, X
 } from 'lucide-react';
 import useSTT from '../hooks/useSTT';
+import { useToast } from '../context/ToastContext';
 
 const AccessibilityToolbar = () => {
+  const toast = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [settings, setSettings] = useState({
     textScale: 1,
@@ -89,7 +91,7 @@ const AccessibilityToolbar = () => {
         setIsSpeaking(true);
       }
     } else {
-      alert("Text-to-Speech not supported in this browser.");
+      toast.error("Text-to-Speech not supported in this browser.");
     }
   };
 

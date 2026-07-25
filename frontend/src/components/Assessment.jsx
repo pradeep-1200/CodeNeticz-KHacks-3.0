@@ -5,8 +5,10 @@ import {
    HelpCircle, Keyboard, Spline, Save, Trash2, Square, Eye, FileText, MessageSquare, Headphones
 } from 'lucide-react';
 import { useAdaptive } from '../context/AdaptiveContext';
+import { useToast } from '../context/ToastContext';
 
 const Assessment = () => {
+   const toast = useToast();
    const [difficulty, setDifficulty] = useState('easy');
    const [currentStep, setCurrentStep] = useState(0);
    const [answers, setAnswers] = useState({});
@@ -120,7 +122,7 @@ const Assessment = () => {
 
          }).catch(err => {
             console.error("Mic access denied", err);
-            alert("Microphone access is required.");
+            toast.error("Microphone access is required.");
          });
       }
    };
@@ -221,11 +223,11 @@ const Assessment = () => {
             // Also trigger a simplification automatically if the student wants
             setSimplifiedText('Text extracted from image. You can now use the Simplifier or Summarizer.');
          } else {
-            alert(data.message || 'OCR failed');
+            toast.error(data.message || 'OCR failed');
          }
       } catch (error) {
          console.error('OCR error:', error);
-         alert('OCR failed: Backend not reachable');
+         toast.error('OCR failed: Backend not reachable');
       }
       setAssistantLoading(false);
    };
@@ -233,7 +235,7 @@ const Assessment = () => {
    const handleTTS = () => {
       const textToSpeak = assistantText.trim() || currentQ.question;
       if (!textToSpeak) {
-         alert('Please enter some text or select a question first');
+         toast.warning('Please enter some text or select a question first');
          return;
       }
       handleSpeech(textToSpeak);

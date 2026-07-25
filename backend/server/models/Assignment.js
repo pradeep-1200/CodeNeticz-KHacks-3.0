@@ -31,8 +31,10 @@ const AssignmentSchema = new mongoose.Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User'
         },
-        content: String, // Text submission or file URL
-        attachment: String,
+        content: String,         // Text/voice answers
+        attachmentUrl: String,   // Cloudinary secure URL for the uploaded file
+        attachmentPublicId: String, // Cloudinary public_id (for deletion/management)
+        attachmentName: String,  // Original filename shown to faculty
         submittedAt: Date,
         status: {
             type: String,

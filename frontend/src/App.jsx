@@ -35,6 +35,12 @@ import PrelimsManager   from './pages/staff/PrelimsManager';
 import { StickyProvider }    from './context/StickyContext';
 import StickyContainer       from './components/sticky/StickyContainer';
 
+// Toast system
+import { ToastProvider }     from './context/ToastContext';
+
+// Gamification System
+import { GamificationProvider } from './context/GamificationContext';
+
 // A3 FIX: AdaptiveProvider was missing — Dashboard/PrelimsTest/Assessment all need it
 import { AdaptiveProvider }  from './context/AdaptiveContext';
 
@@ -79,8 +85,10 @@ const NotFound = () => (
 function App() {
   return (
     <AdaptiveProvider>
-      <StickyProvider>
-      <BrowserRouter>
+      <GamificationProvider>
+        <StickyProvider>
+          <ToastProvider>
+            <BrowserRouter>
         <TitleUpdater />
 
         {/* Global Accessibility Toolbar — always visible */}
@@ -128,7 +136,9 @@ function App() {
           </Routes>
         </div>
       </BrowserRouter>
+      </ToastProvider>
     </StickyProvider>
+    </GamificationProvider>
   </AdaptiveProvider>
   );
 }

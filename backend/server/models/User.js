@@ -16,8 +16,11 @@ const userSchema = new mongoose.Schema({
   levelTitle:   { type: String, default: 'Beginner' },
   xp:           { type: Number, default: 0 },
   nextLevelXp:  { type: Number, default: 1000 },
-  streak:       { type: Number, default: 0 },
-  badges:       [String],
+  streak:          { type: Number, default: 0 },
+  lastStreakDate:   { type: String, default: null }, // ISO date string 'YYYY-MM-DD'
+  badges:          [String],
+  completedLevels: [{ type: String }],
+
 
   // P2 — Prelims adaptive onboarding
   learningProfile: {
@@ -26,7 +29,22 @@ const userSchema = new mongoose.Schema({
     default: 'DEFAULT'
   },
   isPrelimsCompleted: { type: Boolean, default: false },
-  prelimsScore:       { type: Number, default: 0 }
+  prelimsScore:       { type: Number, default: 0 },
+
+  // Phase 1 — Per-domain support-profile vector
+  // Each band: 'none' (≥80%), 'mild' (50–79%), 'full' (<50%)
+  supportProfile: {
+    reading: { type: String, enum: ['none', 'mild', 'full'], default: 'none' },
+    writing:  { type: String, enum: ['none', 'mild', 'full'], default: 'none' },
+    math:     { type: String, enum: ['none', 'mild', 'full'], default: 'none' }
+  },
+
+  // Phase 1 — Accessibility preferences set during prelims preference questions
+  accessibilityPrefs: {
+    fontSize:  { type: String, enum: ['normal', 'large'], default: 'normal' },
+    contrast:  { type: String, enum: ['normal', 'high'],  default: 'normal' },
+    readAloud: { type: Boolean, default: false }
+  }
 
 }, { timestamps: true });
 

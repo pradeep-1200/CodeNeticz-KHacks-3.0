@@ -7,7 +7,7 @@ import {
     TrendingUp, ArrowRight, Sparkles,
     Headphones, Type, CheckCircle2,
     MoveRight, BookOpen, Brain,
-    ArrowUp, ArrowDown, Activity, Calendar
+    ArrowUp, ArrowDown, Activity, Calendar, Flame, Rocket
 } from 'lucide-react';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -34,8 +34,8 @@ const Report = () => {
                 {/* 1. OVERVIEW HEADER */}
                 <section className="bg-[var(--bg-surface)] p-8 rounded-3xl shadow-sm border border-[var(--border-color)] flex flex-col md:flex-row items-center justify-between gap-6 card-hover-lift">
                     <div className="flex items-center gap-6">
-                        <div className="w-20 h-20 bg-emerald-500/10 rounded-3xl flex items-center justify-center text-4xl border border-emerald-500/20 shadow-lg">
-                            🌱
+                        <div className="w-20 h-20 bg-emerald-500/10 rounded-3xl flex items-center justify-center border border-emerald-500/20 shadow-lg">
+                            <Sparkles className="text-emerald-500" size={36} />
                         </div>
                         <div>
                             <h1 className="text-3xl font-black mb-2 text-[var(--text-primary)]">Your learning journey is improving</h1>
@@ -44,7 +44,7 @@ const Report = () => {
                                 <span className="hidden md:inline">•</span>
                                 <span className="flex items-center gap-1"><span className="font-bold text-[var(--text-primary)]">Level:</span> {reportData?.userId?.levelTitle || 'Beginner'}</span>
                                 <span className="hidden md:inline">•</span>
-                                <span className="flex items-center gap-1"><span className="font-bold text-[var(--text-primary)]">Streak:</span> {reportData?.userId?.streak || 0} Days 🔥</span>
+                                <span className="flex items-center gap-1"><span className="font-bold text-[var(--text-primary)]">Streak:</span> {reportData?.userId?.streak || 0} Days <Flame size={16} className="text-amber-500 fill-amber-500 inline" /></span>
                             </div>
                         </div>
                     </div>
@@ -231,7 +231,7 @@ const Report = () => {
                 <section className="bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 rounded-3xl p-8 md:p-10 text-white shadow-xl overflow-hidden relative border border-indigo-500/30 card-hover-lift">
                     <div className="grid md:grid-cols-2 gap-8 relative z-10 w-full items-center">
                         <div className="space-y-4">
-                            <h2 className="text-2xl font-black">Recommended Next Steps 🚀</h2>
+                            <h2 className="text-2xl font-black flex items-center gap-2">Recommended Next Steps <Rocket size={22} className="text-indigo-400" /></h2>
                             <p className="text-indigo-200 text-sm font-medium">
                                 Based on your progress, continue practicing with your adaptive tools in the classroom.
                             </p>

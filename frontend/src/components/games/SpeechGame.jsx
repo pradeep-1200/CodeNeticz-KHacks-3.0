@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useGamification } from '../../context/GamificationContext';
 import { transcribeAudio } from '../../services/api';
 import { Mic, Square, Volume2, CheckCircle, RefreshCcw, Loader2 } from 'lucide-react';
 
-const SpeechGame = ({ promptText, expectedKeywords = [] }) => {
+const SpeechGame = ({ promptText, expectedKeywords = [], onComplete }) => {
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
@@ -17,64 +17,74 @@ const SpeechGame = ({ promptText, expectedKeywords = [] }) => {
                 window.mediaRecorder.stop();
             }
         } else {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-            window.mediaRecorder = mediaRecorder;
-            const chunks = [];
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                window.mediaRecorder = mediaRecorder;
+                const chunks = [];
 
-            mediaRecorder.ondataavailable = e => chunks.push(e.data);
-            mediaRecorder.onstop = async () => {
-                const blob = new Blob(chunks, { type: 'audio/webm' });
-                setIsProcessing(true);
+                mediaRecorder.ondataavailable = e => chunks.push(e.data);
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(chunks, { type: 'audio/webm' });
+                    setIsProcessing(true);
 
-                try {
-                    const result = await transcribeAudio(blob);
-                    if (result.success) {
-                        setTranscript(result.text);
-                        checkClarity(result.text);
+                    try {
+                        const result = await transcribeAudio(blob);
+                        if (result.success) {
+                            setTranscript(result.text);
+                            checkClarity(result.text);
+                        }
+                    } catch (err) {
+                        console.error("STT Error", err);
+                    } finally {
+                        setIsProcessing(false);
                     }
-                } catch (err) {
-                    console.error("STT Error", err);
-                } finally {
-                    setIsProcessing(false);
-                }
-            };
+                };
 
-            mediaRecorder.start();
-            setIsListening(true);
+                mediaRecorder.start();
+                setIsListening(true);
+            } catch (err) {
+                console.error("Mic error:", err);
+            }
         }
     };
 
     const checkClarity = (text) => {
-        // AI assists clarity, not correctness - logic
-        // We look for any of the expected keywords
         const found = expectedKeywords.some(k => text.toLowerCase().includes(k.toLowerCase()));
         if (found || expectedKeywords.length === 0) {
             setStatus('correct');
             addXP(250);
+            if (onComplete) onComplete(true);
         } else {
             setStatus('retry');
         }
     };
 
     const speakPrompt = () => {
-        const utterance = new SpeechSynthesisUtterance(promptText);
-        window.speechSynthesis.speak(utterance);
+        if ('speechSynthesis' in window && promptText) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(promptText);
+            window.speechSynthesis.speak(utterance);
+        }
     };
 
     return (
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-xl border-4 border-[var(--border-color)]">
-            <h3 className="text-2xl font-bold mb-6 text-center text-[var(--text-primary)]">
-                🗣️ Say it out loud!
+        <div className="bg-[var(--bg-surface)] p-8 rounded-3xl shadow-xl border-2 border-[var(--border-color)] space-y-6 animate-fade-in-up">
+            <h3 className="text-2xl font-black text-center text-[var(--text-primary)] tracking-tight">
+                🗣️ Voice Fluency Practice
             </h3>
 
             <div className="flex flex-col items-center gap-8">
                 {/* Prompt Card */}
-                <div className="w-full p-6 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border-2 border-blue-200 dark:border-blue-800 relative">
-                    <button onClick={speakPrompt} className="absolute -top-3 -right-3 p-2 bg-blue-600 text-white rounded-full shadow-lg">
-                        <Volume2 size={20} />
+                <div className="w-full p-6 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 relative shadow-sm">
+                    <button 
+                        onClick={speakPrompt} 
+                        className="absolute top-4 right-4 p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-md transition-all"
+                        title="Listen to prompt"
+                    >
+                        <Volume2 size={18} />
                     </button>
-                    <p className="text-xl font-medium text-blue-900 dark:text-blue-100 italic text-center">
+                    <p className="text-lg md:text-xl font-bold text-indigo-950 dark:text-indigo-100 text-center leading-relaxed pr-10">
                         "{promptText}"
                     </p>
                 </div>
@@ -84,45 +94,46 @@ const SpeechGame = ({ promptText, expectedKeywords = [] }) => {
                     <button
                         onClick={toggleListening}
                         disabled={isProcessing || status === 'correct'}
-                        className={`w-32 h-32 rounded-full flex items-center justify-center transition-all ${isListening
-                                ? 'bg-red-500 animate-pulse shadow-red-200'
+                        className={`w-28 h-28 rounded-full flex items-center justify-center transition-all ${
+                            isListening
+                                ? 'bg-rose-500 animate-pulse shadow-rose-500/30'
                                 : status === 'correct'
-                                    ? 'bg-green-500 shadow-green-200'
-                                    : 'bg-blue-600 hover:scale-105 shadow-blue-200'
-                            } shadow-2xl disabled:opacity-50`}
+                                    ? 'bg-emerald-500 shadow-emerald-500/30'
+                                    : 'bg-indigo-600 hover:bg-indigo-700 hover:scale-105 shadow-indigo-600/30'
+                        } shadow-2xl disabled:opacity-50 text-white`}
                     >
                         {isProcessing ? (
-                            <Loader2 size={48} className="text-white animate-spin" />
+                            <Loader2 size={40} className="animate-spin" />
                         ) : isListening ? (
-                            <Square size={48} className="text-white fill-current" />
+                            <Square size={36} className="fill-current" />
                         ) : status === 'correct' ? (
-                            <CheckCircle size={48} className="text-white" />
+                            <CheckCircle size={44} />
                         ) : (
-                            <Mic size={48} className="text-white" />
+                            <Mic size={44} />
                         )}
                     </button>
                 </div>
 
                 {/* Transcript Preview */}
-                <div className="w-full">
+                <div className="w-full space-y-3">
                     {transcript && (
-                        <div className="p-4 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-color)] text-center">
-                            <label className="text-xs font-bold text-gray-400 uppercase">Voice Preview</label>
-                            <p className="text-lg font-bold">{transcript}</p>
+                        <div className="p-4 bg-[var(--bg-base)] rounded-2xl border border-[var(--border-color)] text-center shadow-inner">
+                            <label className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider block mb-1">Voice Transcript</label>
+                            <p className="text-base font-extrabold text-[var(--text-primary)]">{transcript}</p>
                         </div>
                     )}
 
                     {status === 'correct' && (
-                        <div className="mt-6 text-center animate-bounce text-green-600 font-black text-2xl">
-                            Perfect expression! +250 XP
+                        <div className="text-center animate-bounce text-emerald-600 dark:text-emerald-400 font-black text-xl flex items-center justify-center gap-2">
+                            <CheckCircle size={24} /> Perfect expression! +250 XP
                         </div>
                     )}
 
                     {status === 'retry' && (
-                        <div className="mt-6 text-center text-orange-500 font-bold flex items-center justify-center gap-2">
-                            <span className="p-2 bg-orange-50 rounded-lg italic">We didn't quite catch that. Try speaking a bit louder!</span>
-                            <button onClick={() => setStatus('idle')} className="p-2 hover:bg-gray-100 rounded-full">
-                                <RefreshCcw size={16} />
+                        <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 rounded-xl text-xs font-bold flex items-center justify-between">
+                            <span>We didn't quite catch that. Try speaking a bit clearer!</span>
+                            <button onClick={() => setStatus('idle')} className="p-1 hover:bg-amber-500/20 rounded-lg">
+                                <RefreshCcw size={14} />
                             </button>
                         </div>
                     )}

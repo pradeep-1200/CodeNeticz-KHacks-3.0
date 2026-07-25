@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import LandingPage from '../../dyscalculia/components/LandingPage';
 import AnimationStage from '../../dyscalculia/components/AnimationStage';
-import axios from 'axios';
+import { solveMath } from '../../services/api';
 import { ChevronLeft } from 'lucide-react';
 import ErrorBoundary from '../../dyscalculia/components/ErrorBoundary';
 
@@ -9,8 +9,11 @@ import ErrorBoundary from '../../dyscalculia/components/ErrorBoundary';
 import '../../dyscalculia/components/LandingPage.css';
 import '../../dyscalculia/components/AnimationStage.css';
 
+import { useToast } from '../../context/ToastContext';
+
 // Component Logic
 function DyscalculiaTool() {
+    const toast = useToast();
     const [currentSolution, setCurrentSolution] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [view, setView] = useState('landing'); // 'landing' | 'player'
@@ -18,18 +21,18 @@ function DyscalculiaTool() {
     const handleSolve = async (question) => {
         setIsProcessing(true);
         try {
-            // Using the main backend API we just created
-            const res = await axios.post('http://localhost:5000/api/dyscalculia/solve', { question });
+            // Using central API service
+            const data = await solveMath(question);
 
-            if (res.data && !res.data.error) {
-                setCurrentSolution(res.data);
+            if (data && !data.error) {
+                setCurrentSolution(data);
                 setView('player'); // Switch to video player
             } else {
-                alert(res.data.message || "Could not understand that math problem.");
+                toast.error(data?.message || "Could not understand that math problem.");
             }
         } catch (error) {
             console.error(error);
-            alert("Something went wrong connecting to the brain.");
+            toast.error("Something went wrong connecting to the brain.");
         } finally {
             setIsProcessing(false);
         }

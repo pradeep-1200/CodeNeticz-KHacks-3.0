@@ -92,6 +92,9 @@ app.use('/api/v1/announcements', authenticate, require('./routes/announcements')
 app.use('/api/v1/prelims',       authenticate, require('./routes/prelims'));
 app.use('/api/v1/staff',         authenticate, require('./routes/staff'));
 
+// Serve uploaded files statically (for legacy uploaded files & document previews)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Health check (no auth)
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 

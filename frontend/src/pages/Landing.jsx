@@ -44,8 +44,8 @@ const Landing = () => {
       {/* Hero Section */}
       <main className="container mx-auto px-6 py-16 flex flex-col md:flex-row items-center gap-12">
         <div className="flex-1 space-y-6">
-          <div className="inline-block px-4 py-2 bg-green-100 text-green-800 rounded-full font-bold text-sm mb-2 border border-green-200">
-             ✨ This platform supports audio learning, flexible reading, and personalized pacing.
+          <div className="inline-flex items-center gap-1 px-4 py-2 bg-green-100 text-green-800 rounded-full font-bold text-sm mb-2 border border-green-200">
+             <Sparkles size={16} className="text-green-600" /> This platform supports audio learning, flexible reading, and personalized pacing.
           </div>
           <h1 className="text-5xl md:text-6xl font-extrabold leading-tight text-[var(--text-primary)]">
             Accessible Learning <br />

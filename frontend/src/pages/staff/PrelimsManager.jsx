@@ -1,177 +1,291 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Trash2, Sparkles } from 'lucide-react';
-import { getPrelimsQuestions, addPrelimsQuestion, deletePrelimsQuestion } from '../../services/api';
+import { Plus, Trash2, BookOpen, Layers, CheckCircle } from 'lucide-react';
+import StaffNavbar from '../../components/StaffNavbar';
+import { getPrelimsQuestions, addPrelimsQuestion, deletePrelimsQuestion, seedPrelimsQuestions } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 
 const PrelimsManager = () => {
+    const toast = useToast();
     const [questions, setQuestions] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [isSeeding, setIsSeeding] = useState(false);
     const [newQuestion, setNewQuestion] = useState({
         question: '',
-        type: 'text',
+        domain: 'reading',
+        type: 'mcq',
+        passage: '',
+        options: ['', '', '', ''],
         correctAnswer: '',
-        patternTag: 'default',
-        disabilityMarker: 'DEFAULT'
+        sequenceItems: '',
+        isUngraded: false
     });
 
     useEffect(() => {
-        fetchQuestions();
+        loadQuestions();
     }, []);
 
-    const fetchQuestions = async () => {
+    const loadQuestions = async () => {
+        setLoading(true);
         try {
             const data = await getPrelimsQuestions();
             setQuestions(data || []);
         } catch (err) {
-            console.error('Failed to fetch prelims questions', err);
+            console.error("Failed to load prelims questions:", err);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleAdd = async (e) => {
+    const handleCreate = async (e) => {
         e.preventDefault();
-        if (!newQuestion.question || !newQuestion.correctAnswer) return alert("Please fill in all mandatory fields (*)");
+        if (!newQuestion.question || (!newQuestion.correctAnswer && !newQuestion.isUngraded)) {
+            return toast.warning("Please fill in question and correct answer!");
+        }
+
         try {
-            await addPrelimsQuestion(newQuestion);
-            setNewQuestion({ question: '', type: 'text', correctAnswer: '', patternTag: 'default', disabilityMarker: 'DEFAULT' });
-            fetchQuestions();
+            const payload = {
+                ...newQuestion,
+                sequenceItems: newQuestion.type === 'sequence' 
+                    ? newQuestion.sequenceItems.split(',').map(s => s.trim()).filter(Boolean)
+                    : []
+            };
+            await addPrelimsQuestion(payload);
+            toast.success("Question added!");
+            setNewQuestion({
+                question: '',
+                domain: 'reading',
+                type: 'mcq',
+                passage: '',
+                options: ['', '', '', ''],
+                correctAnswer: '',
+                sequenceItems: '',
+                isUngraded: false
+            });
+            loadQuestions();
         } catch (err) {
-            console.error('Failed to add question', err);
+            console.error("Failed to add question:", err);
+            toast.error("Error adding question.");
         }
     };
 
-    const autoGenerate = () => {
-        const patternMap = [
-            { tag: 'reading-speed', marker: 'DYSLEXIA', q: "Spell the word 'Accommodation'.", a: "Accommodation", type: "text" },
-            { tag: 'attention', marker: 'DYSGRAPHIA', q: "Type the following sentence accurately: 'The quick brown fox jumps over the lazy dog.'", a: "The quick brown fox jumps over the lazy dog.", type: "text" },
-            { tag: 'numerical', marker: 'DYSCALCULIA', q: "What is 15% of 200?", a: "30", type: "math" },
-            { tag: 'logical', marker: 'DEFAULT', q: "What is the capital of France?", a: "Paris", type: "text" }
-        ];
-
-        const gen = patternMap[Math.floor(Math.random() * patternMap.length)];
-        setNewQuestion({
-            question: gen.q,
-            type: gen.type,
-            correctAnswer: gen.a,
-            patternTag: gen.tag,
-            disabilityMarker: gen.marker
+    const handleDelete = (id) => {
+        toast.confirm({
+            title: "Delete Question",
+            message: "Are you sure you want to delete this question from the diagnostic pool?",
+            onConfirm: async () => {
+                try {
+                    await deletePrelimsQuestion(id);
+                    toast.success("Question deleted.");
+                    loadQuestions();
+                } catch (err) {
+                    console.error("Failed to delete question:", err);
+                    toast.error("Failed to delete question.");
+                }
+            }
         });
     };
 
-    const handleDelete = async (id) => {
-        try {
-            await deletePrelimsQuestion(id);
-            fetchQuestions();
-        } catch (err) {
-            console.error('Failed to delete question', err);
-        }
+    const handleSeed = () => {
+        toast.confirm({
+            title: "Seed Diagnostic Questions",
+            message: "Seed 28 standard domain-structured questions? This will reset existing questions.",
+            onConfirm: async () => {
+                setIsSeeding(true);
+                try {
+                    await seedPrelimsQuestions();
+                    toast.success("Prelims questions seeded successfully!");
+                    loadQuestions();
+                } catch (err) {
+                    console.error("Failed to seed:", err);
+                    toast.error("Failed to seed questions.");
+                } finally {
+                    setIsSeeding(false);
+                }
+            }
+        });
     };
 
     return (
-        <div className="p-4 md:p-8 max-w-4xl mx-auto text-[var(--text-primary)] animate-fade-in-up">
-            <h1 className="text-3xl font-bold mb-2 font-outfit tracking-tight">Manage Prelims Questions</h1>
-            <p className="text-xs text-[var(--text-secondary)] mb-6 font-medium">Fields marked with <span className="text-red-500 font-bold">*</span> are mandatory.</p>
-            
-            <form onSubmit={handleAdd} className="bg-[var(--bg-surface)] p-6 rounded-2xl border border-[var(--border-color)] mb-8 shadow-xl">
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-semibold">Add New Question</h2>
-                    <button 
-                        type="button" 
-                        onClick={autoGenerate}
-                        className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl font-bold text-xs transition-all hover:scale-105 flex items-center gap-2 shadow-sm"
+        <div className="min-h-screen bg-slate-50 text-slate-900 pb-20">
+            <StaffNavbar />
+
+            <div className="container mx-auto px-6 py-8 max-w-6xl space-y-8">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h1 className="text-3xl font-black text-slate-800">Prelims Assessment Manager</h1>
+                        <p className="text-xs text-slate-500 font-bold mt-1">Configure domain diagnostic questions (Reading, Writing, Math, Preferences)</p>
+                    </div>
+                    <button
+                        onClick={handleSeed}
+                        disabled={isSeeding}
+                        className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-2"
                     >
-                        <Sparkles size={16} /> Auto-Generate via AI
+                        <Layers size={16} />
+                        {isSeeding ? "Seeding..." : "🌱 Seed 28 Standard Questions"}
                     </button>
                 </div>
-                <div className="grid grid-cols-1 gap-4 text-xs font-bold">
-                    <div>
-                        <label className="block text-[var(--text-secondary)] mb-1 uppercase tracking-wider">
-                            Question Prompt <span className="text-red-500">*</span>
-                        </label>
-                        <input 
-                            type="text" 
-                            placeholder="e.g. Spell the word 'Accommodation' accurately." 
-                            className="w-full p-3 bg-[var(--bg-base)] rounded-xl border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-purple-500 font-medium"
-                            value={newQuestion.question}
-                            onChange={(e) => setNewQuestion({...newQuestion, question: e.target.value})}
-                            required
-                        />
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-[var(--text-secondary)] mb-1 uppercase tracking-wider">
-                                Cognitive Support Category <span className="text-red-500">*</span>
-                            </label>
-                            <select 
-                                className="w-full p-3 bg-[var(--bg-base)] rounded-xl border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none"
-                                value={newQuestion.patternTag}
-                                onChange={(e) => {
-                                    const tag = e.target.value;
-                                    const markerMap = {
-                                        'reading-speed': 'DYSLEXIA',
-                                        'numerical': 'DYSCALCULIA',
-                                        'attention': 'DYSGRAPHIA',
-                                        'default': 'DEFAULT'
-                                    };
-                                    setNewQuestion({
-                                        ...newQuestion, 
-                                        patternTag: tag,
-                                        disabilityMarker: markerMap[tag] || 'DEFAULT'
-                                    });
-                                }}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Add Question Form */}
+                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-fit space-y-4">
+                        <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <Plus size={18} className="text-indigo-600" /> Add Diagnostic Question
+                        </h2>
+
+                        <form onSubmit={handleCreate} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Domain</label>
+                                <select
+                                    className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl font-bold text-sm"
+                                    value={newQuestion.domain}
+                                    onChange={(e) => setNewQuestion({ ...newQuestion, domain: e.target.value })}
+                                >
+                                    <option value="reading">📖 Reading</option>
+                                    <option value="writing">✏️ Writing</option>
+                                    <option value="math">🔢 Math</option>
+                                    <option value="preference">⚙️ Preference (Ungraded)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Question Type</label>
+                                <select
+                                    className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl font-bold text-sm"
+                                    value={newQuestion.type}
+                                    onChange={(e) => setNewQuestion({ ...newQuestion, type: e.target.value })}
+                                >
+                                    <option value="mcq">Multiple Choice (MCQ)</option>
+                                    <option value="sequence">Sequence / Ordering</option>
+                                    <option value="text">Text Input / STT</option>
+                                    <option value="math">Math Input</option>
+                                </select>
+                            </div>
+
+                            {newQuestion.domain === 'reading' && (
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Reading Passage (Optional)</label>
+                                    <textarea
+                                        className="w-full p-3 bg-indigo-50 border border-indigo-200 text-indigo-950 rounded-xl text-xs font-medium"
+                                        placeholder="Passage text displayed above question..."
+                                        rows="3"
+                                        value={newQuestion.passage}
+                                        onChange={(e) => setNewQuestion({ ...newQuestion, passage: e.target.value })}
+                                    />
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Question Prompt</label>
+                                <textarea
+                                    className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium"
+                                    placeholder="e.g., What is 24 + 37?"
+                                    rows="2"
+                                    value={newQuestion.question}
+                                    onChange={(e) => setNewQuestion({ ...newQuestion, question: e.target.value })}
+                                    required
+                                />
+                            </div>
+
+                            {newQuestion.type === 'mcq' && (
+                                <div className="space-y-2">
+                                    <label className="block text-xs font-bold text-slate-500 uppercase">MCQ Options</label>
+                                    {newQuestion.options.map((opt, i) => (
+                                        <input
+                                            key={i}
+                                            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                                            placeholder={`Option ${i + 1}`}
+                                            value={opt}
+                                            onChange={(e) => {
+                                                const newOpts = [...newQuestion.options];
+                                                newOpts[i] = e.target.value;
+                                                setNewQuestion({ ...newQuestion, options: newOpts });
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
+                            {newQuestion.type === 'sequence' && (
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Sequence Items (Comma Separated)</label>
+                                    <input
+                                        className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono"
+                                        placeholder="e.g. the, dog, barked, loudly"
+                                        value={newQuestion.sequenceItems}
+                                        onChange={(e) => setNewQuestion({ ...newQuestion, sequenceItems: e.target.value })}
+                                    />
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Correct Answer</label>
+                                <input
+                                    className="w-full p-3 bg-green-50 border border-green-200 text-green-800 font-bold rounded-xl text-sm"
+                                    placeholder="Exact correct answer string"
+                                    value={newQuestion.correctAnswer}
+                                    onChange={(e) => setNewQuestion({ ...newQuestion, correctAnswer: e.target.value })}
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition-all shadow-md"
                             >
-                                <option value="default">General Knowledge (Default)</option>
-                                <option value="reading-speed">Reading Speed / Spelling (Reading Support)</option>
-                                <option value="attention">Typing / Voice Focus (Voice Support)</option>
-                                <option value="numerical">Math / Logic (Number Support)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-[var(--text-secondary)] mb-1 uppercase tracking-wider">
-                                Response Format <span className="text-red-500">*</span>
-                            </label>
-                            <select 
-                                className="w-full p-3 bg-[var(--bg-base)] rounded-xl border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none"
-                                value={newQuestion.type}
-                                onChange={(e) => setNewQuestion({...newQuestion, type: e.target.value})}
-                            >
-                                <option value="text">Short Text</option>
-                                <option value="math">Math Expression</option>
-                            </select>
-                        </div>
+                                Add Question
+                            </button>
+                        </form>
                     </div>
 
-                    <div>
-                        <label className="block text-[var(--text-secondary)] mb-1 uppercase tracking-wider">
-                            Expected Answer <span className="text-red-500">*</span>
-                        </label>
-                        <input 
-                            type="text" 
-                            placeholder="e.g. Accommodation" 
-                            className="w-full p-3 bg-[var(--bg-base)] rounded-xl border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-purple-500 font-medium"
-                            value={newQuestion.correctAnswer}
-                            onChange={(e) => setNewQuestion({...newQuestion, correctAnswer: e.target.value})}
-                            required
-                        />
-                    </div>
+                    {/* Question List Grouped by Domain */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {loading ? (
+                            <div className="text-center py-12 font-bold text-slate-400">Loading questions...</div>
+                        ) : questions.length === 0 ? (
+                            <div className="text-center p-12 bg-white rounded-2xl border border-dashed border-slate-300 text-slate-400 font-bold">
+                                No questions found. Click "Seed 28 Standard Questions" above to populate!
+                            </div>
+                        ) : (
+                            ['reading', 'writing', 'math', 'preference'].map(dom => {
+                                const domQs = questions.filter(q => (q.domain || 'reading') === dom);
+                                if (domQs.length === 0) return null;
+                                return (
+                                    <div key={dom} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                                        <h3 className="font-black text-slate-800 uppercase tracking-wider text-xs flex items-center justify-between">
+                                            <span>
+                                                {dom === 'reading' ? '📖 Reading Domain' : dom === 'writing' ? '✏️ Writing Domain' : dom === 'math' ? '🔢 Math Domain' : '⚙️ Preferences (Ungraded)'}
+                                            </span>
+                                            <span className="text-slate-400 font-semibold">{domQs.length} questions</span>
+                                        </h3>
 
-                    <button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white p-3.5 rounded-xl font-bold flex justify-center items-center gap-2 transition-all shadow-md mt-2">
-                        <PlusCircle size={18} /> Add Question Item
-                    </button>
+                                        <div className="space-y-3">
+                                            {domQs.map((q, idx) => (
+                                                <div key={q._id || idx} className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-start gap-4">
+                                                    <div>
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className="text-[10px] font-black uppercase bg-slate-200 px-2 py-0.5 rounded text-slate-600">
+                                                                {q.type}
+                                                            </span>
+                                                            {q.passage && (
+                                                                <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">
+                                                                    Passage Included
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <h4 className="font-bold text-sm text-slate-800">{q.question}</h4>
+                                                        <p className="text-xs text-green-600 font-bold mt-1">Ans: {q.correctAnswer}</p>
+                                                    </div>
+                                                    <button onClick={() => handleDelete(q._id)} className="text-red-400 hover:text-red-600 p-1">
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
                 </div>
-            </form>
-
-            <div className="space-y-4">
-                <h2 className="text-xl font-semibold mb-4">Existing Questions ({(questions || []).length})</h2>
-                {(questions || []).map((q, idx) => (
-                    <div key={q._id || idx} className="bg-[var(--bg-surface)] p-5 rounded-2xl flex justify-between items-center border border-[var(--border-color)] shadow-sm hover:shadow-md transition-shadow">
-                        <div>
-                            <p className="font-semibold text-lg">{q.question}</p>
-                            <p className="text-xs opacity-70 mt-1">Tag: <span className="font-mono bg-[var(--bg-base)] px-2 py-0.5 rounded text-xs">{q.patternTag || q.disabilityMarker}</span> | Expected Answer: <span className="font-mono bg-[var(--bg-base)] px-2 py-0.5 rounded text-xs">{q.correctAnswer}</span></p>
-                        </div>
-                        <button onClick={() => handleDelete(q._id)} className="text-red-400 hover:text-red-300 p-2 rounded-lg hover:bg-red-500/10 transition-colors" title="Delete Question">
-                            <Trash2 size={20} />
-                        </button>
-                    </div>
-                ))}
             </div>
         </div>
     );

@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import StaffNavbar from '../../components/StaffNavbar';
 import { UploadCloud, FileText, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { getTeacherClasses, uploadMaterial } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 
 const UploadMaterial = () => {
     const navigate = useNavigate();
+    const toast = useToast();
     const [classes, setClasses] = useState([]);
     const [selectedClass, setSelectedClass] = useState('');
     const [file, setFile] = useState(null);
@@ -44,7 +46,7 @@ const UploadMaterial = () => {
 
     const handleUpload = async (e) => {
         if (e) e.preventDefault();
-        if (!file || !selectedClass || !title) return alert("Please fill in all mandatory fields (*)");
+        if (!file || !selectedClass || !title) return toast.warning("Please fill in all mandatory fields (*)");
 
         setIsUploading(true);
         const formData = new FormData();
@@ -57,14 +59,14 @@ const UploadMaterial = () => {
             const data = await uploadMaterial(formData);
 
             if (data.success || data.material) {
-                alert("Material uploaded successfully!");
+                toast.success("Material uploaded successfully!");
                 navigate('/staff/dashboard');
             } else {
-                alert("Upload failed: " + (data.message || 'Error processing file'));
+                toast.error("Upload failed: " + (data.message || 'Error processing file'));
             }
         } catch (err) {
             console.error(err);
-            alert(err.response?.data?.message || err.message || "Upload failed due to server error.");
+            toast.error(err.response?.data?.message || err.message || "Upload failed due to server error.");
         } finally {
             setIsUploading(false);
         }

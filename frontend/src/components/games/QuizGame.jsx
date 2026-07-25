@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useGamification } from '../../context/GamificationContext';
 import { Volume2, CheckCircle, XCircle, Info } from 'lucide-react';
 
-const QuizGame = ({ question, options, correctAnswer, hint, type = 'mcq' }) => {
+const QuizGame = ({ question, options, correctAnswer, hint, type = 'mcq', onComplete }) => {
     const [selected, setSelected] = useState(null);
     const [status, setStatus] = useState('idle'); // idle, correct, wrong
     const [showHint, setShowHint] = useState(false);
@@ -15,79 +15,89 @@ const QuizGame = ({ question, options, correctAnswer, hint, type = 'mcq' }) => {
         if (option === correctAnswer) {
             setStatus('correct');
             addXP(150);
+            if (onComplete) onComplete(true);
         } else {
             setStatus('wrong');
             // Allow retry after a small delay
             setTimeout(() => {
                 setStatus('idle');
                 setSelected(null);
-            }, 1000);
+            }, 1200);
         }
     };
 
     const speak = (text) => {
-        if ('speechSynthesis' in window) {
+        if ('speechSynthesis' in window && text) {
             window.speechSynthesis.cancel();
             window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
         }
     };
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-8 animate-fade-in-up">
             {/* Question Card */}
-            <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-xl border-4 border-b-8 border-[var(--border-color)] relative">
+            <div className="bg-[var(--bg-surface)] p-8 rounded-3xl shadow-xl border-2 border-[var(--border-color)] relative">
                 <button
                     onClick={() => speak(question)}
-                    className="absolute top-4 right-4 p-2 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors"
+                    className="absolute top-6 right-6 p-2.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-full transition-all border border-indigo-500/20"
+                    title="Read Question Aloud"
                 >
-                    <Volume2 size={24} />
+                    <Volume2 size={22} />
                 </button>
 
-                <h2 className="text-3xl font-bold text-[var(--text-primary)] leading-tight mb-4 pr-12">
+                <h2 className="text-2xl md:text-3xl font-black text-[var(--text-primary)] leading-tight mb-4 pr-14 tracking-tight">
                     {question}
                 </h2>
 
                 {hint && (
-                    <button
-                        onClick={() => setShowHint(!showHint)}
-                        className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-blue-600 transition-colors"
-                    >
-                        <Info size={16} /> {showHint ? hint : "Need a hint?"}
-                    </button>
+                    <div className="pt-2">
+                        <button
+                            onClick={() => setShowHint(!showHint)}
+                            className="inline-flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline transition-colors bg-indigo-500/10 px-3.5 py-1.5 rounded-full border border-indigo-500/20"
+                        >
+                            <Info size={14} /> {showHint ? hint : "Need a hint?"}
+                        </button>
+                    </div>
                 )}
             </div>
 
             {/* Options Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(options || []).map((option) => (
-                    <button
-                        key={option}
-                        disabled={status === 'correct'}
-                        onClick={() => handleSelect(option)}
-                        className={`p-6 rounded-2xl text-left border-4 border-b-8 font-bold text-xl transition-all relative overflow-hidden ${selected === option
-                                ? status === 'correct'
-                                    ? 'bg-green-100 border-green-500 text-green-700'
-                                    : 'bg-red-100 border-red-500 text-red-700 animate-shake'
-                                : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 hover:border-gray-400'
-                            }`}
-                    >
-                        <div className="flex justify-between items-center">
-                            <span>{option}</span>
-                            {selected === option && status === 'correct' && <CheckCircle className="text-green-600" />}
-                            {selected === option && status === 'wrong' && <XCircle className="text-red-600" />}
-                        </div>
-                    </button>
-                ))}
+                {(options || []).map((option) => {
+                    const isSelected = selected === option;
+                    let optionStyle = "bg-[var(--bg-surface)] text-[var(--text-primary)] border-[var(--border-color)] hover:border-indigo-500/50 hover:bg-indigo-50/40 dark:hover:bg-slate-800/60";
+                    
+                    if (isSelected) {
+                        if (status === 'correct') {
+                            optionStyle = "bg-emerald-500/15 border-emerald-500 text-emerald-700 dark:text-emerald-300 shadow-md shadow-emerald-500/10 font-black";
+                        } else if (status === 'wrong') {
+                            optionStyle = "bg-rose-500/15 border-rose-500 text-rose-700 dark:text-rose-300 shadow-md shadow-rose-500/10 animate-shake font-black";
+                        }
+                    }
+
+                    return (
+                        <button
+                            key={option}
+                            disabled={status === 'correct'}
+                            onClick={() => handleSelect(option)}
+                            className={`p-6 rounded-2xl text-left border-2 font-bold text-lg md:text-xl transition-all relative overflow-hidden flex items-center justify-between ${optionStyle}`}
+                        >
+                            <span className="leading-snug pr-4">{option}</span>
+                            {isSelected && status === 'correct' && <CheckCircle className="text-emerald-500 shrink-0" size={24} />}
+                            {isSelected && status === 'wrong' && <XCircle className="text-rose-500 shrink-0" size={24} />}
+                        </button>
+                    );
+                })}
             </div>
 
-            {/* Feedback Footer */}
+            {/* Feedback Banner */}
             {status === 'correct' && (
-                <div className="bg-green-500 p-6 rounded-2xl text-white flex justify-between items-center shadow-lg transform scale-105 transition-transform duration-300">
+                <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 rounded-2xl text-white flex justify-between items-center shadow-xl border border-emerald-400/30 transform scale-102 transition-transform">
                     <div>
-                        <h4 className="text-2xl font-black">You are amazing!</h4>
-                        <p className="font-bold opacity-90">+150 XP earned!</p>
+                        <h4 className="text-2xl font-black">Spot on! Excellent work!</h4>
+                        <p className="font-extrabold text-emerald-100 mt-0.5">+150 XP earned!</p>
                     </div>
-                    <CheckCircle size={48} className="animate-bounce" />
+                    <CheckCircle size={44} className="animate-bounce text-emerald-200" />
                 </div>
             )}
         </div>

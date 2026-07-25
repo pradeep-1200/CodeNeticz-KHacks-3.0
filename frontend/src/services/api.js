@@ -99,9 +99,19 @@ export const completeActivity = async (type, difficulty, accuracy) => {
   return data;
 };
 
+export const completeLevelApi = async ({ levelId, title, xpReward, accuracy, xpMultiplier }) => {
+  const { data } = await api.post('/student/complete-level', { levelId, title, xpReward, accuracy, xpMultiplier });
+  return data;
+};
+
 // ── Staff API ─────────────────────────────────────────────────
 export const getStaffDashboardData = async () => {
   const { data } = await api.get('/staff/dashboard');
+  return data;
+};
+
+export const getStaffReportsData = async () => {
+  const { data } = await api.get('/staff/reports');
   return data;
 };
 
@@ -152,6 +162,12 @@ export const getLevels = async () => {
   return data;
 };
 
+// Phase 2: profile-filtered levels for student — backend reads JWT + supportProfile
+export const getLevelsForStudent = async () => {
+  const { data } = await api.get('/levels/for-student');
+  return data;
+};
+
 export const getLevelById = async (id) => {
   const { data } = await api.get(`/levels/${id}`);
   return data;
@@ -164,6 +180,12 @@ export const createLevel = async (levelData) => {
 
 export const deleteLevel = async (id) => {
   const { data } = await api.delete(`/levels/${id}`);
+  return data;
+};
+
+// Phase 2: smart template AI task generation based on targetProfile + difficulty + taskType
+export const generateTaskWithAI = async ({ targetProfile, difficulty, taskType }) => {
+  const { data } = await api.post('/levels/ai-generate', { targetProfile, difficulty, taskType });
   return data;
 };
 
@@ -186,6 +208,24 @@ export const addPrelimsQuestion = async (questionData) => {
 
 export const deletePrelimsQuestion = async (id) => {
   const { data } = await api.delete(`/prelims/questions/${id}`);
+  return data;
+};
+
+// Phase 1: seed sample structured prelims questions (staff only)
+export const seedPrelimsQuestions = async () => {
+  const { data } = await api.get('/prelims/seed');
+  return data;
+};
+
+// Phase 1: get a student's support profile (staff side view)
+export const getStudentSupportProfile = async (studentId) => {
+  const { data } = await api.get(`/prelims/student/${studentId}`);
+  return data;
+};
+
+// Phase 1: staff override of a student's support profile bands
+export const overrideStudentSupportProfile = async (studentId, { supportProfile, accessibilityPrefs }) => {
+  const { data } = await api.put(`/prelims/student/${studentId}/override`, { supportProfile, accessibilityPrefs });
   return data;
 };
 
@@ -251,16 +291,31 @@ export const getAllMaterials = async () => {
 };
 
 // ── Assignments API ───────────────────────────────────────────
+// getAssignmentsByClass: Fetches all assignments for a class (used in Classwork tab)
 export const getAssignmentsByClass = async (classId) => {
   const { data } = await api.get(`/assignments/class/${classId}`);
   return data;
 };
 
+// getClassSubmissions: Fetches assignments WITH student names pre-populated.
+// WHY a separate route: The basic list route returns raw ObjectIds for studentId.
+// This route returns enriched submissions with studentName + studentEmail already
+// attached — done in a single batch query on the backend (no N+1 issue).
+// Used exclusively in the Staff → Grades & Submissions tab.
+export const getClassSubmissions = async (classId) => {
+  const { data } = await api.get(`/assignments/class/${classId}/submissions`);
+  return data;
+};
+
+// createAssignment: Staff creates an assignment. Triggers student notifications.
 export const createAssignment = async (assignmentData) => {
   const { data } = await api.post('/assignments/create', assignmentData);
   return data;
 };
 
+// submitAssignment: Student turns in work.
+// Handles both FormData (file upload) and plain JSON (text answers).
+// WHY FormData check: Axios needs a different Content-Type header for file uploads.
 export const submitAssignment = async (submissionData) => {
   if (submissionData instanceof FormData) {
     const { data } = await api.post('/assignments/submit', submissionData, {

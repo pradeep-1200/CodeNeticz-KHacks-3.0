@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useGamification } from '../../context/GamificationContext';
-import { Volume2, CheckCircle, RefreshCcw, ArrowRight } from 'lucide-react';
+import { Volume2, CheckCircle, RefreshCcw } from 'lucide-react';
+import { useToast } from '../../context/ToastContext';
 
 const JumbledSentenceGame = ({ sentence, onComplete }) => {
+    const toast = useToast();
     const [words, setWords] = useState([]);
     const [userOrder, setUserOrder] = useState([]);
     const [isCorrect, setIsCorrect] = useState(false);
     const { addXP } = useGamification();
 
     useEffect(() => {
+        if (!sentence) return;
         const wordList = sentence.split(' ').map((text, id) => ({ id, text }));
         // Shuffle words
         const shuffled = [...wordList].sort(() => Math.random() - 0.5);
@@ -32,15 +35,14 @@ const JumbledSentenceGame = ({ sentence, onComplete }) => {
         if (currentSentence === sentence) {
             setIsCorrect(true);
             addXP(200);
-            if (onComplete) onComplete();
+            if (onComplete) onComplete(true);
         } else {
-            // Shake effect or feedback
-            alert("Almost there! Try rearranging the words.");
+            toast.warning("Almost there! Try rearranging the words into a complete sentence.");
         }
     };
 
     const speakWord = (text) => {
-        if ('speechSynthesis' in window) {
+        if ('speechSynthesis' in window && text) {
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
             window.speechSynthesis.speak(utterance);
@@ -48,32 +50,36 @@ const JumbledSentenceGame = ({ sentence, onComplete }) => {
     };
 
     return (
-        <div className="p-8 bg-white dark:bg-slate-900 rounded-3xl border-4 border-dashed border-[var(--border-color)] shadow-inner">
-            <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-[var(--text-secondary)]">
+        <div className="p-6 md:p-8 bg-[var(--bg-surface)] rounded-3xl border-2 border-[var(--border-color)] shadow-xl space-y-6 animate-fade-in-up">
+            <h3 className="text-lg md:text-xl font-black flex items-center gap-2 text-[var(--text-primary)] tracking-tight">
                 🧩 Arrange the words to form a meaningful sentence
             </h3>
 
             {/* Target Area (Container for chosen words) */}
-            <div className="min-h-[100px] p-6 bg-[var(--bg-secondary)] rounded-2xl border-2 border-blue-200 dark:border-blue-900 flex flex-wrap gap-3 mb-8 shadow-sm">
+            <div className="min-h-[110px] p-6 bg-[var(--bg-base)] rounded-2xl border-2 border-indigo-500/30 flex flex-wrap items-center gap-3 shadow-inner">
                 {userOrder.length === 0 && (
-                    <div className="text-gray-400 font-medium italic animate-pulse">
-                        Tap words below to build your sentence...
+                    <div className="text-[var(--text-secondary)] font-semibold text-sm italic animate-pulse">
+                        Tap the word tiles below to build your sentence...
                     </div>
                 )}
-                {userOrder.map((word, index) => (
+                {userOrder.map((word) => (
                     <button
                         key={`user-word-${word.id}`}
                         onClick={() => handleWordClick(word)}
-                        className={`px-4 py-3 bg-[var(--note-blue)] text-blue-900 rounded-xl font-bold text-lg shadow-md hover:-translate-y-1 transition-all border-b-4 border-blue-300 flex items-center gap-2 ${isCorrect ? 'border-green-500 bg-green-100' : ''}`}
+                        className={`px-4 py-2.5 rounded-xl font-bold text-base shadow-sm transition-all border flex items-center gap-2 ${
+                            isCorrect 
+                                ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/50' 
+                                : 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/20'
+                        }`}
                     >
                         {word.text}
-                        <Volume2 size={14} className="opacity-40" onClick={(e) => { e.stopPropagation(); speakWord(word.text); }} />
+                        <Volume2 size={14} className="opacity-60 hover:opacity-100" onClick={(e) => { e.stopPropagation(); speakWord(word.text); }} />
                     </button>
                 ))}
             </div>
 
             {/* Word Bank */}
-            <div className="flex flex-wrap gap-3 justify-center mb-10">
+            <div className="flex flex-wrap gap-3 justify-center py-2">
                 {words.map((word) => {
                     const isUsed = userOrder.some(w => w.id === word.id);
                     return (
@@ -81,10 +87,11 @@ const JumbledSentenceGame = ({ sentence, onComplete }) => {
                             key={`bank-word-${word.id}`}
                             disabled={isUsed || isCorrect}
                             onClick={() => handleWordClick(word)}
-                            className={`px-5 py-3 rounded-xl font-bold text-lg transition-all border-b-4 ${isUsed
-                                    ? 'bg-gray-100 dark:bg-slate-800 text-gray-400 border-gray-200 cursor-not-allowed opacity-50'
-                                    : 'bg-[var(--note-yellow)] text-yellow-900 border-yellow-300 hover:shadow-lg active:translate-y-1 active:border-b-0 shadow-md'
-                                }`}
+                            className={`px-5 py-3 rounded-2xl font-bold text-base transition-all border ${
+                                isUsed
+                                    ? 'bg-[var(--bg-base)] text-[var(--text-secondary)] border-[var(--border-color)] opacity-40 cursor-not-allowed'
+                                    : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:scale-105 active:scale-95 shadow-sm'
+                            }`}
                         >
                             {word.text}
                         </button>
@@ -93,31 +100,30 @@ const JumbledSentenceGame = ({ sentence, onComplete }) => {
             </div>
 
             {/* Actions */}
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center pt-4 border-t border-[var(--border-color)]">
                 <button
                     onClick={() => setUserOrder([])}
-                    disabled={isCorrect}
-                    className="flex items-center gap-2 px-6 py-3 bg-gray-100 dark:bg-slate-800 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-colors"
+                    disabled={isCorrect || userOrder.length === 0}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-[var(--bg-base)] text-[var(--text-secondary)] border border-[var(--border-color)] rounded-xl font-extrabold text-xs hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-40"
                 >
-                    <RefreshCcw size={18} /> Reset
+                    <RefreshCcw size={14} /> Reset
                 </button>
 
                 {!isCorrect ? (
                     <button
                         onClick={checkAnswer}
                         disabled={userOrder.length !== words.length}
-                        className={`px-8 py-3 rounded-xl font-bold text-xl shadow-lg transition-all flex items-center gap-2 ${userOrder.length === words.length
-                                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            }`}
+                        className={`px-8 py-3 rounded-2xl font-black text-sm shadow-lg transition-all ${
+                            userOrder.length === words.length
+                                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:scale-105 active:scale-95'
+                                : 'bg-[var(--bg-base)] text-[var(--text-secondary)] border border-[var(--border-color)] cursor-not-allowed opacity-50'
+                        }`}
                     >
-                        Check My Work
+                        Check Answer
                     </button>
                 ) : (
-                    <div className="flex items-center gap-4 animate-bounce">
-                        <span className="text-green-600 font-bold text-2xl flex items-center gap-2">
-                            <CheckCircle size={32} /> Perfect! +200 XP
-                        </span>
+                    <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-black text-lg animate-bounce">
+                        <CheckCircle size={24} /> Perfect! +200 XP
                     </div>
                 )}
             </div>

@@ -1,0 +1,57 @@
+﻿generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Institution {
+  id            String   @id @default(cuid())
+  name          String
+  staffDomain   String
+  studentDomain String
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  @@map("institutions")
+}
+
+model GamificationStat {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  xp               Int      @default(0)
+  level            Int      @default(1)
+  world            Int      @default(1)
+  gems             Int      @default(0)
+  streak           Int      @default(0)
+  longestStreak    Int      @default(0)
+  lastActiveAt     DateTime?
+  completedLevelIds String[] @default([])
+  updatedAt        DateTime @updatedAt
+  @@map("gamification_stats")
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String
+  name        String
+  description String
+  xpReward    Int      @default(0)
+  gemsReward  Int      @default(0)
+  iconCode    String
+  earnedAt    DateTime @default(now())
+  @@map("achievements")
+}
+
+model Leaderboard {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  xp        Int      @default(0)
+  level     Int      @default(1)
+  rank      Int?
+  period    String   @default("all-time")
+  updatedAt DateTime @updatedAt
+  @@map("leaderboard")
+}

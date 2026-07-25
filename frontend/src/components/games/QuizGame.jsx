@@ -59,7 +59,7 @@ const QuizGame = ({ question, options, correctAnswer, hint, type = 'mcq' }) => {
 
             {/* Options Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {options.map((option) => (
+                {(options || []).map((option) => (
                     <button
                         key={option}
                         disabled={status === 'correct'}

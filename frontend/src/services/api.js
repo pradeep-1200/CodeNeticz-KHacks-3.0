@@ -1,178 +1,257 @@
-const BASE_URL = 'http://localhost:5000/api';
+import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
 
-export const loginUser = async (email, password) => {
-    try {
-        const response = await fetch(`${BASE_URL}/auth/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password, type: 'student' }), // Defaulting to student for now as per Login.jsx
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+
+// ── Base Axios instance ────────────────────────────────────────
+const api = axios.create({
+  baseURL: BASE_URL,
+  withCredentials: true,   // Send httpOnly refresh token cookie
+  timeout: 15000,
+  headers: { 'Content-Type': 'application/json' }
+});
+
+// ── Request interceptor: attach access token ──────────────────
+api.interceptors.request.use(
+  (config) => {
+    const token = useAuthStore.getState().accessToken;
+    if (token) config.headers['Authorization'] = `Bearer ${token}`;
+    return config;
+  },
+  (err) => Promise.reject(err)
+);
+
+// ── Response interceptor: auto-refresh on 401 ────────────────
+let isRefreshing = false;
+let waitQueue    = [];
+
+api.interceptors.response.use(
+  (res) => res,
+  async (err) => {
+    const original = err.config;
+
+    if (err.response?.status === 401 && !original._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          waitQueue.push({ resolve, reject });
+        }).then(token => {
+          original.headers['Authorization'] = `Bearer ${token}`;
+          return api(original);
         });
-        return await response.json();
-    } catch (error) {
-        console.error("Login failed:", error);
-        return { success: false, message: "Network error" };
-    }
-};
+      }
 
-export const registerUser = async (userData) => {
-    try {
-        const response = await fetch(`${BASE_URL}/auth/register`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(userData),
-        });
-        return await response.json();
-    } catch (error) {
-        console.error("Registration failed:", error);
-        return { success: false, message: "Network error" };
-    }
-};
+      original._retry = true;
+      isRefreshing = true;
 
+      try {
+        const { data } = await axios.post(`${BASE_URL}/auth/refresh`, {}, { withCredentials: true });
+        const newToken = data.data.accessToken;
+        useAuthStore.getState().setToken(newToken);
+        waitQueue.forEach(({ resolve }) => resolve(newToken));
+        waitQueue = [];
+        original.headers['Authorization'] = `Bearer ${newToken}`;
+        return api(original);
+      } catch (refreshErr) {
+        waitQueue.forEach(({ reject }) => reject(refreshErr));
+        waitQueue = [];
+        useAuthStore.getState().clearAuth();
+        window.location.href = '/login';
+        return Promise.reject(refreshErr);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    return Promise.reject(err);
+  }
+);
+
+export default api;
+
+// ─────────────────────────────────────────────────────────────
+// A5 FIX: All API call functions centralized here
+// Pages import these directly instead of writing fetch/axios calls inline
+// ─────────────────────────────────────────────────────────────
+
+// ── Student API ───────────────────────────────────────────────
 export const getDashboardData = async () => {
-    try {
-        const response = await fetch(`${BASE_URL}/student/dashboard`);
-        if (!response.ok) throw new Error('Failed to fetch dashboard data');
-        return await response.json();
-    } catch (error) {
-        console.error("Dashboard fetch failed:", error);
-        return null;
-    }
-};
-
-export const getStaffDashboardData = async () => {
-    try {
-        const response = await fetch(`${BASE_URL}/staff/dashboard`);
-        if (!response.ok) throw new Error('Failed to fetch staff dashboard data');
-        return await response.json();
-    } catch (error) {
-        console.error("Staff Dashboard fetch failed:", error);
-        return null;
-    }
+  const { data } = await api.get('/student/dashboard');
+  return data;
 };
 
 export const getMaterials = async () => {
-    try {
-        const response = await fetch(`${BASE_URL}/student/classroom`);
-        if (!response.ok) throw new Error('Failed to fetch materials');
-        const data = await response.json();
-        return data.materials || [];
-    } catch (error) {
-        console.error("Classroom fetch failed:", error);
-        return [];
-    }
+  const { data } = await api.get('/student/classroom');
+  return data.materials || [];
 };
 
 export const getReportData = async () => {
-    try {
-        const response = await fetch(`${BASE_URL}/student/report`);
-        if (!response.ok) throw new Error('Failed to fetch report');
-        return await response.json();
-    } catch (error) {
-        console.error("Report fetch failed:", error);
-        return null;
-    }
+  const { data } = await api.get('/student/report');
+  return data;
 };
 
 export const getAssessmentQuestions = async () => {
-    try {
-        const response = await fetch(`${BASE_URL}/student/assessment`);
-        if (!response.ok) throw new Error('Failed to fetch assessment');
-        return await response.json();
-    } catch (error) {
-        console.error("Assessment fetch failed:", error);
-        return [];
-    }
+  const { data } = await api.get('/student/assessment');
+  return data;
 };
 
-export const completeActivity = async (type, difficulty) => {
-    try {
-        const response = await fetch(`${BASE_URL}/student/complete-activity`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type, difficulty, accuracy })
-        });
-        return await response.json();
-    } catch (error) {
-        console.error("Completion failed:", error);
-        return { success: false };
-    }
+export const completeActivity = async (type, difficulty, accuracy) => {
+  const { data } = await api.post('/student/complete-activity', { type, difficulty, accuracy });
+  return data;
 };
 
-export const transcribeAudio = async (audioBlob) => {
-    try {
-        const formData = new FormData();
-        formData.append('audio', audioBlob, 'recording.webm');
-
-        const response = await fetch(`${BASE_URL}/stt/process`, {
-            method: 'POST',
-            body: formData, // No Content-Type header needed, browser handles multipart
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || 'Transcription failed');
-        }
-        return await response.json();
-    } catch (error) {
-        console.error("STT failed:", error);
-        return { success: false, message: error.message };
-    }
+// ── Staff API ─────────────────────────────────────────────────
+export const getStaffDashboardData = async () => {
+  const { data } = await api.get('/staff/dashboard');
+  return data;
 };
 
+// ── Classes API ───────────────────────────────────────────────
+export const getTeacherClasses = async () => {
+  const { data } = await api.get('/classes/teacher');
+  return data.classes || [];
+};
+
+export const getStudentClasses = async () => {
+  const { data } = await api.get('/classes/student');
+  return data.classes || [];
+};
+
+export const createClass = async (classData) => {
+  const { data } = await api.post('/classes/create', classData);
+  return data;
+};
+
+export const joinClass = async (code) => {
+  const { data } = await api.post('/classes/join', { code });
+  return data;
+};
+
+export const inviteStudent = async (email, classId) => {
+  const { data } = await api.post('/classes/invite', { email, classId });
+  return data;
+};
+
+export const getStudentInvites = async () => {
+  const { data } = await api.get('/classes/invites');
+  return data.invites || [];
+};
+
+export const respondToInvite = async (inviteId, status) => {
+  const { data } = await api.post('/classes/invite/respond', { inviteId, status });
+  return data;
+};
+
+export const assignLevelToClass = async (classId, levelId) => {
+  const { data } = await api.post('/classes/assign-level', { classId, levelId });
+  return data;
+};
+
+// ── Levels API ────────────────────────────────────────────────
+export const getLevels = async () => {
+  const { data } = await api.get('/levels');
+  return data;
+};
+
+export const getLevelById = async (id) => {
+  const { data } = await api.get(`/levels/${id}`);
+  return data;
+};
+
+export const createLevel = async (levelData) => {
+  const { data } = await api.post('/levels', levelData);
+  return data;
+};
+
+export const deleteLevel = async (id) => {
+  const { data } = await api.delete(`/levels/${id}`);
+  return data;
+};
+
+// ── Prelims API ───────────────────────────────────────────────
 export const getPrelimsQuestions = async () => {
-    try {
-        const response = await fetch(`${BASE_URL}/prelims/questions`);
-        if (!response.ok) throw new Error('Failed to fetch prelims questions');
-        return await response.json();
-    } catch (error) {
-        console.error("Prelims fetch failed:", error);
-        throw error;
-    }
+  const { data } = await api.get('/prelims/questions');
+  return data;
+};
+
+export const submitPrelimsTest = async (answers) => {
+  // P2 FIX: userId comes from JWT on backend — no need to pass it from frontend
+  const { data } = await api.post('/prelims/submit', { answers });
+  return data;
 };
 
 export const addPrelimsQuestion = async (questionData) => {
-    try {
-        const response = await fetch(`${BASE_URL}/prelims/questions`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(questionData)
-        });
-        if (!response.ok) throw new Error('Failed to add prelims question');
-        return await response.json();
-    } catch (error) {
-        console.error("Add prelims question failed:", error);
-        throw error;
-    }
+  const { data } = await api.post('/prelims/questions', questionData);
+  return data;
 };
 
 export const deletePrelimsQuestion = async (id) => {
-    try {
-        const response = await fetch(`${BASE_URL}/prelims/questions/${id}`, {
-            method: 'DELETE',
-        });
-        if (!response.ok) throw new Error('Failed to delete prelims question');
-        return await response.json();
-    } catch (error) {
-        console.error("Delete prelims question failed:", error);
-        throw error;
-    }
+  const { data } = await api.delete(`/prelims/questions/${id}`);
+  return data;
 };
 
-export const submitPrelimsTest = async (userId, answers) => {
-    try {
-        const response = await fetch(`${BASE_URL}/prelims/submit`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, answers })
-        });
-        if (!response.ok) throw new Error('Failed to submit prelims test');
-        return await response.json();
-    } catch (error) {
-        console.error("Submit prelims test failed:", error);
-        throw error;
-    }
+// ── Notifications API ─────────────────────────────────────────
+export const getNotifications = async () => {
+  const { data } = await api.get('/notifications');
+  return data;
+};
+
+// ── STT API ───────────────────────────────────────────────────
+export const transcribeAudio = async (audioBlob) => {
+  const form = new FormData();
+  form.append('audio', audioBlob, 'recording.webm');
+  const { data } = await api.post('/stt/process', form, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return data;
+};
+
+// ── Dyslexia AI API ───────────────────────────────────────────
+export const summarizeText = async (text) => {
+  const { data } = await api.post('/dyslexia/summarize', { text });
+  return data;
+};
+
+export const simplifyText = async (text) => {
+  const { data } = await api.post('/dyslexia/simplify', { text });
+  return data;
+};
+
+export const extractKeywords = async (text) => {
+  const { data } = await api.post('/dyslexia/keywords', { text });
+  return data;
+};
+
+// ── Dyscalculia API ───────────────────────────────────────────
+export const solveMath = async (question) => {
+  const { data } = await api.post('/dyscalculia/solve', { question });
+  return data;
+};
+
+// ── Materials API ─────────────────────────────────────────────
+export const uploadMaterial = async (formData) => {
+  const { data } = await api.post('/materials/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return data;
+};
+
+export const getAllMaterials = async () => {
+  const { data } = await api.get('/materials');
+  return data;
+};
+
+// ── Assignments API ───────────────────────────────────────────
+export const getAssignmentsByClass = async (classId) => {
+  const { data } = await api.get(`/assignments/class/${classId}`);
+  return data;
+};
+
+export const createAssignment = async (assignmentData) => {
+  const { data } = await api.post('/assignments/create', assignmentData);
+  return data;
+};
+
+export const submitAssignment = async (submissionData) => {
+  const { data } = await api.post('/assignments/submit', submissionData);
+  return data;
 };

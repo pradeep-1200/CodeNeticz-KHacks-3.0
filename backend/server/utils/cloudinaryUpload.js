@@ -4,7 +4,7 @@ const streamifier = require('streamifier');
 const uploadToCloudinary = (fileBuffer) => {
     console.log('Uploading to Cloudinary, buffer size:', fileBuffer.length);
     return new Promise((resolve, reject) => {
-        console.log('Cloudinary config:', { cloud_name: process.env.CLOUDINARY_CLOUD_NAME, api_key: process.env.CLOUDINARY_API_KEY });
+        console.log('Cloudinary upload requested:', { cloud_name: process.env.CLOUDINARY_CLOUD_NAME });
         const uploadStream = cloudinary.uploader.upload_stream(
             {
                 resource_type: "auto",

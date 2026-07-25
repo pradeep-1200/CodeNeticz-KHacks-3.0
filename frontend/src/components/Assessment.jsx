@@ -487,7 +487,7 @@ const Assessment = () => {
             <div className="flex-1">
                {currentQ.type === 'mcq' ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     {currentQ.options.map((opt) => (
+                     {(currentQ.options || []).map((opt) => (
                         <button
                            key={opt}
                            onClick={() => handleAnswer(opt)}

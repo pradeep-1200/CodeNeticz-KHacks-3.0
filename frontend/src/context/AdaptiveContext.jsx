@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAccessibilityStore } from '../store/accessibilityStore';
 
 const AdaptiveContext = createContext();
 
@@ -40,9 +41,35 @@ export const AdaptiveProvider = ({ children }) => {
         }
     }, [profile, isPrelimsCompleted]);
 
-    const updateProfile = (newProfile, completedStatus = true) => {
-        setProfile(newProfile);
+    const updateProfile = (rawInput, completedStatus = true) => {
+        let normalizedProfile = 'DEFAULT';
+        let a11yMode = 'standard';
+
+        const inputStr = (rawInput || '').toLowerCase().replace('_', '-');
+
+        if (inputStr.includes('dyslexia') || inputStr.includes('reading')) {
+            normalizedProfile = 'DYSLEXIA';
+            a11yMode = 'reading-support';
+        } else if (inputStr.includes('dyscalculia') || inputStr.includes('number')) {
+            normalizedProfile = 'DYSCALCULIA';
+            a11yMode = 'number-support';
+        } else if (inputStr.includes('dysgraphia') || inputStr.includes('voice')) {
+            normalizedProfile = 'DYSGRAPHIA';
+            a11yMode = 'voice-input';
+        } else if (inputStr.includes('focus')) {
+            normalizedProfile = 'DEFAULT';
+            a11yMode = 'focus';
+        }
+
+        setProfile(normalizedProfile);
         setIsPrelimsCompleted(completedStatus);
+
+        // B3 FIX: Synchronize with Accessibility Store
+        try {
+            useAccessibilityStore.getState().setMode(a11yMode);
+        } catch (e) {
+            console.warn("Could not sync accessibility store mode", e);
+        }
     };
 
     return (

@@ -1,18 +1,102 @@
-# Logs
-logs
-*.log
+# ============================================================
+#  ACLC — CodeNeticz KHacks 3.0
+#  .gitignore  (root — covers ALL sub-projects)
+# ============================================================
+
+# ── 🔐 SECRETS & ENV (NEVER commit these) ──────────────────
+.env
+.env.*
+!.env.example        # keep the template
+
+# ── 📦 NODE / NPM ──────────────────────────────────────────
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+.pnp
+.pnp.js
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
 
-node_modules
-dist
-dist-ssr
+# ── ⚡ VITE / BUILD OUTPUT ──────────────────────────────────
+dist/
+dist-ssr/
+build/
 *.local
 
-# Large binary files
+# ── 🐍 PYTHON ──────────────────────────────────────────────
+venv/
+.venv/
+env/
+*.egg-info/
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+.Python
+pip-wheel-metadata/
+.pytest_cache/
+
+# Specific venv paths used in the project
+cognitive_disability/dyslexia/venv/
+cognitive_disability/dyscalculia/venv/
+backend/ML/Dyslexia/venv/
+
+# ── 🤖 ML / AI MODEL FILES (too large for Git) ─────────────
+# HuggingFace cached models
+cache/
+models/
+*.bin
+*.safetensors
+*.h5
+*.pt
+*.ckpt
+*.onnx
+
+# Word / embedding caches generated at runtime
+word_cache.json
+
+# ── 🗄️ DATABASE ────────────────────────────────────────────
+*.sqlite
+*.sqlite3
+*.db
+
+# Prisma generated client (regenerated from schema)
+backend/server/node_modules/.prisma/
+
+# ── 📁 UPLOADS (runtime user data, not source) ─────────────
+uploads/
+backend/server/uploads/
+backend/public/
+
+# ── 📋 LOGS ────────────────────────────────────────────────
+logs/
+*.log
+backend/server/logs/
+
+# ── 🖥️ EDITOR & IDE ────────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ── 🖼️ OS JUNK ─────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# ── 🔧 MISC ────────────────────────────────────────────────
+# Large binary system files
 *.dll
 *.so
 *.dylib
@@ -22,34 +106,15 @@ dist-ssr
 *.obj
 *.o
 
-# Python
-venv/
-Dyslexia/venv/
-__pycache__/
-*.pyc
-*.pyo
-.env
-*.env
+# Coverage reports
+coverage/
+*.lcov
+.nyc_output/
 
-# ML models and cache
-cache/
-*.bin
-*.safetensors
-*.h5
-*.pt
-*.ckpt
+# TypeScript build info
+*.tsbuildinfo
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
+# ── 📄 INTERNAL / GENERATED DOCS (not for public repo) ────
 TECHNICAL_OVERVIEW.md
-
-Deployment_Playbook/*
+Deployment_Playbook/
+GIT_LARGE_FILES_FIX.md

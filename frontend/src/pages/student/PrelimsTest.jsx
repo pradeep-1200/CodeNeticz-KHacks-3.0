@@ -9,6 +9,7 @@ const PrelimsTest = () => {
     const [answers, setAnswers] = useState({});
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [isRecording, setIsRecording] = useState(false);
+    const [mediaRecorder, setMediaRecorder] = useState(null); // B1 FIX: Added missing mediaRecorder state
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
@@ -23,7 +24,7 @@ const PrelimsTest = () => {
         setError(null);
         try {
             const data = await getPrelimsQuestions();
-            setQuestions(data);
+            setQuestions(data || []);
         } catch (err) {
             console.error('Failed to fetch prelims questions', err);
             setError(err.message || 'Failed to connect to the server.');
@@ -51,10 +52,14 @@ const PrelimsTest = () => {
             recorder.ondataavailable = (e) => chunks.push(e.data);
             recorder.onstop = async () => {
                 const blob = new Blob(chunks, { type: 'audio/webm' });
-                const res = await transcribeAudio(blob);
-                if (res.success) {
-                    const qId = questions[currentQuestionIndex]._id;
-                    handleAnswerChange(qId, res.text, true);
+                try {
+                    const res = await transcribeAudio(blob);
+                    if (res.success && res.text) {
+                        const qId = questions[currentQuestionIndex]._id;
+                        handleAnswerChange(qId, res.text, true);
+                    }
+                } catch (err) {
+                    console.error("Audio transcription failed", err);
                 }
             };
 
@@ -74,25 +79,33 @@ const PrelimsTest = () => {
     };
 
     const readQuestion = (text) => {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 0.9;
-        window.speechSynthesis.speak(utterance);
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel(); // Stop ongoing speech
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+        }
     };
 
     const handleSubmit = async () => {
         try {
-            const userId = localStorage.getItem('userId') || 'demo-user-id'; // Assuming demo
             const formattedAnswers = Object.entries(answers).map(([questionId, data]) => ({
                 questionId,
                 answer: data.answer || '',
                 usedStt: data.usedStt || false
             }));
 
-            const result = await submitPrelimsTest(userId, formattedAnswers);
-            updateProfile(result.profile, true);
+            // B1 FIX: submitPrelimsTest gets userId from JWT on backend; only answers are passed
+            const result = await submitPrelimsTest(formattedAnswers);
+            
+            // Map server's suggestedMode or learningProfile to frontend profile
+            const profileToSet = result.suggestedMode || result.profile || 'DEFAULT';
+            updateProfile(profileToSet, true);
+            
             navigate('/student/dashboard');
         } catch (err) {
             console.error("Failed to submit prelims", err);
+            setError("Failed to submit test. Please try again.");
         }
     };
 
@@ -100,7 +113,7 @@ const PrelimsTest = () => {
         return (
             <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-8">
                 <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p className="text-xl">Loading Assessment...</p>
+                <p className="text-xl font-bold">Loading Assessment...</p>
             </div>
         );
     }
@@ -122,7 +135,7 @@ const PrelimsTest = () => {
         );
     }
 
-    if (questions.length === 0) {
+    if (!questions || questions.length === 0) {
         return (
             <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-8">
                 <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 text-center max-w-md shadow-xl">
@@ -147,27 +160,27 @@ const PrelimsTest = () => {
 
     return (
         <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center p-8">
-            <h1 className="text-4xl font-outfit font-bold mb-8">Cognitive Prelims Assessment</h1>
+            <h1 className="text-4xl font-outfit font-bold mb-8 tracking-tight">Cognitive Prelims Assessment</h1>
             
             <div className="bg-slate-800 p-8 rounded-2xl w-full max-w-2xl border border-slate-700 shadow-xl">
                 <div className="flex justify-between items-center mb-6">
-                    <span className="text-slate-400">Question {currentQuestionIndex + 1} of {questions.length}</span>
+                    <span className="text-slate-400 font-medium">Question {currentQuestionIndex + 1} of {questions.length}</span>
                     <button 
                         onClick={() => readQuestion(currentQuestion.question)}
-                        className="text-blue-400 hover:text-blue-300 flex items-center gap-2"
+                        className="text-blue-400 hover:text-blue-300 flex items-center gap-2 font-medium bg-slate-700/50 px-3 py-1.5 rounded-lg transition-colors"
                     >
-                        <Volume2 size={20} /> Read Aloud
+                        <Volume2 size={18} /> Read Aloud
                     </button>
                 </div>
 
-                <h2 className="text-2xl font-semibold mb-6">{currentQuestion.question}</h2>
+                <h2 className="text-2xl font-semibold mb-6 text-slate-100">{currentQuestion.question}</h2>
 
                 <div className="mb-6 relative">
                     {currentQuestion.type === 'text' || currentQuestion.type === 'math' ? (
                         <textarea 
                             value={currentAnswer}
                             onChange={(e) => handleAnswerChange(currentQuestion._id, e.target.value)}
-                            className="w-full bg-slate-900 p-4 rounded-xl border border-slate-700 min-h-[120px] focus:outline-none focus:border-blue-500"
+                            className="w-full bg-slate-900 p-4 rounded-xl border border-slate-700 min-h-[120px] text-white focus:outline-none focus:border-blue-500 transition-colors"
                             placeholder="Type your answer here..."
                         />
                     ) : (
@@ -175,17 +188,18 @@ const PrelimsTest = () => {
                             type="text"
                             value={currentAnswer}
                             onChange={(e) => handleAnswerChange(currentQuestion._id, e.target.value)}
-                            className="w-full bg-slate-900 p-4 rounded-xl border border-slate-700 focus:outline-none focus:border-blue-500"
+                            className="w-full bg-slate-900 p-4 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                            placeholder="Type your answer here..."
                         />
                     )}
 
                     <div className="absolute right-4 bottom-4">
                         {isRecording ? (
-                            <button onClick={stopRecording} className="bg-red-500 p-3 rounded-full animate-pulse">
+                            <button onClick={stopRecording} className="bg-red-500 p-3 rounded-full animate-pulse text-white hover:bg-red-600 transition-colors" title="Stop Recording">
                                 <Square size={20} />
                             </button>
                         ) : (
-                            <button onClick={startRecording} className="bg-blue-600 hover:bg-blue-500 p-3 rounded-full">
+                            <button onClick={startRecording} className="bg-blue-600 hover:bg-blue-500 p-3 rounded-full text-white transition-colors" title="Record Voice Answer">
                                 <Mic size={20} />
                             </button>
                         )}
@@ -196,7 +210,7 @@ const PrelimsTest = () => {
                     <button 
                         disabled={currentQuestionIndex === 0}
                         onClick={() => setCurrentQuestionIndex(prev => prev - 1)}
-                        className="px-6 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 disabled:opacity-50"
+                        className="px-6 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                         Previous
                     </button>
@@ -204,14 +218,14 @@ const PrelimsTest = () => {
                     {currentQuestionIndex === questions.length - 1 ? (
                         <button 
                             onClick={handleSubmit}
-                            className="px-6 py-2 rounded-lg bg-green-600 hover:bg-green-500 font-semibold"
+                            className="px-6 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 text-white font-semibold shadow-lg shadow-green-900/30 transition-all hover:scale-105"
                         >
                             Submit Assessment
                         </button>
                     ) : (
                         <button 
                             onClick={() => setCurrentQuestionIndex(prev => prev + 1)}
-                            className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 font-semibold"
+                            className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-lg shadow-blue-900/30 transition-all hover:scale-105"
                         >
                             Next
                         </button>

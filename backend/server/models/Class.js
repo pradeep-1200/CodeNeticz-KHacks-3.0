@@ -4,6 +4,8 @@ const classSchema = new mongoose.Schema({
     name: { type: String, required: true },
     section: { type: String },
     subject: { type: String, required: true },
+    room: { type: String, trim: true },
+    capacity: { type: Number, min: 1, default: 60 },
     code: { type: String, unique: true, required: true }, // Join Code
     teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     students: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],

@@ -12,7 +12,7 @@ const NotificationSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['assignment', 'announcement', 'grade', 'info'],
+        enum: ['assignment', 'announcement', 'grade', 'info', 'invitation'],
         default: 'info'
     },
     link: String, // URL to redirect

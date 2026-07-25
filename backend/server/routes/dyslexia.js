@@ -7,13 +7,12 @@ const fs = require('fs');
 // MOCK MODE - Set to true to test without Python
 const MOCK_MODE = false;
 
-// Path to virtual environment Python (fallback to system python if venv doesn't exist)
-// FORCE SYSTEM PYTHON to avoid Raghul_Sekar path issues
-const pythonCommand = 'python';
+
+const pythonCommand = process.env.PYTHON_EXECUTABLE || 'python';
 
 console.log('Dyslexia Routes - Mock Mode:', MOCK_MODE);
 if (!MOCK_MODE) {
-    console.log('Python command (FORCED):', pythonCommand);
+    console.log('Using Python command:', pythonCommand);
 }
 
 // POST /api/dyslexia/summarize
@@ -29,7 +28,7 @@ router.post('/summarize', async (req, res) => {
         }
 
         // REAL MODE - Use Python script
-        const pythonScript = path.join(__dirname, '../../../Dyslexia/bart_summarization.py');
+        const pythonScript = path.join(__dirname, '../../../cognitive_disability/dyslexia/bart_summarization.py');
         console.log('Spawning Python for Summarization:', pythonCommand, pythonScript);
         const python = spawn(pythonCommand, [pythonScript]);
 
@@ -103,7 +102,7 @@ router.post('/simplify', async (req, res) => {
         }
 
         // REAL MODE - Use Python script
-        const pythonScript = path.join(__dirname, '../../../Dyslexia/simplify_wrapper.py');
+        const pythonScript = path.join(__dirname, '../../../cognitive_disability/dyslexia/simplify_wrapper.py');
         console.log(`[Simplify] Spawning Python: ${pythonCommand} ${pythonScript}`);
 
         const python = spawn(pythonCommand, [pythonScript]);

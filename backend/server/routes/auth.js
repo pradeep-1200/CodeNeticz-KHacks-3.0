@@ -1,89 +1,69 @@
+// P1 FIX: Legacy auth routes — now use real Argon2 hashing + real JWT
+// These routes exist alongside /api/v1/auth for backward compatibility
+// They delegate to auth.service.js for the actual business logic
 const express = require('express');
-const router = express.Router();
-const User = require('../models/User');
+const router  = express.Router();
 
-router.post('/login', async (req, res) => {
-    const { email, password, type } = req.body;
-    try {
-        // In a real app, hash passwords. Here we compare plain text as per demo requirements/simplicity
-        const user = await User.findOne({ email });
+const authService = require('../src/modules/auth/auth.service');
+const logger      = require('../src/utils/logger');
 
-        if (user && user.password === password) {
-            res.json({
-                success: true,
-                user: {
-                    id: user._id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role
-                },
-                token: "mock-jwt-token-12345"
-            });
-        } else {
-            res.status(401).json({ success: false, message: "Invalid credentials" });
-        }
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false, message: "Server Error" });
+// ── POST /api/auth/login ───────────────────────────────────────
+router.post('/login', async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Email and password required' });
     }
+    const meta   = { ip: req.ip, userAgent: req.headers['user-agent'] };
+    const result = await authService.login({ email, password }, meta);
+
+    // Set httpOnly refresh token cookie
+    res.cookie('aclc_rt', result.refreshToken, {
+      httpOnly: true, sameSite: 'strict',
+      secure:   process.env.NODE_ENV === 'production',
+      maxAge:   7 * 24 * 60 * 60 * 1000
+    });
+
+    res.json({ success: true, user: result.user, token: result.accessToken });
+  } catch (err) {
+    if (err.code === 'INVALID_CREDENTIALS') {
+      return res.status(401).json({ success: false, message: err.message });
+    }
+    next(err);
+  }
 });
 
-const Report = require('../models/Report');
-const DashboardStats = require('../models/DashboardStats');
-const db = require('../data/db');
-
-router.post('/register', async (req, res) => {
+// ── POST /api/auth/register ────────────────────────────────────
+router.post('/register', async (req, res, next) => {
+  try {
     const { name, email, password, role } = req.body;
-    try {
-        let user = await User.findOne({ email });
-        if (user) {
-            return res.status(400).json({ success: false, message: "User already exists" });
-        }
-
-        user = new User({
-            name,
-            email,
-            password,
-            role: role || 'student'
-        });
-
-        await user.save();
-
-        // Initialize Report for the new user
-        await Report.create({
-            userId: user._id,
-            improvementData: db.reports.improvementData, // Initial empty/baseline data
-            skillData: db.reports.skillData,
-            strengths: db.reports.strengths,
-            areasToExplore: db.reports.areasToExplore,
-            beforeStats: db.reports.beforeStats,
-            afterStats: db.reports.afterStats,
-            submissionHistory: [],
-            problemStats: { ...db.reports.problemStats }
-        });
-
-        // Initialize Dashboard Stats
-        await DashboardStats.create({
-            userId: user._id,
-            activeClasses: db.dashboardStats.activeClasses,
-            pendingInvites: db.dashboardStats.pendingInvites,
-            weeklyGoal: db.dashboardStats.weeklyGoal
-        });
-
-        res.json({
-            success: true,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role
-            },
-            token: "mock-jwt-token-12345"
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false, message: "Server Error" });
+    if (!name || !email || !password) {
+      return res.status(400).json({ success: false, message: 'Name, email, and password required' });
     }
+    const meta   = { ip: req.ip, userAgent: req.headers['user-agent'] };
+    const result = await authService.register({ name, email, password }, meta);
+
+    res.cookie('aclc_rt', result.refreshToken, {
+      httpOnly: true, sameSite: 'strict',
+      secure:   process.env.NODE_ENV === 'production',
+      maxAge:   7 * 24 * 60 * 60 * 1000
+    });
+
+    res.status(201).json({ success: true, user: result.user, token: result.accessToken });
+  } catch (err) {
+    if (err.code === 'EMAIL_EXISTS') {
+      return res.status(409).json({ success: false, message: err.message });
+    }
+    next(err);
+  }
+});
+
+// ── POST /api/auth/logout ──────────────────────────────────────
+router.post('/logout', async (req, res) => {
+  const raw = req.cookies?.aclc_rt;
+  await authService.logout(raw).catch(() => {});
+  res.clearCookie('aclc_rt');
+  res.json({ success: true, message: 'Logged out' });
 });
 
 module.exports = router;

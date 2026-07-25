@@ -1,12 +1,7 @@
-const mongoose = require('mongoose');
+const { connectMongoDB } = require('../src/config/mongodb');
 
 const connectDB = async () => {
-    try {
-        await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/aclc_db');
-        console.log('MongoDB Connected');
-    } catch (err) {
-        console.error('MongoDB Connection Error:', err);
-    }
-}
+    await connectMongoDB();
+};
 
 module.exports = connectDB;

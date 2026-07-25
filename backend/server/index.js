@@ -1,40 +1,164 @@
-const express = require('express');
-const cors = require('cors');
-const app = express();
-const port = process.env.PORT || 5000;
+'use strict';
+
 require('dotenv').config();
-const connectDB = require('./config/dbConn');
 
-// Connect to MongoDB
-connectDB();
+const { validateEnv } = require('./src/config/env');
+validateEnv(); // Exit immediately if required env vars are missing
 
-app.use(cors());
-app.use(express.json());
+const express   = require('express');
+const cors      = require('cors');
+const helmet    = require('helmet');
+const cookieParser = require('cookie-parser');
+const path      = require('path');
+const { spawn } = require('child_process');
 
-// Import Routes
-const studentRoutes = require('./routes/student');
-const authRoutes = require('./routes/auth');
-const materialRoutes = require('./routes/material');
+const { connectMongoDB }      = require('./src/config/mongodb');
+const { requestLogger }       = require('./src/middleware/requestLogger');
+const { globalLimiter }       = require('./src/middleware/rateLimiter');
+const { errorHandler }        = require('./src/middleware/errorHandler');
+const logger                  = require('./src/utils/logger');
 
-const sttRoutes = require('./routes/stt');
-const dyslexiaRoutes = require('./routes/dyslexia');
+const app  = express();
+const PORT = process.env.PORT || 5000;
 
-// Use Routes
-app.use('/api/student', studentRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/materials', materialRoutes);
-app.use('/api/levels', require('./routes/levels'));
-app.use('/api/classes', require('./routes/classes'));
-app.use('/api/stt', sttRoutes);
-app.use('/api/dyslexia', dyslexiaRoutes);
-app.use('/api/dyscalculia', require('./routes/dyscalculia'));
-app.use('/api/assignments', require('./routes/assignments'));
-app.use('/api/notifications', require('./routes/notifications'));
+// ── 1. Security Middleware ──────────────────────────────────────
+app.use(helmet({
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      imgSrc:     ["'self'", "data:", "res.cloudinary.com"],
+      scriptSrc:  ["'self'"],
+      styleSrc:   ["'self'", "'unsafe-inline'", "fonts.googleapis.com"],
+      fontSrc:    ["'self'", "fonts.gstatic.com"]
+    }
+  }
+}));
 
-app.get('/', (req, res) => {
-    res.send('ACLC Backend API is running');
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(',');
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g., mobile apps, Postman)
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`Origin ${origin} not allowed by CORS`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
+}));
+
+app.use(globalLimiter);
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(cookieParser());
+app.use(requestLogger);
+
+// ── 2. Routes ──────────────────────────────────────────────────
+app.use('/api/v1/auth',          require('./src/modules/auth/auth.routes'));
+
+// Legacy routes — kept for backward compatibility during migration
+// These will be refactored to /api/v1/ modules in P3
+const { authenticate } = require('./src/middleware/auth');
+
+// P1 FIX: Legacy auth route now uses real Argon2 + JWT (delegates to auth.service.js)
+app.use('/api/auth',          require('./routes/auth'));
+
+app.use('/api/student',       authenticate, require('./routes/student'));
+app.use('/api/materials',     authenticate, require('./routes/material'));
+app.use('/api/levels',        authenticate, require('./routes/levels'));
+app.use('/api/classes',       authenticate, require('./routes/classes'));
+app.use('/api/stt',           authenticate, require('./routes/stt'));
+app.use('/api/dyslexia',      authenticate, require('./routes/dyslexia'));
+app.use('/api/ocr',           authenticate, require('./routes/ocr'));
+app.use('/api/dyscalculia',   authenticate, require('./routes/dyscalculia'));
+app.use('/api/assignments',   authenticate, require('./routes/assignments'));
+app.use('/api/notifications', authenticate, require('./routes/notifications'));
+app.use('/api/announcements', authenticate, require('./routes/announcements'));
+app.use('/api/prelims',       authenticate, require('./routes/prelims'));
+app.use('/api/staff',         authenticate, require('./routes/staff'));
+
+// Versioned aliases for legacy feature routes. Authentication is shared with
+// the versioned auth API, which keeps every frontend request on /api/v1.
+app.use('/api/v1/student',       authenticate, require('./routes/student'));
+app.use('/api/v1/materials',     authenticate, require('./routes/material'));
+app.use('/api/v1/levels',        authenticate, require('./routes/levels'));
+app.use('/api/v1/classes',       authenticate, require('./routes/classes'));
+app.use('/api/v1/stt',           authenticate, require('./routes/stt'));
+app.use('/api/v1/dyslexia',      authenticate, require('./routes/dyslexia'));
+app.use('/api/v1/ocr',           authenticate, require('./routes/ocr'));
+app.use('/api/v1/dyscalculia',   authenticate, require('./routes/dyscalculia'));
+app.use('/api/v1/assignments',   authenticate, require('./routes/assignments'));
+app.use('/api/v1/notifications', authenticate, require('./routes/notifications'));
+app.use('/api/v1/announcements', authenticate, require('./routes/announcements'));
+app.use('/api/v1/prelims',       authenticate, require('./routes/prelims'));
+app.use('/api/v1/staff',         authenticate, require('./routes/staff'));
+
+// Health check (no auth)
+app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+
+// ── 3. 404 Handler ─────────────────────────────────────────────
+app.use((req, res) => {
+  res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: `Route ${req.method} ${req.path} not found` } });
 });
 
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+// ── 4. Global Error Handler ────────────────────────────────────
+app.use(errorHandler);
+
+// ── 5. Python AI Service Manager ──────────────────────────────
+let pythonProcess = null;
+
+async function startPythonService() {
+  const aiPath = path.join(__dirname, '../../services/ai');
+  const pyExe  = process.env.PYTHON_EXECUTABLE || 'python';
+  const aiUrl  = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+
+  try {
+    pythonProcess = spawn(pyExe, ['-m', 'uvicorn', 'main:app', '--host', '0.0.0.0', '--port', '8000'], {
+      cwd: aiPath, stdio: ['ignore', 'pipe', 'pipe']
+    });
+
+    pythonProcess.stdout.on('data', d => logger.info(d.toString().trim(), { category: 'ai-service' }));
+    pythonProcess.stderr.on('data', d => logger.info(d.toString().trim(), { category: 'ai-service' }));
+    pythonProcess.on('error', err => {
+      logger.warn('Python AI service not available — AI features degraded', { category: 'ai-service', error: err.message });
+    });
+
+    // Wait up to 30s for health check
+    for (let i = 0; i < 30; i++) {
+      try {
+        const res = await fetch(`${aiUrl}/health/ping`);
+        if (res.ok) { logger.info('Python AI service ready', { category: 'ai-service' }); return; }
+      } catch {}
+      await new Promise(r => setTimeout(r, 1000));
+    }
+    logger.warn('Python AI service health check timed out — AI features may be unavailable', { category: 'ai-service' });
+  } catch (err) {
+    logger.warn('Could not start Python AI service', { category: 'ai-service', error: err.message });
+  }
+}
+
+// ── 6. Startup ────────────────────────────────────────────────
+async function startServer() {
+  await connectMongoDB();
+
+  // Start Python AI service (non-blocking — server starts even if Python is missing)
+  startPythonService().catch(() => {});
+
+  app.listen(PORT, () => {
+    logger.info(`ACLC API server running on port ${PORT}`, { category: 'system', port: PORT, env: process.env.NODE_ENV });
+  });
+}
+
+// ── 7. Graceful Shutdown ──────────────────────────────────────
+function shutdown(signal) {
+  logger.info(`Received ${signal} — shutting down gracefully`, { category: 'system' });
+  if (pythonProcess) pythonProcess.kill();
+  process.exit(0);
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT',  () => shutdown('SIGINT'));
+
+startServer().catch(err => {
+  logger.error('Failed to start server', { category: 'system', error: err.message });
+  process.exit(1);
 });

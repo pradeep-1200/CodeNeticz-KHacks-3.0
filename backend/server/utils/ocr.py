@@ -6,7 +6,7 @@ import os
 # Import from Dyslexia folder if possible
 try:
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    dyslexia_path = os.path.abspath(os.path.join(current_dir, '../../../Dyslexia'))
+    dyslexia_path = os.path.abspath(os.path.join(current_dir, '../../../cognitive_disability/dyslexia'))
     sys.path.append(dyslexia_path)
     
     # Check if we can use any specific extraction tools from there
@@ -28,7 +28,15 @@ def extract_text(image_path):
             return {"error": "Missing dependencies. Please install: pip install pytesseract pillow"}
 
         # Attempt OCR
+        # On Windows, Tesseract path often needs to be set explicitly
+        tesseract_path = os.environ.get('TESSERACT_CMD')
+        if tesseract_path:
+            pytesseract.pytesseract.tesseract_cmd = tesseract_path
+
         text = pytesseract.image_to_string(Image.open(image_path))
+        
+        if not text.strip():
+            return {"error": "No text detected in the image. Try a clearer image.", "success": False}
         
         return {"text": text.strip(), "success": True}
 

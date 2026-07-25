@@ -1,28 +1,28 @@
-# ======================
-# Node.js
-# ======================
+# ============================================================
+#  backend/server/.gitignore
+#  (Root .gitignore also applies — this adds server-specifics)
+# ============================================================
+
+# Node
 node_modules/
 npm-debug.log*
-yarn-error.log*
 
-# ======================
-# Python
-# ======================
-venv/
-.env/
+# Secrets — CRITICAL
+.env
+.env.*
+!.env.example
+
+# Runtime uploads (Multer temp files)
+uploads/
+
+# Python bridges / ML artifacts
 __pycache__/
 *.pyc
 *.pyo
+venv/
+.venv/
 
-# ======================
-# OS junk
-# ======================
-.DS_Store
-Thumbs.db
-
-# ======================
-# ML / AI artifacts (generated, not source)
-# ======================
+# ML model caches
 cache/
 models/*.bin
 models/*.safetensors
@@ -30,7 +30,13 @@ models/*.h5
 models/*.pt
 models/*.ckpt
 
-# ======================
-# User uploads (runtime data)
-# ======================
-uploads/
+# Server logs (generated at runtime)
+logs/
+*.log
+
+# Prisma generated client
+node_modules/.prisma/
+
+# OS
+.DS_Store
+Thumbs.db

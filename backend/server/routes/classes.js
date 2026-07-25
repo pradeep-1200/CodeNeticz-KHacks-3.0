@@ -169,7 +169,9 @@ router.post('/invite/respond', rbac('STUDENT'), async (req, res, next) => {
 
     if (status === 'accepted') {
       const cls = await Class.findById(invite.classId);
-      if (cls && !cls.students.includes(studentId)) {
+      // FIX: was cls.students.includes(studentId) which compares ObjectId vs string
+      //      and always returns false, allowing duplicate enrollments.
+      if (cls && !cls.students.some(id => id.toString() === studentId)) {
         cls.students.push(studentId);
         await cls.save();
       }
@@ -203,6 +205,128 @@ router.post('/assign-level', rbac('TEACHER', 'ADMIN'), async (req, res, next) =>
     }
 
     res.json({ success: true, message: 'Level assigned successfully' });
+  } catch (err) { next(err); }
+});
+
+// ── Assessment Management ──────────────────────────────────────
+const Assessment = require('../models/Assessment');
+
+// CREATE & PUBLISH Assessment to Class — teacher only
+// Requires: title, duration > 0, at least 1 question when publishing
+router.post('/create-assessment', rbac('TEACHER', 'ADMIN'), async (req, res, next) => {
+  const { classId, title, subject, duration, scheduledDate, startTime, endTime, questions, status, isPublished } = req.body;
+  const teacherId = req.user.id;
+  try {
+    // ── Basic field validation ──
+    if (!classId) return res.status(400).json({ success: false, message: 'classId is required' });
+    if (!title?.trim()) return res.status(400).json({ success: false, message: 'Assessment title is required' });
+
+    const parsedDuration = Number(duration);
+    if (!parsedDuration || parsedDuration < 1) {
+      return res.status(400).json({ success: false, message: 'Duration must be at least 1 minute' });
+    }
+
+    const questionList = Array.isArray(questions) ? questions : [];
+
+    // ── Enforce question requirement when publishing ──
+    const willPublish = isPublished !== false; // default = true (publish)
+    if (willPublish && questionList.length === 0) {
+      return res.status(400).json({ success: false, message: 'At least one question is required before publishing. Add questions or save as Draft.' });
+    }
+
+    // ── Class ownership check ──
+    const cls = await Class.findById(classId);
+    if (!cls) return res.status(404).json({ success: false, message: 'Classroom not found' });
+    if (cls.teacherId.toString() !== teacherId) return res.status(403).json({ success: false, message: 'Not your class' });
+
+    const now = new Date();
+    const newAssessment = new Assessment({
+      title: title.trim(),
+      subject: (subject || '').trim() || cls.subject || '',
+      teacherId,
+      classId,
+      duration: parsedDuration,
+      scheduledDate: scheduledDate ? new Date(scheduledDate) : now,
+      startTime: startTime || '09:00 AM',
+      endTime: endTime || '10:00 AM',
+      status: status || 'Upcoming',
+      isPublished: willPublish,
+      publishedAt: willPublish ? now : null,
+      questions: questionList
+    });
+
+    await newAssessment.save();
+
+    // Notify enrolled students only when publishing
+    if (willPublish && cls.students.length > 0) {
+      const notifications = cls.students.map(sid => ({
+        userId: sid,
+        message: `New Assessment Published: ${newAssessment.title} in ${cls.name}`,
+        type: 'assignment',
+        link: `/student/dashboard`
+      }));
+      await Notification.insertMany(notifications);
+    }
+
+    const action = willPublish ? 'published' : 'saved as draft';
+    res.status(201).json({ success: true, message: `Assessment ${action} successfully!`, assessment: newAssessment });
+  } catch (err) { next(err); }
+});
+
+// GET all assessments for a class — teacher only (returns both published & draft)
+router.get('/:classId/assessments', rbac('TEACHER', 'ADMIN'), async (req, res, next) => {
+  const { classId } = req.params;
+  const teacherId = req.user.id;
+  try {
+    const cls = await Class.findById(classId);
+    if (!cls) return res.status(404).json({ success: false, message: 'Classroom not found' });
+    if (cls.teacherId.toString() !== teacherId) return res.status(403).json({ success: false, message: 'Not your class' });
+
+    const assessments = await Assessment.find({ classId })
+      .populate('teacherId', 'name email')
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, assessments });
+  } catch (err) { next(err); }
+});
+
+// UNPUBLISH assessment — teacher only
+router.patch('/assessments/:assessmentId/unpublish', rbac('TEACHER', 'ADMIN'), async (req, res, next) => {
+  const { assessmentId } = req.params;
+  const teacherId = req.user.id;
+  try {
+    const assessment = await Assessment.findById(assessmentId);
+    if (!assessment) return res.status(404).json({ success: false, message: 'Assessment not found' });
+
+    // Verify class ownership
+    const cls = await Class.findById(assessment.classId);
+    if (!cls || cls.teacherId.toString() !== teacherId) {
+      return res.status(403).json({ success: false, message: 'Not your assessment' });
+    }
+
+    assessment.isPublished = false;
+    assessment.publishedAt = null;
+    await assessment.save();
+
+    res.json({ success: true, message: 'Assessment unpublished (moved to Draft)', assessment });
+  } catch (err) { next(err); }
+});
+
+// DELETE assessment — teacher only
+router.delete('/assessments/:assessmentId', rbac('TEACHER', 'ADMIN'), async (req, res, next) => {
+  const { assessmentId } = req.params;
+  const teacherId = req.user.id;
+  try {
+    const assessment = await Assessment.findById(assessmentId);
+    if (!assessment) return res.status(404).json({ success: false, message: 'Assessment not found' });
+
+    const cls = await Class.findById(assessment.classId);
+    if (!cls || cls.teacherId.toString() !== teacherId) {
+      return res.status(403).json({ success: false, message: 'Not your assessment' });
+    }
+
+    await Assessment.findByIdAndDelete(assessmentId);
+    res.json({ success: true, message: 'Assessment deleted successfully' });
   } catch (err) { next(err); }
 });
 

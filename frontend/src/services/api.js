@@ -146,6 +146,37 @@ export const assignLevelToClass = async (classId, levelId) => {
   return data;
 };
 
+export const getStudentAssessments = async () => {
+  const { data } = await api.get('/student/assessments');
+  return data;
+};
+
+export const getStudentAssessmentById = async (id) => {
+  const { data } = await api.get(`/student/assessments/${id}`);
+  return data;
+};
+
+export const createClassAssessment = async (assessmentData) => {
+  const { data } = await api.post('/classes/create-assessment', assessmentData);
+  return data;
+};
+
+// ── Teacher Assessment Management ─────────────────────────────
+export const getClassAssessments = async (classId) => {
+  const { data } = await api.get(`/classes/${classId}/assessments`);
+  return data;
+};
+
+export const unpublishAssessment = async (assessmentId) => {
+  const { data } = await api.patch(`/classes/assessments/${assessmentId}/unpublish`);
+  return data;
+};
+
+export const deleteClassAssessment = async (assessmentId) => {
+  const { data } = await api.delete(`/classes/assessments/${assessmentId}`);
+  return data;
+};
+
 // ── Levels API ────────────────────────────────────────────────
 export const getLevels = async () => {
   const { data } = await api.get('/levels');
@@ -280,5 +311,81 @@ export const getAnnouncementsByClass = async (classId) => {
 
 export const createAnnouncement = async (announcementData) => {
   const { data } = await api.post('/announcements/create', announcementData);
+  return data;
+};
+
+// ── Assessment Submission API (Phase 4) ───────────────────────
+export const startAssessmentAttempt = async (assessmentId) => {
+  const { data } = await api.post(`/submissions/${assessmentId}/start`);
+  return data;
+};
+
+export const saveAssessmentProgress = async (assessmentId, answers) => {
+  const { data } = await api.post(`/submissions/${assessmentId}/save`, { answers });
+  return data;
+};
+
+export const submitAssessmentAttempt = async (assessmentId, answers) => {
+  const { data } = await api.post(`/submissions/${assessmentId}/submit`, { answers });
+  return data;
+};
+
+export const getMySubmission = async (assessmentId) => {
+  const { data } = await api.get(`/submissions/${assessmentId}/me`);
+  return data;
+};
+
+// ── AI Math Assistant API (Phase 6) ───────────────────────────
+export const getMathAssistance = async (payload) => {
+  // payload: { question, questionType, options, studentAnswer, accessibilityProfile }
+  const { data } = await api.post('/ai/math-assistant', payload);
+  return data;
+};
+
+// ── Student Profile API ───────────────────────────────────────
+export const getStudentProfile = async (studentId) => {
+  const { data } = await api.get(`/students/${studentId}`);
+  return data;
+};
+
+export const updateStudentProfile = async (studentId, profileData) => {
+  const { data } = await api.put(`/students/${studentId}`, profileData);
+  return data;
+};
+
+export const getAccessibilityProfile = async (studentId) => {
+  const { data } = await api.get(`/students/${studentId}/accessibility-profile`);
+  return data;
+};
+
+export const updateAccessibilityProfile = async (studentId, profileData) => {
+  const { data } = await api.put(`/students/${studentId}/accessibility-profile`, profileData);
+  return data;
+};
+
+// ── Analytics API (Phase 8) ───────────────────────────────────
+
+export const getMyAssessmentResult = async (assessmentId) => {
+  const { data } = await api.get(`/analytics/my-result/${assessmentId}`);
+  return data;
+};
+
+export const getMyAssessmentHistory = async () => {
+  const { data } = await api.get('/analytics/my-history');
+  return data;
+};
+
+export const getAssessmentAnalytics = async (assessmentId) => {
+  const { data } = await api.get(`/analytics/assessment/${assessmentId}`);
+  return data;
+};
+
+export const getClassAnalytics = async (classId) => {
+  const { data } = await api.get(`/analytics/class/${classId}`);
+  return data;
+};
+
+export const getStudentResultForTeacher = async (studentId, assessmentId) => {
+  const { data } = await api.get(`/analytics/student/${studentId}/result/${assessmentId}`);
   return data;
 };

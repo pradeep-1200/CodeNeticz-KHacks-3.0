@@ -1,5 +1,6 @@
 const express = require('express');
 const router  = express.Router();
+const mongoose = require('mongoose');
 const User       = require('../models/User');
 const Activity   = require('../models/Activity');
 const Material   = require('../models/Material');
@@ -75,7 +76,13 @@ router.get('/report', async (req, res, next) => {
         improvementData: [], skillData: [], strengths: [],
         areasToExplore: [], beforeStats: [], afterStats: [],
         submissionHistory: [],
-        problemStats: { easy: { solved: 0 }, medium: { solved: 0 }, hard: { solved: 0 }, total: { solved: 0 } }
+        // FIX: include total counts so increments work from the first activity
+        problemStats: {
+          easy:   { solved: 0, total: 100 },
+          medium: { solved: 0, total: 80 },
+          hard:   { solved: 0, total: 30 },
+          total:  { solved: 0, total: 210 }
+        }
       });
       report = await Report.findById(report._id).populate('userId', 'name email level levelTitle streak');
     }
@@ -123,7 +130,103 @@ router.post('/complete-activity', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ── Assessment Questions ──────────────────────────────────────
+// ── Classroom Published Assessments for Student Dashboard ──────
+router.get('/assessments', async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    // Find all classes the student is enrolled in
+    const enrolledClasses = await Class.find({ students: userId }).select('_id');
+    const classIds = enrolledClasses.map(c => c._id);
+
+    if (classIds.length === 0) {
+      return res.json({ success: true, assessments: [] });
+    }
+
+    // Fetch published assessments for these enrolled classes only
+    const assessments = await Assessment.find({
+      classId: { $in: classIds },
+      isPublished: true
+    })
+    .populate('teacherId', 'name email')
+    .populate('classId', 'name subject section')
+    .sort({ scheduledDate: 1, createdAt: -1 });
+
+    if (assessments.length === 0) {
+      return res.json({ success: true, assessments: [] });
+    }
+
+    // ── Phase 8: overlay per-student submission status ────────
+    // A student who has submitted sees that assessment as 'Completed'
+    // regardless of the teacher-set status window.
+    const assessmentIds = assessments.map(a => a._id);
+    const submissions   = await require('../models/AssessmentSubmission').find({
+      assessmentId: { $in: assessmentIds },
+      studentId:    userId,
+      status:       { $in: ['submitted', 'auto_submitted'] }
+    }).select('assessmentId').lean();
+
+    const submittedSet = new Set(submissions.map(s => String(s.assessmentId)));
+
+    // Merge: if student has submitted, override status to 'Completed'
+    const enriched = assessments.map(a => {
+      const plain = a.toObject();
+      if (submittedSet.has(String(a._id))) {
+        plain.status = 'Completed';
+      }
+      return plain;
+    });
+
+    res.json({ success: true, assessments: enriched });
+  } catch (err) { next(err); }
+});
+
+// ── Get Single Assessment for Student Details Page ────────────
+router.get('/assessments/:id', async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid assessment ID format' });
+    }
+
+    // Find all classes the student is enrolled in
+    const enrolledClasses = await Class.find({ students: userId }).select('_id');
+    const classIds = enrolledClasses.map(c => c._id);
+
+    // Fetch the assessment details if published and assigned to student's enrolled classroom
+    const assessment = await Assessment.findOne({
+      _id: id,
+      classId: { $in: classIds },
+      isPublished: true
+    })
+    .populate('teacherId', 'name email')
+    .populate('classId', 'name subject section');
+
+    if (!assessment) {
+      return res.status(404).json({ success: false, message: 'Assessment not found or not published' });
+    }
+
+    // ── Phase 8: check if this student has submitted ──────────
+    const AssessmentSubmission = require('../models/AssessmentSubmission');
+    const submission = await AssessmentSubmission.findOne({
+      assessmentId: id,
+      studentId:    userId,
+      status:       { $in: ['submitted', 'auto_submitted'] }
+    }).select('_id status submittedAt').lean();
+
+    const plain = assessment.toObject();
+    if (submission) {
+      plain.status       = 'Completed';
+      plain.submittedAt  = submission.submittedAt;
+    }
+
+    res.json({ success: true, assessment: plain });
+  } catch (err) { next(err); }
+});
+
+// ── Assessment Questions (Legacy) ──────────────────────────────
 router.get('/assessment', async (req, res, next) => {
   try {
     const userId = req.user.id;

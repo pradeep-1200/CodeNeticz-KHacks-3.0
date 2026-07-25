@@ -3,7 +3,7 @@ import StaffNavbar from '../../components/StaffNavbar';
 import { 
    Users, Plus, Copy, Check, BookOpen, Mail, Send, ClipboardCheck, Calendar, 
    FileText, Mic, List, Type, X, Trophy, ChevronDown, ChevronRight, Eye, Home, 
-   MoreVertical, Folder, ArrowLeft, UploadCloud, Sparkles, CheckCircle, AlertCircle, Download, Paperclip 
+   MoreVertical, Folder, ArrowLeft, UploadCloud, Sparkles, CheckCircle, AlertCircle, Download, Paperclip, BarChart2
 } from 'lucide-react';
 import { 
    createClass, 
@@ -14,12 +14,18 @@ import {
    createAssignment, 
    assignLevelToClass,
    getAnnouncementsByClass,
-   createAnnouncement
+   createAnnouncement,
+   createClassAssessment,
+   getClassAssessments,
+   unpublishAssessment,
+   deleteClassAssessment
 } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
+import { useNavigate } from 'react-router-dom';
 
 const ClassManager = () => {
     const user = useAuthStore(s => s.user);
+    const navigate = useNavigate();
     const [classes, setClasses] = useState([]);
     const [activeClass, setActiveClass] = useState(null); // null = Dashboard Grid View
     const [activeTab, setActiveTab] = useState('stream'); // 'stream' | 'classwork' | 'people' | 'grades'
@@ -44,6 +50,18 @@ const ClassManager = () => {
     const [assignmentData, setAssignmentData] = useState({ title: '', description: '', deadline: '', questions: [] });
     const [newQuestion, setNewQuestion] = useState({ type: 'text', questionText: '', options: [] });
     const [optionText, setOptionText] = useState('');
+
+    // Publish Assessment State
+    const [showCreateAssessmentModal, setShowCreateAssessmentModal] = useState(false);
+    const [assessmentForm, setAssessmentForm] = useState({
+        title: '', subject: '', duration: 30, scheduledDate: '', startTime: '09:00 AM', endTime: '10:00 AM', status: 'Upcoming'
+    });
+    const [assessmentQuestions, setAssessmentQuestions] = useState([]);
+    const [newAssessmentQ, setNewAssessmentQ] = useState({ type: 'mcq', questionText: '', options: [], optionInput: '' });
+
+    // Teacher Assessment List State
+    const [classAssessments, setClassAssessments] = useState([]);
+    const [viewAssessmentModal, setViewAssessmentModal] = useState(null); // assessment to view details
 
     // Detailed Class Assignments & Submissions
     const [detailedAssignments, setDetailedAssignments] = useState([]);
@@ -107,6 +125,11 @@ const ClassManager = () => {
             const assignData = await getAssignmentsByClass(classId);
             setDetailedAssignments(assignData.assignments || assignData || []);
         } catch (e) { setDetailedAssignments([]); }
+
+        try {
+            const assessData = await getClassAssessments(classId);
+            setClassAssessments(assessData.assessments || []);
+        } catch (e) { setClassAssessments([]); }
     };
 
     const handleCreateClass = async (e) => {
@@ -200,6 +223,88 @@ const ClassManager = () => {
             }
         } catch (err) { 
             showToast(err.response?.data?.error?.message || err.response?.data?.message || "Error creating assignment", "error"); 
+        }
+    };
+
+    const isPublishReady = () => {
+        return assessmentForm.title?.trim() &&
+            Number(assessmentForm.duration) > 0 &&
+            assessmentQuestions.length > 0;
+    };
+
+    const handleSaveAssessment = async (publish) => {
+        if (!assessmentForm.title?.trim()) return showToast("Assessment Title is required", "error");
+        if (!Number(assessmentForm.duration) || Number(assessmentForm.duration) < 1) return showToast("Duration must be at least 1 minute", "error");
+        if (publish && assessmentQuestions.length === 0) return showToast("Add at least one question before publishing", "error");
+        try {
+            const data = await createClassAssessment({
+                classId: activeClass._id,
+                title: assessmentForm.title.trim(),
+                subject: (assessmentForm.subject || '').trim() || activeClass.subject,
+                duration: Number(assessmentForm.duration),
+                scheduledDate: assessmentForm.scheduledDate || new Date().toISOString().split('T')[0],
+                startTime: assessmentForm.startTime || '09:00 AM',
+                endTime: assessmentForm.endTime || '10:00 AM',
+                status: assessmentForm.status || 'Upcoming',
+                questions: assessmentQuestions.map(q => ({
+                    question: q.questionText,
+                    type: q.type,
+                    options: q.options || [],
+                    correctAnswer: q.correctAnswer || '',
+                    difficulty: 'easy',
+                    hint: ''
+                })),
+                isPublished: publish
+            });
+            if (data.success) {
+                showToast(publish ? "Assessment published to classroom students!" : "Assessment saved as Draft", "success");
+                setShowCreateAssessmentModal(false);
+                setAssessmentForm({ title: '', subject: '', duration: 30, scheduledDate: '', startTime: '09:00 AM', endTime: '10:00 AM', status: 'Upcoming' });
+                setAssessmentQuestions([]);
+                setNewAssessmentQ({ type: 'mcq', questionText: '', options: [], optionInput: '' });
+                fetchClassStreamData(activeClass._id);
+            } else {
+                showToast(data.message || "Failed to save assessment", "error");
+            }
+        } catch (err) {
+            showToast(err.response?.data?.message || "Error saving assessment", "error");
+        }
+    };
+
+    const handleAddAssessmentQuestion = () => {
+        if (!newAssessmentQ.questionText.trim()) return showToast("Question text cannot be empty", "error");
+        if (newAssessmentQ.type === 'mcq' && newAssessmentQ.options.length < 2) return showToast("MCQ questions need at least 2 options", "error");
+        setAssessmentQuestions(prev => [...prev, { ...newAssessmentQ, optionInput: undefined }]);
+        setNewAssessmentQ({ type: 'mcq', questionText: '', options: [], optionInput: '' });
+    };
+
+    const handleAddOption = () => {
+        if (!newAssessmentQ.optionInput?.trim()) return;
+        setNewAssessmentQ(prev => ({ ...prev, options: [...prev.options, prev.optionInput.trim()], optionInput: '' }));
+    };
+
+    const handleUnpublish = async (assessmentId) => {
+        try {
+            const data = await unpublishAssessment(assessmentId);
+            if (data.success) {
+                showToast("Assessment moved to Draft", "info");
+                fetchClassStreamData(activeClass._id);
+            }
+        } catch (err) {
+            showToast(err.response?.data?.message || "Error unpublishing assessment", "error");
+        }
+    };
+
+    const handleDeleteAssessment = async (assessmentId, title) => {
+        if (!window.confirm(`Delete assessment "${title}"? This cannot be undone.`)) return;
+        try {
+            const data = await deleteClassAssessment(assessmentId);
+            if (data.success) {
+                showToast("Assessment deleted", "success");
+                fetchClassStreamData(activeClass._id);
+            }
+        } catch (err) {
+            showToast(err.response?.data?.message || "Error deleting assessment", "error");
         }
     };
 
@@ -501,9 +606,116 @@ const ClassManager = () => {
                             {/* ── TAB 2: CLASSWORK ─────────────────────────────────────────── */}
                             {activeTab === 'classwork' && (
                                 <div className="space-y-6">
-                                   <div className="bg-white dark:bg-[var(--bg-surface)] p-6 rounded-2xl border border-[var(--border-color)] shadow-sm space-y-6">
+
+                                   {/* ─── ASSESSMENTS SECTION ─── */}
+                                   <div className="bg-white dark:bg-[var(--bg-surface)] p-6 rounded-2xl border border-[var(--border-color)] shadow-sm space-y-4">
                                       <div className="flex justify-between items-center">
-                                         <h2 className="text-lg font-black tracking-tight text-[var(--text-primary)]">Classwork & Materials Management</h2>
+                                         <div>
+                                            <h2 className="text-lg font-black tracking-tight text-[var(--text-primary)] flex items-center gap-2">
+                                               <ClipboardCheck size={20} className="text-indigo-600" /> Published Assessments
+                                            </h2>
+                                            <p className="text-xs text-[var(--text-secondary)] font-medium mt-0.5">Visible to enrolled students in their dashboard</p>
+                                         </div>
+                                         <button onClick={() => { setAssessmentQuestions([]); setNewAssessmentQ({ type: 'mcq', questionText: '', options: [], optionInput: '' }); setShowCreateAssessmentModal(true); }} className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-extrabold text-xs shadow-md flex items-center gap-1.5 hover:bg-indigo-700 transition-colors">
+                                            <Plus size={16} /> New Assessment
+                                         </button>
+                                      </div>
+
+                                      {(classAssessments || []).length === 0 ? (
+                                         <div className="py-10 text-center">
+                                            <ClipboardCheck size={40} className="mx-auto mb-3 text-indigo-500/30" />
+                                            <p className="text-sm font-bold text-[var(--text-secondary)]">No assessments yet</p>
+                                            <p className="text-xs text-[var(--text-secondary)] mt-1">Click "New Assessment" to create and publish one.</p>
+                                         </div>
+                                      ) : (
+                                         <div className="space-y-3">
+                                            {(classAssessments || []).map(assess => {
+                                               const statusColors = {
+                                                  'Upcoming':  'bg-blue-500/10 text-blue-600 border-blue-500/20',
+                                                  'Active':    'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+                                                  'Completed': 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+                                                  'Missed':    'bg-red-500/10 text-red-600 border-red-500/20'
+                                               };
+                                               const questionCount = (assess.questions || []).length;
+                                               const scheduledLabel = assess.scheduledDate
+                                                  ? new Date(assess.scheduledDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                                                  : 'Not set';
+
+                                               return (
+                                                  <div key={assess._id} className="bg-[var(--bg-base)] border border-[var(--border-color)] rounded-2xl p-5 flex flex-col md:flex-row md:items-center gap-4">
+                                                     {/* Left: Info */}
+                                                     <div className="flex items-start gap-4 flex-1">
+                                                        <div className={`p-3 rounded-2xl shrink-0 ${assess.isPublished ? 'bg-indigo-500/10 text-indigo-600' : 'bg-gray-500/10 text-gray-500'}`}>
+                                                           <ClipboardCheck size={20} />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0 space-y-1.5">
+                                                           <div className="flex flex-wrap items-center gap-2">
+                                                              <h4 className="font-extrabold text-sm text-[var(--text-primary)] truncate">{assess.title}</h4>
+                                                              <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${statusColors[assess.status] || statusColors['Upcoming']}`}>
+                                                                 {assess.status}
+                                                              </span>
+                                                              <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                                                                 assess.isPublished
+                                                                    ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                                                                    : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                                                              }`}>
+                                                                 {assess.isPublished ? '● Published' : '○ Draft'}
+                                                              </span>
+                                                           </div>
+                                                           <div className="flex flex-wrap gap-3 text-[11px] font-semibold text-[var(--text-secondary)]">
+                                                              <span><b className="text-[var(--text-primary)]">{assess.subject || activeClass.subject}</b> • Subject</span>
+                                                              <span><b className="text-[var(--text-primary)]">{questionCount}</b> {questionCount === 1 ? 'Question' : 'Questions'}</span>
+                                                              <span><b className="text-[var(--text-primary)]">{assess.duration || 30} min</b> duration</span>
+                                                              <span><b className="text-[var(--text-primary)]">{scheduledLabel}</b> scheduled</span>
+                                                              {assess.startTime && <span>{assess.startTime} – {assess.endTime}</span>}
+                                                           </div>
+                                                        </div>
+                                                     </div>
+
+                                                     {/* Right: Actions */}
+                                                     <div className="flex gap-2 shrink-0 flex-wrap">
+                                                        <button
+                                                           onClick={() => setViewAssessmentModal(assess)}
+                                                           className="flex items-center gap-1 px-3 py-1.5 text-[10px] font-extrabold bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 rounded-lg hover:bg-indigo-500/20 transition-colors"
+                                                        >
+                                                           <Eye size={12} /> View
+                                                        </button>
+                                                        {assess.isPublished && (
+                                                           <button
+                                                              onClick={() => handleUnpublish(assess._id)}
+                                                              className="flex items-center gap-1 px-3 py-1.5 text-[10px] font-extrabold bg-amber-500/10 text-amber-600 border border-amber-500/20 rounded-lg hover:bg-amber-500/20 transition-colors"
+                                                           >
+                                                              <X size={12} /> Unpublish
+                                                           </button>
+                                                        )}
+                                                        {assess.isPublished && (
+                                                           <button
+                                                              onClick={() => navigate(`/staff/analytics/${assess._id}`)}
+                                                              className="flex items-center gap-1 px-3 py-1.5 text-[10px] font-extrabold bg-purple-500/10 text-purple-600 border border-purple-500/20 rounded-lg hover:bg-purple-500/20 transition-colors"
+                                                           >
+                                                              <BarChart2 size={12} /> Analytics
+                                                           </button>
+                                                        )}
+                                                        <button
+                                                           onClick={() => handleDeleteAssessment(assess._id, assess.title)}
+                                                           className="flex items-center gap-1 px-3 py-1.5 text-[10px] font-extrabold bg-red-500/10 text-red-600 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-colors"
+                                                        >
+                                                           <X size={12} /> Delete
+                                                        </button>
+                                                     </div>
+                                                  </div>
+                                               );
+                                            })}
+                                         </div>
+                                      )}
+                                   </div>
+
+                                   {/* ─── ASSIGNMENTS SECTION ─── */}
+                                   <div className="bg-white dark:bg-[var(--bg-surface)] p-6 rounded-2xl border border-[var(--border-color)] shadow-sm space-y-4">
+                                      <div className="flex justify-between items-center">
+                                         <h2 className="text-lg font-black tracking-tight text-[var(--text-primary)] flex items-center gap-2">
+                                            <FileText size={20} className="text-purple-600" /> Written Assignments
+                                         </h2>
                                          <div className="flex gap-2">
                                             <button onClick={() => setShowAssignModal(true)} className="px-4 py-2 bg-purple-600 text-white rounded-xl font-extrabold text-xs shadow-md flex items-center gap-1.5 hover:bg-purple-700">
                                                <Plus size={16} /> Create Assignment
@@ -514,7 +726,7 @@ const ClassManager = () => {
                                          </div>
                                       </div>
 
-                                      {(detailedAssignments || []).length === 0 ? <p className="text-xs text-[var(--text-secondary)] italic py-6">No assignments created yet. Click "+ Create Assignment" to get started.</p> : (
+                                      {(detailedAssignments || []).length === 0 ? <p className="text-xs text-[var(--text-secondary)] italic py-4">No assignments created yet. Click "+ Create Assignment" to get started.</p> : (
                                          <div className="space-y-4">
                                             {(detailedAssignments || []).map(assign => (
                                                <div key={assign._id} className="bg-[var(--bg-base)] p-5 rounded-2xl border border-[var(--border-color)] space-y-3">
@@ -566,9 +778,14 @@ const ClassManager = () => {
                                       </div>
                                       <div className="space-y-2">
                                          {(activeClass.students || []).map(student => (
-                                            <div key={student._id} className="flex justify-between items-center p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                                            <div
+                                               key={student._id}
+                                               onClick={() => navigate(`/teacher/students/${student._id}`)}
+                                               className="flex justify-between items-center p-3 rounded-xl hover:bg-indigo-500/5 hover:border-indigo-500/30 border border-transparent dark:hover:bg-slate-800 transition-colors cursor-pointer group"
+                                               title="View Student Profile"
+                                            >
                                                <div className="flex items-center gap-3">
-                                                  <div className="w-9 h-9 rounded-full bg-purple-500/10 text-purple-600 font-extrabold text-xs flex items-center justify-center">
+                                                  <div className="w-9 h-9 rounded-full bg-purple-500/10 text-purple-600 font-extrabold text-xs flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
                                                      {student.name ? student.name[0].toUpperCase() : 'S'}
                                                   </div>
                                                   <div>
@@ -583,9 +800,12 @@ const ClassManager = () => {
                                                      <p className="text-[10px] text-[var(--text-secondary)]">{student.email}</p>
                                                   </div>
                                                </div>
-                                               <div className="text-right text-xs">
-                                                  <span className="text-[10px] text-[var(--text-secondary)] block font-bold">Prelims Score</span>
-                                                  <b className="text-purple-600 font-black">{student.prelimsScore !== undefined ? `${student.prelimsScore}%` : 'N/A'}</b>
+                                               <div className="flex items-center gap-3">
+                                                  <div className="text-right text-xs">
+                                                     <span className="text-[10px] text-[var(--text-secondary)] block font-bold">Prelims Score</span>
+                                                     <b className="text-purple-600 font-black">{student.prelimsScore !== undefined ? `${student.prelimsScore}%` : 'N/A'}</b>
+                                                  </div>
+                                                  <ChevronRight size={14} className="text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
                                                </div>
                                             </div>
                                          ))}
@@ -821,6 +1041,275 @@ const ClassManager = () => {
                             <button type="submit" className="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white font-extrabold rounded-xl text-xs shadow-md">Create & Assign</button>
                         </div>
                     </form>
+                </div>
+            )}
+            {/* PUBLISH / DRAFT ASSESSMENT MODAL */}
+            {showCreateAssessmentModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
+                    <div className="bg-white dark:bg-[var(--bg-surface)] border border-[var(--border-color)] p-6 md:p-8 rounded-3xl w-full max-w-2xl shadow-2xl space-y-5 animate-fade-in-up my-8">
+                        <div className="flex justify-between items-center pb-2 border-b border-[var(--border-color)]">
+                            <div>
+                                <h2 className="text-xl font-black text-[var(--text-primary)]">Create Assessment</h2>
+                                <p className="text-xs text-[var(--text-secondary)]">For <b>{activeClass?.name}</b> — add details and at least 1 question before publishing</p>
+                            </div>
+                            <button type="button" onClick={() => setShowCreateAssessmentModal(false)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] p-1"><X size={20} /></button>
+                        </div>
+
+                        {/* ─── Basic Details ─── */}
+                        <div className="space-y-3 text-xs font-semibold">
+                            <div>
+                                <label className="block text-[11px] font-extrabold uppercase text-[var(--text-secondary)] mb-1">Assessment Title <span className="text-red-500">*</span></label>
+                                <input 
+                                    type="text" 
+                                    placeholder="e.g. Mid-Term Algebra Evaluation" 
+                                    className="w-full p-3 bg-gray-50 dark:bg-[var(--bg-base)] border border-[var(--border-color)] rounded-xl text-xs text-[var(--text-primary)] outline-none focus:border-indigo-500" 
+                                    value={assessmentForm.title} 
+                                    onChange={e => setAssessmentForm({ ...assessmentForm, title: e.target.value })} 
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-[11px] font-extrabold uppercase text-[var(--text-secondary)] mb-1">Subject</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder={activeClass?.subject || 'e.g. Mathematics'} 
+                                        className="w-full p-3 bg-gray-50 dark:bg-[var(--bg-base)] border border-[var(--border-color)] rounded-xl text-xs text-[var(--text-primary)] outline-none focus:border-indigo-500" 
+                                        value={assessmentForm.subject} 
+                                        onChange={e => setAssessmentForm({ ...assessmentForm, subject: e.target.value })} 
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-extrabold uppercase text-[var(--text-secondary)] mb-1">Duration (Minutes) <span className="text-red-500">*</span></label>
+                                    <input 
+                                        type="number" 
+                                        min="1" 
+                                        className="w-full p-3 bg-gray-50 dark:bg-[var(--bg-base)] border border-[var(--border-color)] rounded-xl text-xs text-[var(--text-primary)] outline-none focus:border-indigo-500" 
+                                        value={assessmentForm.duration} 
+                                        onChange={e => setAssessmentForm({ ...assessmentForm, duration: e.target.value })} 
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-[11px] font-extrabold uppercase text-[var(--text-secondary)] mb-1">Scheduled Date</label>
+                                    <input 
+                                        type="date" 
+                                        className="w-full p-3 bg-gray-50 dark:bg-[var(--bg-base)] border border-[var(--border-color)] rounded-xl text-xs text-[var(--text-primary)] outline-none focus:border-indigo-500" 
+                                        value={assessmentForm.scheduledDate} 
+                                        onChange={e => setAssessmentForm({ ...assessmentForm, scheduledDate: e.target.value })} 
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-extrabold uppercase text-[var(--text-secondary)] mb-1">Status</label>
+                                    <select 
+                                        className="w-full p-3 bg-gray-50 dark:bg-[var(--bg-base)] border border-[var(--border-color)] rounded-xl text-xs text-[var(--text-primary)] outline-none focus:border-indigo-500"
+                                        value={assessmentForm.status}
+                                        onChange={e => setAssessmentForm({ ...assessmentForm, status: e.target.value })}
+                                    >
+                                        <option value="Upcoming">Upcoming</option>
+                                        <option value="Active">Active</option>
+                                        <option value="Completed">Completed</option>
+                                        <option value="Missed">Missed</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-[11px] font-extrabold uppercase text-[var(--text-secondary)] mb-1">Start Time</label>
+                                    <input type="text" placeholder="09:00 AM" className="w-full p-3 bg-gray-50 dark:bg-[var(--bg-base)] border border-[var(--border-color)] rounded-xl text-xs text-[var(--text-primary)] outline-none focus:border-indigo-500" value={assessmentForm.startTime} onChange={e => setAssessmentForm({ ...assessmentForm, startTime: e.target.value })} />
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-extrabold uppercase text-[var(--text-secondary)] mb-1">End Time</label>
+                                    <input type="text" placeholder="10:00 AM" className="w-full p-3 bg-gray-50 dark:bg-[var(--bg-base)] border border-[var(--border-color)] rounded-xl text-xs text-[var(--text-primary)] outline-none focus:border-indigo-500" value={assessmentForm.endTime} onChange={e => setAssessmentForm({ ...assessmentForm, endTime: e.target.value })} />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* ─── Question Builder ─── */}
+                        <div className="border-t border-[var(--border-color)] pt-4 space-y-3">
+                            <div className="flex justify-between items-center">
+                                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)]">Questions <span className="text-red-500">*</span></h3>
+                                <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${
+                                    assessmentQuestions.length === 0
+                                        ? 'bg-red-500/10 text-red-600 border-red-500/20'
+                                        : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                                }`}>
+                                    {assessmentQuestions.length} {assessmentQuestions.length === 1 ? 'Question' : 'Questions'} added
+                                </span>
+                            </div>
+
+                            {assessmentQuestions.length === 0 && (
+                                <p className="text-[11px] text-red-500 font-semibold">⚠ At least 1 question is required before publishing.</p>
+                            )}
+
+                            {/* Add new question row */}
+                            <div className="bg-gray-50 dark:bg-[var(--bg-base)] border border-[var(--border-color)] rounded-2xl p-4 space-y-3">
+                                <div className="flex gap-2">
+                                    <select
+                                        className="p-2.5 bg-white dark:bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] text-xs outline-none"
+                                        value={newAssessmentQ.type}
+                                        onChange={e => setNewAssessmentQ({ ...newAssessmentQ, type: e.target.value, options: [] })}
+                                    >
+                                        <option value="mcq">MCQ</option>
+                                        <option value="text">Short Text</option>
+                                        <option value="voice">Voice</option>
+                                    </select>
+                                    <input
+                                        className="flex-1 p-2.5 bg-white dark:bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] text-xs outline-none focus:border-indigo-500"
+                                        placeholder="Type your question here..."
+                                        value={newAssessmentQ.questionText}
+                                        onChange={e => setNewAssessmentQ({ ...newAssessmentQ, questionText: e.target.value })}
+                                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); } }}
+                                    />
+                                </div>
+
+                                {newAssessmentQ.type === 'mcq' && (
+                                    <div className="space-y-2">
+                                        <div className="flex gap-2">
+                                            <input
+                                                className="flex-1 p-2 bg-white dark:bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] text-xs outline-none"
+                                                placeholder="Type option & press Add"
+                                                value={newAssessmentQ.optionInput || ''}
+                                                onChange={e => setNewAssessmentQ({ ...newAssessmentQ, optionInput: e.target.value })}
+                                                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddOption(); } }}
+                                            />
+                                            <button type="button" onClick={handleAddOption} className="px-3 py-2 bg-indigo-500/10 text-indigo-600 text-xs font-bold rounded-xl border border-indigo-500/20 hover:bg-indigo-500/20">Add</button>
+                                        </div>
+                                        <div className="flex flex-wrap gap-1">
+                                            {(newAssessmentQ.options || []).map((opt, i) => (
+                                                <span key={i} className="flex items-center gap-1 bg-indigo-500/10 text-indigo-600 px-2 py-1 rounded-lg text-[10px] font-bold border border-indigo-500/20">
+                                                    {opt}
+                                                    <button type="button" onClick={() => setNewAssessmentQ(prev => ({ ...prev, options: prev.options.filter((_, idx) => idx !== i) }))} className="hover:text-red-500"><X size={10} /></button>
+                                                </span>
+                                            ))}
+                                        </div>
+                                        {(newAssessmentQ.options || []).length > 0 && (
+                                            <div>
+                                                <label className="text-[10px] text-[var(--text-secondary)] font-bold uppercase block mb-1">Correct Answer</label>
+                                                <select
+                                                    className="w-full p-2 bg-white dark:bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl text-xs text-[var(--text-primary)] outline-none"
+                                                    value={newAssessmentQ.correctAnswer || ''}
+                                                    onChange={e => setNewAssessmentQ({ ...newAssessmentQ, correctAnswer: e.target.value })}
+                                                >
+                                                    <option value="">-- Select correct answer --</option>
+                                                    {(newAssessmentQ.options || []).map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
+                                                </select>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                <button type="button" onClick={handleAddAssessmentQuestion} className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs shadow-sm flex items-center justify-center gap-1.5">
+                                    <Plus size={14} /> Add Question
+                                </button>
+                            </div>
+
+                            {/* Question list preview */}
+                            {assessmentQuestions.length > 0 && (
+                                <div className="space-y-2">
+                                    {assessmentQuestions.map((q, i) => (
+                                        <div key={i} className="flex justify-between items-start bg-white dark:bg-[var(--bg-surface)] border border-[var(--border-color)] p-3 rounded-xl text-xs">
+                                            <div>
+                                                <span className="text-[10px] font-extrabold uppercase text-indigo-600 mr-2">{q.type}</span>
+                                                <span className="text-[var(--text-primary)] font-medium">{q.questionText}</span>
+                                                {(q.options || []).length > 0 && (
+                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                        {q.options.map((o, j) => (
+                                                            <span key={j} className={`px-2 py-0.5 rounded text-[10px] font-semibold ${o === q.correctAnswer ? 'bg-emerald-500/20 text-emerald-700 border border-emerald-500/30' : 'bg-gray-100 dark:bg-slate-700 text-[var(--text-secondary)]'}`}>{o}{o === q.correctAnswer ? ' ✓' : ''}</span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <button type="button" onClick={() => setAssessmentQuestions(prev => prev.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-500 p-1 shrink-0"><X size={14} /></button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* ─── Action Buttons ─── */}
+                        <div className="flex gap-3 pt-2 border-t border-[var(--border-color)]">
+                            <button type="button" onClick={() => setShowCreateAssessmentModal(false)} className="flex-1 py-3 text-[var(--text-secondary)] font-bold rounded-xl text-xs hover:bg-[var(--bg-base)]">Cancel</button>
+                            <button type="button" onClick={() => handleSaveAssessment(false)} className="px-5 py-3 bg-gray-500/10 text-[var(--text-primary)] border border-[var(--border-color)] hover:bg-gray-500/20 font-extrabold rounded-xl text-xs">
+                                Save Draft
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleSaveAssessment(true)}
+                                disabled={!isPublishReady()}
+                                className={`flex-1 py-3 font-extrabold rounded-xl text-xs shadow-md transition-all ${
+                                    isPublishReady()
+                                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer'
+                                        : 'bg-indigo-600/40 text-white/60 cursor-not-allowed'
+                                }`}
+                                title={!isPublishReady() ? 'Add a title, set duration > 0, and add at least 1 question' : 'Publish to students'}
+                            >
+                                {isPublishReady() ? '🚀 Publish Assessment' : '🔒 Publish (add question first)'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* VIEW ASSESSMENT DETAILS MODAL (Teacher) */}
+            {viewAssessmentModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-[var(--bg-surface)] border border-[var(--border-color)] p-6 md:p-8 rounded-3xl w-full max-w-lg shadow-2xl space-y-5 animate-fade-in-up">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <span className="text-xs font-black text-indigo-600 uppercase tracking-wider">{viewAssessmentModal.subject || activeClass?.subject || 'Assessment'}</span>
+                                <h2 className="text-2xl font-black text-[var(--text-primary)] mt-1">{viewAssessmentModal.title}</h2>
+                            </div>
+                            <button onClick={() => setViewAssessmentModal(null)} className="p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-base)] rounded-xl"><X size={20} /></button>
+                        </div>
+
+                        <div className="bg-[var(--bg-base)] p-4 rounded-2xl border border-[var(--border-color)] space-y-2.5 text-xs font-semibold">
+                            {[
+                                ['Status', viewAssessmentModal.status],
+                                ['Publish State', viewAssessmentModal.isPublished ? '✅ Published' : '○ Draft'],
+                                ['Duration', `${viewAssessmentModal.duration || 30} minutes`],
+                                ['Questions', `${(viewAssessmentModal.questions || []).length} question(s)`],
+                                ['Scheduled', viewAssessmentModal.scheduledDate ? new Date(viewAssessmentModal.scheduledDate).toLocaleDateString() : 'N/A'],
+                                ['Time Slot', `${viewAssessmentModal.startTime || '09:00 AM'} – ${viewAssessmentModal.endTime || '10:00 AM'}`],
+                                ['Published At', viewAssessmentModal.publishedAt ? new Date(viewAssessmentModal.publishedAt).toLocaleString() : 'Not published yet'],
+                            ].map(([label, value]) => (
+                                <div key={label} className="flex justify-between border-b border-[var(--border-color)] pb-2 last:border-0 last:pb-0">
+                                    <span className="text-[var(--text-secondary)]">{label}:</span>
+                                    <span className="font-bold text-[var(--text-primary)]">{value}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Questions preview */}
+                        {(viewAssessmentModal.questions || []).length > 0 && (
+                            <div className="space-y-2">
+                                <h3 className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">Questions</h3>
+                                {viewAssessmentModal.questions.map((q, i) => (
+                                    <div key={i} className="bg-[var(--bg-base)] p-3 rounded-xl border border-[var(--border-color)] text-xs">
+                                        <p className="font-bold text-[var(--text-primary)]"><span className="text-indigo-600 mr-1">Q{i+1}.</span>{q.question}</p>
+                                        {(q.options || []).length > 0 && (
+                                            <div className="flex flex-wrap gap-1 mt-1.5">
+                                                {q.options.map((opt, j) => (
+                                                    <span key={j} className={`px-2 py-0.5 rounded text-[10px] ${opt === q.correctAnswer ? 'bg-emerald-500/20 text-emerald-700 border border-emerald-500/30 font-bold' : 'bg-gray-100 dark:bg-slate-700 text-[var(--text-secondary)]'}`}>{opt}{opt === q.correctAnswer ? ' ✓' : ''}</span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="flex gap-3">
+                            <button onClick={() => setViewAssessmentModal(null)} className="flex-1 py-3 text-[var(--text-secondary)] font-bold rounded-xl text-xs hover:bg-[var(--bg-base)]">Close</button>
+                            {viewAssessmentModal.isPublished && (
+                                <button onClick={() => { handleUnpublish(viewAssessmentModal._id); setViewAssessmentModal(null); }} className="px-5 py-3 bg-amber-500/10 text-amber-600 border border-amber-500/20 font-extrabold rounded-xl text-xs hover:bg-amber-500/20">Unpublish</button>
+                            )}
+                            <button onClick={() => { handleDeleteAssessment(viewAssessmentModal._id, viewAssessmentModal.title); setViewAssessmentModal(null); }} className="px-5 py-3 bg-red-500/10 text-red-600 border border-red-500/20 font-extrabold rounded-xl text-xs hover:bg-red-500/20">Delete</button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

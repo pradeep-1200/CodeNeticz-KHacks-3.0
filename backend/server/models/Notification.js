@@ -1,29 +1,21 @@
 const mongoose = require('mongoose');
 
+// FIX: removed manual createdAt, using timestamps:true for consistent sorting
 const NotificationSchema = new mongoose.Schema({
     userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+        type:     mongoose.Schema.Types.ObjectId,
+        ref:      'User',
+        required: true,
+        index:    true
     },
-    message: {
-        type: String,
-        required: true
-    },
+    message: { type: String, required: true },
     type: {
-        type: String,
-        enum: ['assignment', 'announcement', 'grade', 'info', 'invitation'],
+        type:    String,
+        enum:    ['assignment', 'announcement', 'grade', 'info', 'invitation'],
         default: 'info'
     },
-    link: String, // URL to redirect
-    read: {
-        type: Boolean,
-        default: false
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
-});
+    link:  { type: String, default: '' },
+    read:  { type: Boolean, default: false, index: true }
+}, { timestamps: true });
 
 module.exports = mongoose.model('Notification', NotificationSchema);

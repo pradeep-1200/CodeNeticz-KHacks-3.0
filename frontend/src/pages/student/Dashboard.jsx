@@ -4,14 +4,16 @@ import Navbar from '../../components/Navbar';
 import { useGamification } from '../../context/GamificationContext';
 import { useAuthStore } from '../../store/authStore';
 import { useAdaptive } from '../../context/AdaptiveContext';
-import { getDashboardData, respondToInvite } from '../../services/api';
+import { getDashboardData, respondToInvite, getStudentAssessments } from '../../services/api';
 import { 
    BookOpen, Bell, Star, TrendingUp, ArrowRight, CheckCircle, Clock, 
-   Accessibility, BarChart2, ClipboardCheck, Flame, Trophy, Play, Sparkles, Mic, Target, Mail, Check, X
+   Accessibility, BarChart2, ClipboardCheck, Flame, Trophy, Play, Sparkles, Mic, Target, Mail, Check, Eye
 } from 'lucide-react';
 
 const Dashboard = () => {
    const [data, setData] = useState(null);
+   const [assessments, setAssessments] = useState([]);
+   const [assessmentsLoading, setAssessmentsLoading] = useState(true);
    const { stats } = useGamification();
    const { isPrelimsCompleted, profile } = useAdaptive();
    const user = useAuthStore(s => s.user);
@@ -20,7 +22,24 @@ const Dashboard = () => {
 
    useEffect(() => {
       loadData();
+      loadAssessments();
    }, []);
+
+   const loadAssessments = async () => {
+      try {
+         setAssessmentsLoading(true);
+         const res = await getStudentAssessments();
+         if (res && res.assessments) {
+            setAssessments(res.assessments);
+         } else if (Array.isArray(res)) {
+            setAssessments(res);
+         }
+      } catch (err) {
+         console.error("Fetch student assessments error:", err);
+      } finally {
+         setAssessmentsLoading(false);
+      }
+   };
 
    const loadData = async () => {
       try {
@@ -223,6 +242,113 @@ const Dashboard = () => {
                   </div>
                </div>
             )}
+
+            {/* ASSESSMENTS SECTION (Enrolled Classrooms Integration) */}
+            <div className="space-y-4">
+               <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-extrabold flex items-center gap-2 tracking-tight">
+                     <ClipboardCheck size={20} className="text-indigo-600" /> Upcoming Assessments
+                  </h2>
+                  <span className="text-xs font-extrabold text-indigo-600 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
+                     {assessments.length} Available
+                  </span>
+               </div>
+
+               {assessmentsLoading ? (
+                  <div className="p-8 text-center bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-color)] text-xs text-[var(--text-secondary)] font-semibold">
+                     Loading classroom assessments...
+                  </div>
+               ) : assessments.length === 0 ? (
+                  <div className="p-8 text-center bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-color)] space-y-2">
+                     <ClipboardCheck size={36} className="mx-auto text-indigo-500/40" />
+                     <p className="font-bold text-sm text-[var(--text-primary)]">No Published Assessments Found</p>
+                     <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto">
+                        When teachers publish assessments for your enrolled classrooms, they will automatically appear here.
+                     </p>
+                  </div>
+               ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                     {assessments.map(assess => {
+                        const statusColors = {
+                           'Upcoming':  'bg-blue-500/10 text-blue-600 border-blue-500/20',
+                           'Active':    'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 animate-pulse',
+                           'Completed': 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+                           'Missed':    'bg-red-500/10 text-red-600 border-red-500/20'
+                        };
+
+                        const formattedDate = assess.scheduledDate ? new Date(assess.scheduledDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
+                        const teacherName = assess.teacherId?.name || (typeof assess.teacherId === 'string' ? assess.teacherId : 'Faculty');
+                        const questionCount = (assess.questions || []).length || (assess.question ? 1 : 0);
+
+                        return (
+                           <div key={assess._id} className="bg-[var(--bg-surface)] p-6 rounded-3xl shadow-sm border border-[var(--border-color)] hover:border-indigo-500/40 transition-all flex flex-col justify-between space-y-5 card-hover-lift">
+                              <div className="space-y-3">
+                                 <div className="flex justify-between items-start">
+                                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
+                                       {assess.subject || assess.classId?.subject || 'Assessment'}
+                                    </span>
+                                    <span className={`text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full border ${statusColors[assess.status] || statusColors['Upcoming']}`}>
+                                       • {assess.status}
+                                    </span>
+                                 </div>
+
+                                 <div>
+                                    <h3 className="font-black text-xl text-[var(--text-primary)] tracking-tight leading-snug">{assess.title}</h3>
+                                    <p className="text-xs text-[var(--text-secondary)] font-semibold mt-1 flex items-center gap-1.5">
+                                       <span>Classroom: <b className="text-[var(--text-primary)]">{assess.classId?.name || 'Enrolled Class'}</b></span>
+                                    </p>
+                                 </div>
+
+                                 <div className="grid grid-cols-2 gap-2 pt-2 text-xs font-semibold border-t border-[var(--border-color)]">
+                                    <div className="space-y-1">
+                                       <span className="text-[10px] text-[var(--text-secondary)] uppercase font-bold block">Teacher</span>
+                                       <span className="text-[var(--text-primary)] font-bold truncate block">{teacherName}</span>
+                                    </div>
+                                    <div className="space-y-1">
+                                       <span className="text-[10px] text-[var(--text-secondary)] uppercase font-bold block">Questions</span>
+                                       <span className="text-[var(--text-primary)] font-bold block">{questionCount} {questionCount === 1 ? 'Question' : 'Questions'}</span>
+                                    </div>
+                                    <div className="space-y-1">
+                                       <span className="text-[10px] text-[var(--text-secondary)] uppercase font-bold block">Duration</span>
+                                       <span className="text-[var(--text-primary)] font-bold block">{assess.duration || 30} mins</span>
+                                    </div>
+                                    <div className="space-y-1">
+                                       <span className="text-[10px] text-[var(--text-secondary)] uppercase font-bold block">Scheduled Date</span>
+                                       <span className="text-[var(--text-primary)] font-bold block">{formattedDate}</span>
+                                    </div>
+                                    <div className="col-span-2 space-y-1">
+                                       <span className="text-[10px] text-[var(--text-secondary)] uppercase font-bold block">Time Slot</span>
+                                       <span className="text-[var(--text-primary)] font-bold block">{assess.startTime || '09:00 AM'} - {assess.endTime || '10:00 AM'}</span>
+                                    </div>
+                                 </div>
+                              </div>
+
+                              <div className="pt-2 space-y-2">
+                                 {/* Phase 4 placeholder — assessment taking is not yet implemented */}
+                                 <button
+                                    disabled
+                                    className="w-full py-3 bg-indigo-600/40 text-white/70 font-extrabold rounded-2xl text-xs cursor-not-allowed flex items-center justify-center gap-2 border border-indigo-500/20"
+                                 >
+                                    <ClipboardCheck size={16} /> Start Assessment
+                                 </button>
+                                 <p className="text-center text-[10px] text-[var(--text-secondary)] font-semibold">
+                                    🔒 Available in Phase 4
+                                 </p>
+                                 <button
+                                    onClick={() => navigate(`/student/assessment/${assess._id}`)}
+                                    className="w-full py-2.5 bg-[var(--bg-base)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:bg-indigo-500/10 hover:text-indigo-600 font-bold rounded-2xl text-xs transition-all flex items-center justify-center gap-2"
+                                 >
+                                    <Eye size={14} /> View Details
+                                 </button>
+                              </div>
+                           </div>
+                        );
+                     })}
+                  </div>
+               )}
+            </div>
+
+
 
             {/* Quick Actions & Recent Activity Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -2,6 +2,20 @@ const mongoose = require('mongoose');
 const dns      = require('dns');
 const logger   = require('../utils/logger');
 
+// ── Force Google DNS immediately at module load time ──────────
+// Must run BEFORE mongoose makes any SRV lookups.
+// System DNS (assigned by hotspot/router) often refuses port 53 for
+// mongodb+srv:// SRV queries, causing ECONNREFUSED before connect() is called.
+(function forceGoogleDns() {
+  const envDns = process.env.MONGODB_DNS_SERVERS;
+  const servers = envDns
+    ? envDns.split(',').map(s => s.trim()).filter(Boolean)
+    : ['8.8.8.8', '8.8.4.4', '1.1.1.1'];
+  try {
+    dns.setServers(servers);
+  } catch (_) { /* non-fatal */ }
+})();
+
 async function connectMongoDB() {
   if (mongoose.connection.readyState === 1) return;
 
@@ -11,21 +25,8 @@ async function connectMongoDB() {
     return;
   }
 
-  // Set Google DNS (8.8.8.8, 8.8.4.4, 1.1.1.1) as primary resolvers for SRV lookups on Windows
-  const envDns = process.env.MONGODB_DNS_SERVERS;
-  const dnsServers = envDns
-    ? envDns.split(',').map(s => s.trim()).filter(Boolean)
-    : ['8.8.8.8', '8.8.4.4', '1.1.1.1'];
-
   try {
-    dns.setServers(dnsServers);
-    logger.info(`Using DNS resolvers for MongoDB Atlas: ${dnsServers.join(', ')}`, { category: 'system' });
-  } catch (err) {
-    logger.warn('Could not set DNS resolvers for MongoDB', { category: 'system', error: err.message });
-  }
-
-  try {
-    await mongoose.connect(uri, { serverSelectionTimeoutMS: 10000 });
+    await mongoose.connect(uri, { serverSelectionTimeoutMS: 15000 });
     logger.info('MongoDB Atlas connected successfully', { category: 'system' });
   } catch (err) {
     logger.error('MongoDB connection failed', { category: 'system', error: err.message });

@@ -1,27 +1,28 @@
 const mongoose = require('mongoose');
 
 const reportSchema = new mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
     improvementData: [{
-        subject: String,
-        score: Number,
-        improved: Number
+        subject:  { type: String, default: '' },
+        score:    { type: Number, default: 0 },
+        improved: { type: Number, default: 0 }
     }],
     skillData: [{
-        name: String,
-        progress: Number
+        name:     { type: String, default: '' },
+        progress: { type: Number, default: 0 }
     }],
-    strengths: [String],
-    areasToExplore: [String],
+    strengths:      [{ type: String }],
+    areasToExplore: [{ type: String }],
     beforeStats: [{ label: String, value: Number, display: String }],
-    afterStats: [{ label: String, value: Number, display: String }],
-    submissionHistory: [{ date: String, count: Number }],
+    afterStats:  [{ label: String, value: Number, display: String }],
+    submissionHistory: [{ date: String, count: { type: Number, default: 1 } }],
+    // FIX: added default: 0 on all numeric subfields so they are never undefined
     problemStats: {
-        easy: { solved: Number, total: Number },
-        medium: { solved: Number, total: Number },
-        hard: { solved: Number, total: Number },
-        total: { solved: Number, total: Number }
+        easy:   { solved: { type: Number, default: 0 }, total: { type: Number, default: 100 } },
+        medium: { solved: { type: Number, default: 0 }, total: { type: Number, default: 80 } },
+        hard:   { solved: { type: Number, default: 0 }, total: { type: Number, default: 30 } },
+        total:  { solved: { type: Number, default: 0 }, total: { type: Number, default: 210 } }
     }
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('Report', reportSchema);

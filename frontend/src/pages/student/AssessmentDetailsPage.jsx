@@ -13,7 +13,6 @@ const AssessmentDetailsPage = () => {
    const [assessment, setAssessment] = useState(null);
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState('');
-   const [showPhase4Modal, setShowPhase4Modal] = useState(false);
 
    useEffect(() => {
       fetchAssessment();
@@ -198,7 +197,7 @@ const AssessmentDetailsPage = () => {
                         <p className="text-sm text-[var(--text-secondary)] font-medium">You can begin this assessment now.</p>
                      </div>
                      <button
-                        onClick={() => setShowPhase4Modal(true)}
+                        onClick={() => navigate(`/student/assessment/${id}/attempt`)}
                         className="w-full md:w-auto px-10 py-4 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-black text-base rounded-2xl shadow-xl shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 border border-emerald-400/30"
                      >
                         <Play size={20} fill="currentColor" /> Start Assessment
@@ -230,29 +229,6 @@ const AssessmentDetailsPage = () => {
 
          </main>
 
-         {/* Phase 4 Placeholder Modal */}
-         {showPhase4Modal && (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-               <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] p-8 rounded-3xl w-full max-w-md shadow-2xl space-y-6 animate-fade-in-up text-center">
-                  <div className="w-16 h-16 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto">
-                     <ClipboardCheck size={32} className="text-indigo-600" />
-                  </div>
-                  <h2 className="text-xl font-black text-[var(--text-primary)]">Coming Soon!</h2>
-                  <p className="text-sm text-[var(--text-secondary)] font-medium leading-relaxed">
-                     Assessment Attempt will be available in Phase 4.
-                  </p>
-                  <p className="text-xs text-[var(--text-secondary)]">
-                     The assessment-taking experience with adaptive accessibility features is currently under development.
-                  </p>
-                  <button
-                     onClick={() => setShowPhase4Modal(false)}
-                     className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-2xl text-sm transition-colors shadow-md"
-                  >
-                     Got It
-                  </button>
-               </div>
-            </div>
-         )}
       </div>
    );
 };

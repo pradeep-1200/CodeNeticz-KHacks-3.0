@@ -3,7 +3,7 @@ import StaffNavbar from '../../components/StaffNavbar';
 import { 
    Users, Plus, Copy, Check, BookOpen, Mail, Send, ClipboardCheck, Calendar, 
    FileText, Mic, List, Type, X, Trophy, ChevronDown, ChevronRight, Eye, Home, 
-   MoreVertical, Folder, ArrowLeft, UploadCloud, Sparkles, CheckCircle, AlertCircle, Download, Paperclip 
+   MoreVertical, Folder, ArrowLeft, UploadCloud, Sparkles, CheckCircle, AlertCircle, Download, Paperclip, BarChart2
 } from 'lucide-react';
 import { 
    createClass, 
@@ -686,6 +686,14 @@ const ClassManager = () => {
                                                               className="flex items-center gap-1 px-3 py-1.5 text-[10px] font-extrabold bg-amber-500/10 text-amber-600 border border-amber-500/20 rounded-lg hover:bg-amber-500/20 transition-colors"
                                                            >
                                                               <X size={12} /> Unpublish
+                                                           </button>
+                                                        )}
+                                                        {assess.isPublished && (
+                                                           <button
+                                                              onClick={() => navigate(`/staff/analytics/${assess._id}`)}
+                                                              className="flex items-center gap-1 px-3 py-1.5 text-[10px] font-extrabold bg-purple-500/10 text-purple-600 border border-purple-500/20 rounded-lg hover:bg-purple-500/20 transition-colors"
+                                                           >
+                                                              <BarChart2 size={12} /> Analytics
                                                            </button>
                                                         )}
                                                         <button

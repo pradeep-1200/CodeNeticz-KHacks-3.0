@@ -4,32 +4,34 @@ import Navbar from '../../components/Navbar';
 import { getStudentAssessments } from '../../services/api';
 import {
    ClipboardCheck, Clock, Calendar, User, BookOpen, Hash, Eye,
-   Play, AlertCircle, CheckCircle2, Loader2, Filter
+   AlertCircle, CheckCircle2, Loader2, Filter, BarChart2, Play
 } from 'lucide-react';
 
-/* ── Reusable Assessment Card Component ─────────────────────── */
-const AssessmentCard = ({ assessment, onViewDetails }) => {
+/* ── Reusable Assessment Card ────────────────────────────────── */
+const AssessmentCard = ({ assessment, onViewDetails, onViewResult }) => {
    const statusConfig = {
-      'Upcoming':  { color: 'bg-blue-500/10 text-blue-600 border-blue-500/20',       dot: 'bg-blue-500' },
-      'Active':    { color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 animate-pulse', dot: 'bg-emerald-500' },
-      'Completed': { color: 'bg-purple-500/10 text-purple-600 border-purple-500/20',   dot: 'bg-purple-500' },
-      'Missed':    { color: 'bg-red-500/10 text-red-600 border-red-500/20',            dot: 'bg-red-500' },
+      'Upcoming':  { color: 'bg-blue-500/10 text-blue-600 border-blue-500/20',                          dot: 'bg-blue-500' },
+      'Active':    { color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 animate-pulse',   dot: 'bg-emerald-500' },
+      'Completed': { color: 'bg-purple-500/10 text-purple-600 border-purple-500/20',                    dot: 'bg-purple-500' },
+      'Missed':    { color: 'bg-red-500/10 text-red-600 border-red-500/20',                             dot: 'bg-red-500' },
    };
 
-   const status = statusConfig[assessment.status] || statusConfig['Upcoming'];
+   const status        = statusConfig[assessment.status] || statusConfig['Upcoming'];
+   const isCompleted   = assessment.status === 'Completed';
+   const isActive      = assessment.status === 'Active';
    const formattedDate = assessment.scheduledDate
       ? new Date(assessment.scheduledDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
       : 'N/A';
-   const teacherName = assessment.teacherId?.name || (typeof assessment.teacherId === 'string' ? assessment.teacherId : 'Faculty');
+   const teacherName   = assessment.teacherId?.name || (typeof assessment.teacherId === 'string' ? assessment.teacherId : 'Faculty');
    const questionCount = (assessment.questions || []).length || (assessment.question ? 1 : 0);
-   const subject = assessment.subject || assessment.classId?.subject || 'Assessment';
+   const subject       = assessment.subject || assessment.classId?.subject || 'Assessment';
 
    return (
       <div className="bg-[var(--bg-surface)] p-6 rounded-3xl shadow-sm border border-[var(--border-color)] hover:border-indigo-500/40 transition-all flex flex-col justify-between space-y-5 card-hover-lift">
          <div className="space-y-3">
             {/* Subject + Status */}
             <div className="flex justify-between items-start">
-               <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
+               <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-600 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
                   {subject}
                </span>
                <span className={`text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full border flex items-center gap-1.5 ${status.color}`}>
@@ -72,19 +74,42 @@ const AssessmentCard = ({ assessment, onViewDetails }) => {
             </div>
          </div>
 
-         {/* Action */}
-         <button
-            onClick={() => onViewDetails(assessment._id)}
-            className="w-full py-3 bg-[var(--bg-base)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:bg-indigo-500/10 hover:text-indigo-600 hover:border-indigo-500/30 font-bold rounded-2xl text-xs transition-all flex items-center justify-center gap-2"
-         >
-            <Eye size={14} /> View Details
-         </button>
+         {/* Actions */}
+         <div className="space-y-2">
+            {/* Completed → show View Result as primary */}
+            {isCompleted && (
+               <button
+                  onClick={() => onViewResult(assessment._id)}
+                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-2xl text-xs transition-all flex items-center justify-center gap-2 shadow-sm"
+               >
+                  <BarChart2 size={14} /> View My Result
+               </button>
+            )}
+
+            {/* Active → Start Assessment */}
+            {isActive && (
+               <button
+                  onClick={() => onViewDetails(assessment._id)}
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-2xl text-xs transition-all flex items-center justify-center gap-2 shadow-sm"
+               >
+                  <Play size={14} /> Start Assessment
+               </button>
+            )}
+
+            {/* View Details always visible */}
+            <button
+               onClick={() => onViewDetails(assessment._id)}
+               className="w-full py-2.5 bg-[var(--bg-base)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:bg-indigo-500/10 hover:text-indigo-600 hover:border-indigo-500/30 font-bold rounded-2xl text-xs transition-all flex items-center justify-center gap-2"
+            >
+               <Eye size={14} /> View Details
+            </button>
+         </div>
       </div>
    );
 };
 
-/* ── Section Component ──────────────────────────────────────── */
-const AssessmentSection = ({ title, icon: Icon, iconColor, assessments, emptyMessage, onViewDetails }) => (
+/* ── Section ─────────────────────────────────────────────────── */
+const AssessmentSection = ({ title, icon: Icon, iconColor, assessments, emptyMessage, onViewDetails, onViewResult }) => (
    <div className="space-y-4">
       <div className="flex items-center justify-between">
          <h2 className="text-lg font-extrabold flex items-center gap-2 tracking-tight">
@@ -103,32 +128,32 @@ const AssessmentSection = ({ title, icon: Icon, iconColor, assessments, emptyMes
       ) : (
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {assessments.map(a => (
-               <AssessmentCard key={a._id} assessment={a} onViewDetails={onViewDetails} />
+               <AssessmentCard
+                  key={a._id}
+                  assessment={a}
+                  onViewDetails={onViewDetails}
+                  onViewResult={onViewResult}
+               />
             ))}
          </div>
       )}
    </div>
 );
 
-/* ── Main Assessment Page ───────────────────────────────────── */
+/* ── Main Page ────────────────────────────────────────────────── */
 const AssessmentPage = () => {
    const navigate = useNavigate();
    const [assessments, setAssessments] = useState([]);
-   const [loading, setLoading] = useState(true);
+   const [loading, setLoading]         = useState(true);
 
-   useEffect(() => {
-      loadAssessments();
-   }, []);
+   useEffect(() => { loadAssessments(); }, []);
 
    const loadAssessments = async () => {
       try {
          setLoading(true);
          const res = await getStudentAssessments();
-         if (res?.assessments) {
-            setAssessments(res.assessments);
-         } else if (Array.isArray(res)) {
-            setAssessments(res);
-         }
+         if (res?.assessments) setAssessments(res.assessments);
+         else if (Array.isArray(res)) setAssessments(res);
       } catch (err) {
          console.error('Fetch student assessments error:', err);
       } finally {
@@ -136,9 +161,8 @@ const AssessmentPage = () => {
       }
    };
 
-   const handleViewDetails = (id) => {
-      navigate(`/student/assessment/${id}`);
-   };
+   const handleViewDetails = (id) => navigate(`/student/assessment/${id}`);
+   const handleViewResult  = (id) => navigate(`/student/assessment/${id}/result`);
 
    const upcoming  = assessments.filter(a => a.status === 'Upcoming' || a.status === 'Active');
    const completed = assessments.filter(a => a.status === 'Completed');
@@ -150,18 +174,17 @@ const AssessmentPage = () => {
 
          <main className="container mx-auto px-4 md:px-8 py-8 space-y-10 max-w-7xl animate-fade-in-up">
 
-            {/* Page Header */}
+            {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
                <div className="space-y-2">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-indigo-600 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
                      <ClipboardCheck size={14} /> Classroom Assessments
                   </span>
                   <h1 className="text-3xl md:text-4xl font-black tracking-tight">My Assessments</h1>
                   <p className="text-sm text-[var(--text-secondary)] font-medium max-w-lg">
-                     View assessments assigned to your enrolled classrooms. Click "View Details" to see full information about each assessment.
+                     Active assessments can be started. Completed assessments show your AI-evaluated result.
                   </p>
                </div>
-
                <div className="flex items-center gap-2 bg-[var(--bg-surface)] px-4 py-2.5 rounded-2xl border border-[var(--border-color)] shadow-sm shrink-0">
                   <Filter size={14} className="text-[var(--text-secondary)]" />
                   <span className="text-xs font-bold text-[var(--text-secondary)]">Total:</span>
@@ -172,19 +195,18 @@ const AssessmentPage = () => {
             {loading ? (
                <div className="p-16 text-center bg-[var(--bg-surface)] rounded-3xl border border-[var(--border-color)] flex flex-col items-center gap-4">
                   <Loader2 size={36} className="text-indigo-600 animate-spin" />
-                  <p className="text-sm font-semibold text-[var(--text-secondary)]">Loading your assessments...</p>
+                  <p className="text-sm font-semibold text-[var(--text-secondary)]">Loading your assessments…</p>
                </div>
             ) : assessments.length === 0 ? (
                <div className="p-16 text-center bg-[var(--bg-surface)] rounded-3xl border border-[var(--border-color)] space-y-3">
                   <ClipboardCheck size={48} className="mx-auto text-indigo-500/30" />
                   <h2 className="text-xl font-black text-[var(--text-primary)]">No Assessments Found</h2>
                   <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto font-medium">
-                     When teachers publish assessments for your enrolled classrooms, they will automatically appear here.
+                     When teachers publish assessments for your enrolled classrooms, they will appear here automatically.
                   </p>
                </div>
             ) : (
                <>
-                  {/* Upcoming / Active */}
                   <AssessmentSection
                      title="Upcoming & Active Assessments"
                      icon={Clock}
@@ -192,19 +214,17 @@ const AssessmentPage = () => {
                      assessments={upcoming}
                      emptyMessage="No upcoming assessments at this time."
                      onViewDetails={handleViewDetails}
+                     onViewResult={handleViewResult}
                   />
-
-                  {/* Completed */}
                   <AssessmentSection
                      title="Completed Assessments"
                      icon={CheckCircle2}
                      iconColor="text-purple-600"
                      assessments={completed}
-                     emptyMessage="No completed assessments yet."
+                     emptyMessage="No completed assessments yet. Submit one to see your AI-powered result here."
                      onViewDetails={handleViewDetails}
+                     onViewResult={handleViewResult}
                   />
-
-                  {/* Missed */}
                   <AssessmentSection
                      title="Missed Assessments"
                      icon={AlertCircle}
@@ -212,6 +232,7 @@ const AssessmentPage = () => {
                      assessments={missed}
                      emptyMessage="No missed assessments."
                      onViewDetails={handleViewDetails}
+                     onViewResult={handleViewResult}
                   />
                </>
             )}

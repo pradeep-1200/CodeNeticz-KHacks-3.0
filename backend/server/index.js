@@ -63,6 +63,10 @@ app.use('/api/students',      authenticate, require('./routes/students'));
 app.use('/api/materials',     authenticate, require('./routes/material'));
 app.use('/api/levels',        authenticate, require('./routes/levels'));
 app.use('/api/classes',       authenticate, require('./routes/classes'));
+app.use('/api/classes',       authenticate, require('./routes/assessments'));   // Phase 3: teacher assessment CRUD
+app.use('/api/submissions',  authenticate, require('./routes/submissions'));    // Phase 4: student assessment attempt
+app.use('/api/analytics',   authenticate, require('./routes/analytics'));       // Phase 8: AI analytics
+app.use('/api/ai',           authenticate, require('./routes/mathAssistant'));  // Phase 6: AI math assistant
 app.use('/api/stt',           authenticate, require('./routes/stt'));
 app.use('/api/dyslexia',      authenticate, require('./routes/dyslexia'));
 app.use('/api/ocr',           authenticate, require('./routes/ocr'));
@@ -80,6 +84,10 @@ app.use('/api/v1/students',      authenticate, require('./routes/students'));
 app.use('/api/v1/materials',     authenticate, require('./routes/material'));
 app.use('/api/v1/levels',        authenticate, require('./routes/levels'));
 app.use('/api/v1/classes',       authenticate, require('./routes/classes'));
+app.use('/api/v1/classes',       authenticate, require('./routes/assessments'));  // Phase 3: teacher assessment CRUD
+app.use('/api/v1/submissions',   authenticate, require('./routes/submissions'));   // Phase 4: student assessment attempt
+app.use('/api/v1/analytics',    authenticate, require('./routes/analytics'));      // Phase 8: AI analytics
+app.use('/api/v1/ai',            authenticate, require('./routes/mathAssistant'));  // Phase 6: AI math assistant
 app.use('/api/v1/stt',           authenticate, require('./routes/stt'));
 app.use('/api/v1/dyslexia',      authenticate, require('./routes/dyslexia'));
 app.use('/api/v1/ocr',           authenticate, require('./routes/ocr'));

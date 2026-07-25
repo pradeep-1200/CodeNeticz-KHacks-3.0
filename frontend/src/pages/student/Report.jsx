@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getReportData } from '../../services/api';
+import { getReportData, getMyAssessmentHistory } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import InsightCard from '../../components/InsightCard';
@@ -7,7 +7,8 @@ import {
     TrendingUp, ArrowRight, Sparkles,
     Headphones, Type, CheckCircle2,
     MoveRight, BookOpen, Brain,
-    ArrowUp, ArrowDown, Activity, Calendar
+    ArrowUp, ArrowDown, Activity, Calendar,
+    BarChart2, Trophy, Clock, ChevronRight
 } from 'lucide-react';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -17,13 +18,17 @@ import {
 const Report = () => {
     const navigate = useNavigate();
     const [reportData, setReportData] = useState(null);
+    const [history,    setHistory]    = useState([]);
 
     useEffect(() => {
         getReportData().then(setReportData).catch(err => console.error("Report load error", err));
+        getMyAssessmentHistory()
+            .then(res => { if (res?.results) setHistory(res.results); })
+            .catch(() => {}); // silent — history is bonus data
     }, []);
 
     const beforeStats = reportData?.beforeStats || [];
-    const afterStats = reportData?.afterStats || [];
+    const afterStats  = reportData?.afterStats  || [];
 
     return (
         <div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)] transition-colors duration-300 font-sans">
@@ -227,7 +232,58 @@ const Report = () => {
                     </div>
                 </section>
 
-                {/* 5. NEXT RECOMMENDED ACTIONS */}
+                {/* 5. ASSESSMENT HISTORY */}
+                {history.length > 0 && (
+                    <section className="space-y-4">
+                        <h2 className="text-xl font-extrabold flex items-center gap-2 tracking-tight">
+                            <BarChart2 className="text-indigo-600" /> Assessment History
+                        </h2>
+                        <div className="space-y-3">
+                            {history.map((r, i) => {
+                                const a        = r.assessmentId || {};
+                                const date     = r.completedAt
+                                    ? new Date(r.completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                                    : '—';
+                                const gradeColor =
+                                    r.grade === 'A+' || r.grade === 'A' ? 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20' :
+                                    r.grade === 'B'                     ? 'text-blue-600 bg-blue-500/10 border-blue-500/20' :
+                                    r.grade === 'C'                     ? 'text-indigo-600 bg-indigo-500/10 border-indigo-500/20' :
+                                    r.grade === 'D'                     ? 'text-amber-600 bg-amber-500/10 border-amber-500/20' :
+                                                                          'text-red-600 bg-red-500/10 border-red-500/20';
+                                const timeMins = Math.floor((r.timeTakenSeconds || 0) / 60);
+                                return (
+                                    <div key={i}
+                                        className="bg-[var(--bg-surface)] p-4 rounded-2xl border border-[var(--border-color)] flex items-center gap-4 hover:border-indigo-500/30 transition-all cursor-pointer"
+                                        onClick={() => navigate(`/student/assessment/${r.assessmentId?._id || r.assessmentId}/result`)}>
+                                        {/* Grade badge */}
+                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg border shrink-0 ${gradeColor}`}>
+                                            {r.grade}
+                                        </div>
+                                        {/* Info */}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-extrabold text-sm text-[var(--text-primary)] truncate">
+                                                {a.title || 'Assessment'}
+                                            </p>
+                                            <div className="flex flex-wrap gap-3 text-[10px] font-bold text-[var(--text-secondary)] mt-0.5">
+                                                <span className="flex items-center gap-1"><Calendar size={9} /> {date}</span>
+                                                <span className="flex items-center gap-1"><CheckCircle2 size={9} /> {r.correctAnswers}/{r.totalQuestions} correct</span>
+                                                <span className="flex items-center gap-1"><Clock size={9} /> {timeMins}m</span>
+                                            </div>
+                                        </div>
+                                        {/* Score */}
+                                        <div className="text-right shrink-0">
+                                            <p className="text-2xl font-black text-[var(--text-primary)]">{r.percentage}%</p>
+                                            <p className="text-[10px] font-bold text-[var(--text-secondary)]">score</p>
+                                        </div>
+                                        <ChevronRight size={16} className="text-[var(--text-secondary)] shrink-0" />
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </section>
+                )}
+
+                {/* 6. NEXT RECOMMENDED ACTIONS */}
                 <section className="bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 rounded-3xl p-8 md:p-10 text-white shadow-xl overflow-hidden relative border border-indigo-500/30 card-hover-lift">
                     <div className="grid md:grid-cols-2 gap-8 relative z-10 w-full items-center">
                         <div className="space-y-4">

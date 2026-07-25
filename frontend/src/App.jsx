@@ -16,7 +16,9 @@ import Login    from './pages/Login';
 import Dashboard      from './pages/student/Dashboard';
 import Classroom      from './pages/student/Classroom';
 import AssessmentPage from './pages/student/AssessmentPage';
-import AssessmentDetailsPage from './pages/student/AssessmentDetailsPage';
+import AssessmentDetailsPage  from './pages/student/AssessmentDetailsPage';
+import AssessmentAttemptPage  from './pages/student/AssessmentAttemptPage';
+import AssessmentResultPage   from './pages/student/AssessmentResultPage';
 import DyscalculiaTool from './pages/student/DyscalculiaTool';
 import Report         from './pages/student/Report';
 import Profile        from './pages/student/Profile';
@@ -32,6 +34,7 @@ import StaffReports     from './pages/staff/StaffReports';
 import TeacherLevelBuilder from './pages/teacher/LevelBuilder';
 import PrelimsManager   from './pages/staff/PrelimsManager';
 import StudentProfile   from './pages/staff/StudentProfile';
+import AssessmentAnalytics from './pages/staff/AssessmentAnalytics';
 
 // Sticky notes system
 import { StickyProvider }    from './context/StickyContext';
@@ -39,6 +42,7 @@ import StickyContainer       from './components/sticky/StickyContainer';
 
 // A3 FIX: AdaptiveProvider was missing — Dashboard/PrelimsTest/Assessment all need it
 import { AdaptiveProvider }  from './context/AdaptiveContext';
+import { AssessmentProvider } from './context/AssessmentContext';
 
 // Global Styles
 import './index.css';
@@ -81,6 +85,7 @@ const NotFound = () => (
 function App() {
   return (
     <AdaptiveProvider>
+      <AssessmentProvider>
       <StickyProvider>
       <BrowserRouter>
         <TitleUpdater />
@@ -111,6 +116,8 @@ function App() {
             <Route path="/student/classroom"  element={<ProtectedRoute role="STUDENT"><Classroom /></ProtectedRoute>} />
             <Route path="/student/assessment" element={<ProtectedRoute role="STUDENT"><AssessmentPage /></ProtectedRoute>} />
             <Route path="/student/assessment/:id" element={<ProtectedRoute role="STUDENT"><AssessmentDetailsPage /></ProtectedRoute>} />
+            <Route path="/student/assessment/:id/attempt" element={<ProtectedRoute role="STUDENT"><AssessmentAttemptPage /></ProtectedRoute>} />
+            <Route path="/student/assessment/:id/result"  element={<ProtectedRoute role="STUDENT"><AssessmentResultPage /></ProtectedRoute>} />
             <Route path="/student/learn-path" element={<ProtectedRoute role="STUDENT"><LevelMap /></ProtectedRoute>} />
             {/* FIXED: removed duplicate /student/learn-path route */}
             <Route path="/student/play/:levelId" element={<ProtectedRoute role="STUDENT"><PlayLevel /></ProtectedRoute>} />
@@ -126,6 +133,7 @@ function App() {
             <Route path="/staff/create-level"   element={<ProtectedRoute role="TEACHER"><TeacherLevelBuilder /></ProtectedRoute>} />
             <Route path="/staff/reports"        element={<ProtectedRoute role="TEACHER"><StaffReports /></ProtectedRoute>} />
             <Route path="/teacher/students/:studentId" element={<ProtectedRoute role="TEACHER"><StudentProfile /></ProtectedRoute>} />
+            <Route path="/staff/analytics/:assessmentId" element={<ProtectedRoute role="TEACHER"><AssessmentAnalytics /></ProtectedRoute>} />
 
             {/* ── 404 Fallback ─────────────────────────────── */}
             <Route path="*" element={<NotFound />} />
@@ -133,6 +141,7 @@ function App() {
         </div>
       </BrowserRouter>
     </StickyProvider>
+      </AssessmentProvider>
   </AdaptiveProvider>
   );
 }

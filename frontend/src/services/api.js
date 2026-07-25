@@ -195,6 +195,16 @@ export const getNotifications = async () => {
   return data;
 };
 
+export const markNotificationRead = async (notificationId) => {
+  const { data } = await api.post('/notifications/mark-read', { notificationId });
+  return data;
+};
+
+export const markAllNotificationsRead = async () => {
+  const { data } = await api.post('/notifications/mark-all-read');
+  return data;
+};
+
 // ── STT API ───────────────────────────────────────────────────
 export const transcribeAudio = async (audioBlob) => {
   const form = new FormData();
@@ -252,6 +262,23 @@ export const createAssignment = async (assignmentData) => {
 };
 
 export const submitAssignment = async (submissionData) => {
+  if (submissionData instanceof FormData) {
+    const { data } = await api.post('/assignments/submit', submissionData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return data;
+  }
   const { data } = await api.post('/assignments/submit', submissionData);
+  return data;
+};
+
+// ── Stream Announcements API ──────────────────────────────────
+export const getAnnouncementsByClass = async (classId) => {
+  const { data } = await api.get(`/announcements/class/${classId}`);
+  return data;
+};
+
+export const createAnnouncement = async (announcementData) => {
+  const { data } = await api.post('/announcements/create', announcementData);
   return data;
 };

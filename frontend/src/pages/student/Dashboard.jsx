@@ -4,10 +4,10 @@ import Navbar from '../../components/Navbar';
 import { useGamification } from '../../context/GamificationContext';
 import { useAuthStore } from '../../store/authStore';
 import { useAdaptive } from '../../context/AdaptiveContext';
-import { getDashboardData } from '../../services/api';
+import { getDashboardData, respondToInvite } from '../../services/api';
 import { 
    BookOpen, Bell, Star, TrendingUp, ArrowRight, CheckCircle, Clock, 
-   Accessibility, BarChart2, ClipboardCheck, Flame, Trophy, Play, Sparkles, Mic, Target 
+   Accessibility, BarChart2, ClipboardCheck, Flame, Trophy, Play, Sparkles, Mic, Target, Mail, Check, X
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -19,18 +19,33 @@ const Dashboard = () => {
    const gStats = stats || { xp: 0, level: 1, streak: 0, completedLevels: [] };
 
    useEffect(() => {
-      const loadData = async () => {
-         try {
-            const result = await getDashboardData();
-            setData(result);
-         } catch (err) {
-            console.error("Dashboard fetch error:", err);
-         }
-      };
       loadData();
    }, []);
 
+   const loadData = async () => {
+      try {
+         const result = await getDashboardData();
+         setData(result);
+      } catch (err) {
+         console.error("Dashboard fetch error:", err);
+      }
+   };
+
+   const handleInviteAction = async (inviteId, status) => {
+      try {
+         const res = await respondToInvite(inviteId, status);
+         if (res.success) {
+            alert(status === 'accepted' ? "Classroom joined!" : "Invitation declined.");
+            loadData();
+         }
+      } catch (err) {
+         console.error(err);
+      }
+   };
+
    const dashboardData = data?.stats || { activeClasses: { count: 0 }, pendingInvites: { count: 0 }, weeklyGoal: { progress: 0 } };
+   const pendingInvitesList = data?.pendingInvitesList || [];
+   const activeClassesList = data?.activeClassesList || [];
    const recentActivity = data?.recentActivity || [];
    const dailyTip = data?.dailyTip || { title: "Daily Study Tip", content: "Break down complex tasks into smaller 15-minute chunks for better cognitive retention!" };
 
@@ -45,6 +60,33 @@ const Dashboard = () => {
 
          <main className="container mx-auto px-4 md:px-8 py-8 space-y-8 max-w-7xl animate-fade-in-up">
             
+            {/* PENDING CLASSROOM INVITATION BANNER */}
+            {(pendingInvitesList || []).length > 0 && (
+               <div className="bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-purple-500/20 border-2 border-amber-500/40 p-6 md:p-8 rounded-3xl shadow-xl relative overflow-hidden space-y-4">
+                  <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400 font-extrabold text-sm uppercase tracking-wider">
+                     <Mail size={20} /> Action Required: Class Invitation Received
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                     {(pendingInvitesList || []).map(invite => (
+                        <div key={invite._id} className="bg-[var(--bg-surface)] p-5 rounded-2xl border border-[var(--border-color)] flex justify-between items-center shadow-md">
+                           <div>
+                              <h3 className="font-extrabold text-lg text-[var(--text-primary)]">{invite.classId?.name || 'Classroom Invite'}</h3>
+                              <p className="text-xs text-[var(--text-secondary)]">Subject: {invite.classId?.subject || 'General'} • Instructor: {invite.teacherId?.name || 'Faculty'}</p>
+                           </div>
+                           <div className="flex gap-2">
+                              <button onClick={() => handleInviteAction(invite._id, 'accepted')} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs flex items-center gap-1 shadow-md transition-all hover:scale-105">
+                                 <Check size={14} /> Accept & Join
+                              </button>
+                              <button onClick={() => handleInviteAction(invite._id, 'rejected')} className="px-3 py-2 bg-[var(--bg-base)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:bg-red-500/10 hover:text-red-500 font-bold rounded-xl text-xs transition-colors">
+                                 Decline
+                              </button>
+                           </div>
+                        </div>
+                     ))}
+                  </div>
+               </div>
+            )}
+
             {/* Prelims Assessment Banner (If not completed) */}
             {!isPrelimsCompleted && (
                <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white p-6 md:p-8 rounded-3xl shadow-xl border border-white/20 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 card-hover-lift">
@@ -162,6 +204,26 @@ const Dashboard = () => {
                </div>
             </div>
 
+            {/* ENROLLED CLASSES QUICK DISPLAY */}
+            {(activeClassesList || []).length > 0 && (
+               <div>
+                  <h2 className="text-xl font-extrabold mb-4 flex items-center gap-2 tracking-tight">
+                     <BookOpen size={20} className="text-indigo-600" /> Enrolled Classrooms
+                  </h2>
+                  <div className="grid md:grid-cols-3 gap-4">
+                     {(activeClassesList || []).map(cls => (
+                        <div key={cls._id} onClick={() => navigate('/student/classroom')} className="bg-[var(--bg-surface)] p-5 rounded-2xl shadow-sm border border-[var(--border-color)] hover:border-indigo-500/50 cursor-pointer transition-all card-hover-lift">
+                           <h3 className="font-black text-lg text-[var(--text-primary)] mb-1">{cls.name}</h3>
+                           <p className="text-xs text-[var(--text-secondary)] font-semibold">Subject: {cls.subject}</p>
+                           <p className="text-[11px] text-indigo-600 dark:text-indigo-400 font-bold mt-3 flex items-center gap-1">
+                              View Classwork <ArrowRight size={12} />
+                           </p>
+                        </div>
+                     ))}
+                  </div>
+               </div>
+            )}
+
             {/* Quick Actions & Recent Activity Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
@@ -258,54 +320,10 @@ const Dashboard = () => {
                      </button>
                   </div>
 
-                  {/* Adaptive Cognitive Feature Cards */}
-                  {profile === 'DYSLEXIA' && (
-                     <div className="bg-gradient-to-br from-purple-600 to-indigo-700 p-6 rounded-2xl shadow-xl text-white border border-purple-400/30 card-hover-lift">
-                        <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center mb-3">
-                           <BookOpen size={22} />
-                        </div>
-                        <h3 className="font-extrabold text-lg mb-1">Immersive Dyslexia Reader</h3>
-                        <p className="text-xs text-purple-100 mb-4 font-medium">
-                           Specialized bionic font, line spacing, and text simplifier are active for your profile.
-                        </p>
-                        <button onClick={() => window.dispatchEvent(new Event('open-a11y-toolbar'))} className="w-full py-2.5 bg-white text-purple-700 font-extrabold rounded-xl text-xs hover:bg-purple-50 transition-colors shadow-sm">
-                           Launch Dyslexia Tools
-                        </button>
-                     </div>
-                  )}
-
-                  {profile === 'DYSGRAPHIA' && (
-                     <div className="bg-gradient-to-br from-cyan-600 to-blue-700 p-6 rounded-2xl shadow-xl text-white border border-cyan-400/30 card-hover-lift">
-                        <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center mb-3">
-                           <Mic size={22} />
-                        </div>
-                        <h3 className="font-extrabold text-lg mb-1">Voice Dictation Mode</h3>
-                        <p className="text-xs text-cyan-100 mb-4 font-medium">
-                           Dictate your answers directly using Whisper STT without typing.
-                        </p>
-                        <Link to="/student/classroom" className="block text-center w-full py-2.5 bg-white text-cyan-700 font-extrabold rounded-xl text-xs hover:bg-cyan-50 transition-colors shadow-sm">
-                           Start Voice Dictation
-                        </Link>
-                     </div>
-                  )}
-
-                  {profile === 'DYSCALCULIA' && (
-                     <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-6 rounded-2xl shadow-xl text-white border border-amber-400/30 card-hover-lift">
-                        <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center mb-3">
-                           <BarChart2 size={22} />
-                        </div>
-                        <h3 className="font-extrabold text-lg mb-1">Spatial Math Solver</h3>
-                        <p className="text-xs text-amber-100 mb-4 font-medium">
-                           Interactive step-by-step visual animation engine for math equations.
-                        </p>
-                        <Link to="/dyscalculia-tool" className="block text-center w-full py-2.5 bg-white text-amber-700 font-extrabold rounded-xl text-xs hover:bg-amber-50 transition-colors shadow-sm">
-                           Open Math Solver
-                        </Link>
-                     </div>
-                  )}
                </div>
 
             </div>
+
          </main>
       </div>
    );

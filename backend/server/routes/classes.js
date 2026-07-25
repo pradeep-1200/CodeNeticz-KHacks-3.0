@@ -11,12 +11,11 @@ const { rbac }    = require('../src/middleware/rbac');
 const generateCode = () => crypto.randomBytes(3).toString('hex').toUpperCase();
 
 // CREATE Class — teacher only
-// teacherId now comes from JWT (req.user.id), not the request body
 router.post('/create', rbac('TEACHER', 'ADMIN'), async (req, res, next) => {
   const { name, section, subject, room, capacity } = req.body;
-  const teacherId = req.user.id; // ← SECURITY FIX: from JWT
+  const teacherId = req.user.id;
   try {
-    const allowedParticipants = Number(capacity);
+    const allowedParticipants = Number(capacity) || 60;
     if (!name?.trim() || !subject?.trim()) {
       return res.status(400).json({ success: false, message: 'Class name and subject are required' });
     }
@@ -24,20 +23,26 @@ router.post('/create', rbac('TEACHER', 'ADMIN'), async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Allowed participants must be a whole number of at least 1' });
     }
     const newClass = new Class({
-      name: name.trim(), section: section?.trim(), subject: subject.trim(), room: room?.trim(),
-      capacity: allowedParticipants, teacherId, code: generateCode()
+      name: name.trim(), 
+      section: section?.trim(), 
+      subject: subject.trim(), 
+      room: room?.trim(),
+      capacity: allowedParticipants, 
+      teacherId, 
+      code: generateCode(),
+      isActive: true
     });
     await newClass.save();
     res.status(201).json({ success: true, class: newClass });
   } catch (err) { next(err); }
 });
 
-// GET classes for teacher (authenticated teacher sees only their own)
+// GET classes for teacher
 router.get('/teacher', rbac('TEACHER', 'ADMIN'), async (req, res, next) => {
   try {
-    const teacherId = req.user.id; // ← SECURITY FIX: from JWT
+    const teacherId = req.user.id;
     const classes = await Class.find({ teacherId })
-      .populate('students', 'name email')
+      .populate('students', 'name email prelimsScore learningProfile')
       .populate('assessments', 'title difficulty xpReward')
       .populate('materials');
     res.json({ success: true, classes });
@@ -47,36 +52,56 @@ router.get('/teacher', rbac('TEACHER', 'ADMIN'), async (req, res, next) => {
 // JOIN class — students only, code-based
 router.post('/join', rbac('STUDENT'), async (req, res, next) => {
   const { code } = req.body;
-  const studentId = req.user.id; // ← SECURITY FIX: from JWT
+  const studentId = req.user.id;
   try {
     if (!code) return res.status(400).json({ success: false, message: 'Class code is required' });
 
-    const cls = await Class.findOne({ code: code.toUpperCase().trim() });
-    if (!cls)                          return res.status(404).json({ success: false, message: 'Invalid class code' });
-    if (!cls.isActive)                 return res.status(400).json({ success: false, message: 'This classroom is no longer active' });
-    if (cls.students.length >= (cls.capacity || 60)) return res.status(400).json({ success: false, message: 'Classroom is at full capacity' });
-    if (cls.students.includes(studentId))            return res.status(400).json({ success: false, message: 'You are already in this class' });
-
-    // If invite-only, verify a pending invitation exists
-    if (cls.isInviteOnly) {
-      const invite = await Invitation.findOne({ studentId, classId: cls._id, status: 'pending' });
-      if (!invite) return res.status(403).json({ success: false, message: 'This classroom requires an invitation from the teacher' });
+    const cleanCode = code.toUpperCase().trim();
+    const cls = await Class.findOne({ code: cleanCode });
+    if (!cls) return res.status(404).json({ success: false, message: 'Invalid class code. Please check with your teacher.' });
+    if (cls.isActive === false) return res.status(400).json({ success: false, message: 'This classroom is no longer active.' });
+    
+    // Check student array
+    const studentObjectId = new mongoose.Types.ObjectId(studentId);
+    if (cls.students.some(id => id.toString() === studentId)) {
+      return res.status(400).json({ success: false, message: 'You are already enrolled in this class!' });
+    }
+    if (cls.students.length >= (cls.capacity || 60)) {
+      return res.status(400).json({ success: false, message: 'Classroom has reached full capacity.' });
     }
 
-    cls.students.push(studentId);
+    // If invite-only, verify pending invitation
+    if (cls.isInviteOnly) {
+      const invite = await Invitation.findOne({ studentId, classId: cls._id, status: 'pending' });
+      if (!invite) return res.status(403).json({ success: false, message: 'This classroom requires an invitation from the teacher.' });
+    }
+
+    // Add student to class
+    cls.students.push(studentObjectId);
     await cls.save();
 
-    // Mark invitation as accepted if one existed
+    // Mark invitation accepted if exists
     await Invitation.findOneAndUpdate({ studentId, classId: cls._id }, { status: 'accepted' });
 
-    res.json({ success: true, message: 'Joined successfully', class: cls });
+    // Send notification to teacher
+    if (cls.teacherId) {
+      const studentUser = await User.findById(studentId).select('name');
+      await Notification.create({
+        userId: cls.teacherId,
+        message: `${studentUser?.name || 'A student'} joined ${cls.name}`,
+        type: 'info',
+        link: '/staff/dashboard'
+      });
+    }
+
+    res.json({ success: true, message: `Successfully joined ${cls.name}!`, class: cls });
   } catch (err) { next(err); }
 });
 
 // INVITE student — teacher only
 router.post('/invite', rbac('TEACHER', 'ADMIN'), async (req, res, next) => {
   const { email, classId } = req.body;
-  const teacherId = req.user.id; // ← SECURITY FIX: from JWT
+  const teacherId = req.user.id;
   try {
     const student = await User.findOne({
       email: { $regex: new RegExp(`^${email.trim()}$`, 'i') },
@@ -85,12 +110,12 @@ router.post('/invite', rbac('TEACHER', 'ADMIN'), async (req, res, next) => {
     if (!student) return res.status(404).json({ success: false, message: `Student with email '${email}' not found.` });
 
     const cls = await Class.findById(classId);
-    if (!cls)                                      return res.status(404).json({ success: false, message: 'Class not found' });
-    if (cls.teacherId.toString() !== teacherId)    return res.status(403).json({ success: false, message: 'You are not the teacher of this class' });
-    if (cls.students.includes(student._id))        return res.status(400).json({ success: false, message: 'Student is already in this class' });
+    if (!cls) return res.status(404).json({ success: false, message: 'Classroom not found' });
+    if (cls.teacherId.toString() !== teacherId) return res.status(403).json({ success: false, message: 'You are not the teacher of this class' });
+    if (cls.students.includes(student._id)) return res.status(400).json({ success: false, message: 'Student is already enrolled in this class' });
 
     const existing = await Invitation.findOne({ studentId: student._id, classId: cls._id, status: 'pending' });
-    if (existing) return res.status(400).json({ success: false, message: 'Invitation already sent' });
+    if (existing) return res.status(400).json({ success: false, message: 'Invitation already sent to this student' });
 
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await new Invitation({ studentId: student._id, teacherId, classId, expiresAt }).save();
@@ -103,7 +128,7 @@ router.post('/invite', rbac('TEACHER', 'ADMIN'), async (req, res, next) => {
       link: `/student/dashboard`
     });
 
-    res.json({ success: true, message: 'Invitation sent!' });
+    res.json({ success: true, message: `Invitation sent to ${email}!` });
   } catch (err) { next(err); }
 });
 
@@ -136,8 +161,8 @@ router.post('/invite/respond', rbac('STUDENT'), async (req, res, next) => {
   const studentId = req.user.id;
   try {
     const invite = await Invitation.findById(inviteId);
-    if (!invite)                                    return res.status(404).json({ success: false, message: 'Invite not found' });
-    if (invite.studentId.toString() !== studentId)  return res.status(403).json({ success: false, message: 'Not your invitation' });
+    if (!invite) return res.status(404).json({ success: false, message: 'Invite not found' });
+    if (invite.studentId.toString() !== studentId) return res.status(403).json({ success: false, message: 'Not your invitation' });
 
     invite.status = status;
     await invite.save();
@@ -160,9 +185,9 @@ router.post('/assign-level', rbac('TEACHER', 'ADMIN'), async (req, res, next) =>
   const teacherId = req.user.id;
   try {
     const cls = await Class.findById(classId);
-    if (!cls)                                    return res.status(404).json({ success: false, message: 'Class not found' });
-    if (cls.teacherId.toString() !== teacherId)  return res.status(403).json({ success: false, message: 'Not your class' });
-    if (cls.assessments.includes(levelId))       return res.status(400).json({ success: false, message: 'Level already assigned' });
+    if (!cls) return res.status(404).json({ success: false, message: 'Class not found' });
+    if (cls.teacherId.toString() !== teacherId) return res.status(403).json({ success: false, message: 'Not your class' });
+    if (cls.assessments.includes(levelId)) return res.status(400).json({ success: false, message: 'Level already assigned' });
 
     cls.assessments.push(levelId);
     await cls.save();

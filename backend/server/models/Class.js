@@ -7,6 +7,8 @@ const classSchema = new mongoose.Schema({
     room: { type: String, trim: true },
     capacity: { type: Number, min: 1, default: 60 },
     code: { type: String, unique: true, required: true }, // Join Code
+    isActive: { type: Boolean, default: true },
+    isInviteOnly: { type: Boolean, default: false },
     teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     students: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     materials: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Material' }],

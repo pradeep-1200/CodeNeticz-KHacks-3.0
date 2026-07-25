@@ -72,6 +72,7 @@ app.use('/api/ocr',           authenticate, require('./routes/ocr'));
 app.use('/api/dyscalculia',   authenticate, require('./routes/dyscalculia'));
 app.use('/api/assignments',   authenticate, require('./routes/assignments'));
 app.use('/api/notifications', authenticate, require('./routes/notifications'));
+app.use('/api/announcements', authenticate, require('./routes/announcements'));
 app.use('/api/prelims',       authenticate, require('./routes/prelims'));
 app.use('/api/staff',         authenticate, require('./routes/staff'));
 
@@ -87,6 +88,7 @@ app.use('/api/v1/ocr',           authenticate, require('./routes/ocr'));
 app.use('/api/v1/dyscalculia',   authenticate, require('./routes/dyscalculia'));
 app.use('/api/v1/assignments',   authenticate, require('./routes/assignments'));
 app.use('/api/v1/notifications', authenticate, require('./routes/notifications'));
+app.use('/api/v1/announcements', authenticate, require('./routes/announcements'));
 app.use('/api/v1/prelims',       authenticate, require('./routes/prelims'));
 app.use('/api/v1/staff',         authenticate, require('./routes/staff'));
 

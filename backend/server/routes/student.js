@@ -1,5 +1,6 @@
 const express = require('express');
 const router  = express.Router();
+const mongoose = require('mongoose');
 const User       = require('../models/User');
 const Activity   = require('../models/Activity');
 const Material   = require('../models/Material');
@@ -151,6 +152,37 @@ router.get('/assessments', async (req, res, next) => {
     .sort({ scheduledDate: 1, createdAt: -1 });
 
     res.json({ success: true, assessments });
+  } catch (err) { next(err); }
+});
+
+// ── Get Single Assessment for Student Details Page ────────────
+router.get('/assessments/:id', async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid assessment ID format' });
+    }
+
+    // Find all classes the student is enrolled in
+    const enrolledClasses = await Class.find({ students: userId }).select('_id');
+    const classIds = enrolledClasses.map(c => c._id);
+
+    // Fetch the assessment details if published and assigned to student's enrolled classroom
+    const assessment = await Assessment.findOne({
+      _id: id,
+      classId: { $in: classIds },
+      isPublished: true
+    })
+    .populate('teacherId', 'name email')
+    .populate('classId', 'name subject section');
+
+    if (!assessment) {
+      return res.status(404).json({ success: false, message: 'Assessment not found or not published' });
+    }
+
+    res.json({ success: true, assessment });
   } catch (err) { next(err); }
 });
 

@@ -7,14 +7,13 @@ import { useAdaptive } from '../../context/AdaptiveContext';
 import { getDashboardData, respondToInvite, getStudentAssessments } from '../../services/api';
 import { 
    BookOpen, Bell, Star, TrendingUp, ArrowRight, CheckCircle, Clock, 
-   Accessibility, BarChart2, ClipboardCheck, Flame, Trophy, Play, Sparkles, Mic, Target, Mail, Check, X, Eye
+   Accessibility, BarChart2, ClipboardCheck, Flame, Trophy, Play, Sparkles, Mic, Target, Mail, Check, Eye
 } from 'lucide-react';
 
 const Dashboard = () => {
    const [data, setData] = useState(null);
    const [assessments, setAssessments] = useState([]);
    const [assessmentsLoading, setAssessmentsLoading] = useState(true);
-   const [selectedModalAssessment, setSelectedModalAssessment] = useState(null);
    const { stats } = useGamification();
    const { isPrelimsCompleted, profile } = useAdaptive();
    const user = useAuthStore(s => s.user);
@@ -335,14 +334,12 @@ const Dashboard = () => {
                                  <p className="text-center text-[10px] text-[var(--text-secondary)] font-semibold">
                                     🔒 Available in Phase 4
                                  </p>
-                                 {(assess.status === 'Upcoming' || assess.status === 'Missed') && (
-                                    <button
-                                       onClick={() => setSelectedModalAssessment(assess)}
-                                       className="w-full py-2.5 bg-[var(--bg-base)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:bg-indigo-500/10 hover:text-indigo-600 font-bold rounded-2xl text-xs transition-all flex items-center justify-center gap-2"
-                                    >
-                                       <Eye size={14} /> View Details
-                                    </button>
-                                 )}
+                                 <button
+                                    onClick={() => navigate(`/student/assessment/${assess._id}`)}
+                                    className="w-full py-2.5 bg-[var(--bg-base)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:bg-indigo-500/10 hover:text-indigo-600 font-bold rounded-2xl text-xs transition-all flex items-center justify-center gap-2"
+                                 >
+                                    <Eye size={14} /> View Details
+                                 </button>
                               </div>
                            </div>
                         );
@@ -351,59 +348,7 @@ const Dashboard = () => {
                )}
             </div>
 
-            {/* Assessment Details Modal */}
-            {selectedModalAssessment && (
-               <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                  <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] p-6 md:p-8 rounded-3xl w-full max-w-lg shadow-2xl space-y-6 animate-fade-in-up">
-                     <div className="flex justify-between items-start">
-                        <div>
-                           <span className="text-xs font-black text-indigo-600 uppercase tracking-wider">{selectedModalAssessment.subject || 'Assessment Details'}</span>
-                           <h2 className="text-2xl font-black text-[var(--text-primary)] mt-1">{selectedModalAssessment.title}</h2>
-                        </div>
-                        <button onClick={() => setSelectedModalAssessment(null)} className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-base)] rounded-xl transition-colors">
-                           <X size={20} />
-                        </button>
-                     </div>
 
-                     <div className="space-y-3 bg-[var(--bg-base)] p-4 rounded-2xl border border-[var(--border-color)] text-xs font-semibold">
-                        <div className="flex justify-between border-b border-[var(--border-color)] pb-2">
-                           <span className="text-[var(--text-secondary)]">Classroom:</span>
-                           <span className="font-bold text-[var(--text-primary)]">{selectedModalAssessment.classId?.name || 'Classroom'}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-[var(--border-color)] pb-2">
-                           <span className="text-[var(--text-secondary)]">Instructor:</span>
-                           <span className="font-bold text-[var(--text-primary)]">{selectedModalAssessment.teacherId?.name || 'Faculty'}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-[var(--border-color)] pb-2">
-                           <span className="text-[var(--text-secondary)]">Scheduled Date:</span>
-                           <span className="font-bold text-[var(--text-primary)]">{selectedModalAssessment.scheduledDate ? new Date(selectedModalAssessment.scheduledDate).toLocaleDateString() : 'N/A'}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-[var(--border-color)] pb-2">
-                           <span className="text-[var(--text-secondary)]">Time Slot:</span>
-                           <span className="font-bold text-[var(--text-primary)]">{selectedModalAssessment.startTime || '09:00 AM'} - {selectedModalAssessment.endTime || '10:00 AM'}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-[var(--border-color)] pb-2">
-                           <span className="text-[var(--text-secondary)]">Duration:</span>
-                           <span className="font-bold text-[var(--text-primary)]">{selectedModalAssessment.duration || 30} minutes</span>
-                        </div>
-                        <div className="flex justify-between border-b border-[var(--border-color)] pb-2">
-                           <span className="text-[var(--text-secondary)]">Number of Questions:</span>
-                           <span className="font-bold text-[var(--text-primary)]">{(selectedModalAssessment.questions || []).length || 1} Questions</span>
-                        </div>
-                        <div className="flex justify-between">
-                           <span className="text-[var(--text-secondary)]">Status:</span>
-                           <span className="font-black text-indigo-600">{selectedModalAssessment.status}</span>
-                        </div>
-                     </div>
-
-                     <div className="pt-2 flex justify-end">
-                        <button onClick={() => setSelectedModalAssessment(null)} className="px-6 py-3 bg-indigo-600 text-white font-extrabold rounded-2xl text-xs shadow-md hover:bg-indigo-700">
-                           Close Details
-                        </button>
-                     </div>
-                  </div>
-               </div>
-            )}
 
             {/* Quick Actions & Recent Activity Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

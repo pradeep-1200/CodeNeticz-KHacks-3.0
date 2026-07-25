@@ -16,6 +16,7 @@ import Login    from './pages/Login';
 import Dashboard      from './pages/student/Dashboard';
 import Classroom      from './pages/student/Classroom';
 import AssessmentPage from './pages/student/AssessmentPage';
+import AssessmentDetailsPage from './pages/student/AssessmentDetailsPage';
 import DyscalculiaTool from './pages/student/DyscalculiaTool';
 import Report         from './pages/student/Report';
 import Profile        from './pages/student/Profile';
@@ -109,6 +110,7 @@ function App() {
             <Route path="/student/dashboard"  element={<ProtectedRoute role="STUDENT"><Dashboard /></ProtectedRoute>} />
             <Route path="/student/classroom"  element={<ProtectedRoute role="STUDENT"><Classroom /></ProtectedRoute>} />
             <Route path="/student/assessment" element={<ProtectedRoute role="STUDENT"><AssessmentPage /></ProtectedRoute>} />
+            <Route path="/student/assessment/:id" element={<ProtectedRoute role="STUDENT"><AssessmentDetailsPage /></ProtectedRoute>} />
             <Route path="/student/learn-path" element={<ProtectedRoute role="STUDENT"><LevelMap /></ProtectedRoute>} />
             {/* FIXED: removed duplicate /student/learn-path route */}
             <Route path="/student/play/:levelId" element={<ProtectedRoute role="STUDENT"><PlayLevel /></ProtectedRoute>} />

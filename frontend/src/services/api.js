@@ -151,6 +151,11 @@ export const getStudentAssessments = async () => {
   return data;
 };
 
+export const getStudentAssessmentById = async (id) => {
+  const { data } = await api.get(`/student/assessments/${id}`);
+  return data;
+};
+
 export const createClassAssessment = async (assessmentData) => {
   const { data } = await api.post('/classes/create-assessment', assessmentData);
   return data;

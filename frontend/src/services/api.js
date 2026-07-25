@@ -146,6 +146,32 @@ export const assignLevelToClass = async (classId, levelId) => {
   return data;
 };
 
+export const getStudentAssessments = async () => {
+  const { data } = await api.get('/student/assessments');
+  return data;
+};
+
+export const createClassAssessment = async (assessmentData) => {
+  const { data } = await api.post('/classes/create-assessment', assessmentData);
+  return data;
+};
+
+// ── Teacher Assessment Management ─────────────────────────────
+export const getClassAssessments = async (classId) => {
+  const { data } = await api.get(`/classes/${classId}/assessments`);
+  return data;
+};
+
+export const unpublishAssessment = async (assessmentId) => {
+  const { data } = await api.patch(`/classes/assessments/${assessmentId}/unpublish`);
+  return data;
+};
+
+export const deleteClassAssessment = async (assessmentId) => {
+  const { data } = await api.delete(`/classes/assessments/${assessmentId}`);
+  return data;
+};
+
 // ── Levels API ────────────────────────────────────────────────
 export const getLevels = async () => {
   const { data } = await api.get('/levels');
@@ -280,5 +306,26 @@ export const getAnnouncementsByClass = async (classId) => {
 
 export const createAnnouncement = async (announcementData) => {
   const { data } = await api.post('/announcements/create', announcementData);
+  return data;
+};
+
+// ── Student Profile API ───────────────────────────────────────
+export const getStudentProfile = async (studentId) => {
+  const { data } = await api.get(`/students/${studentId}`);
+  return data;
+};
+
+export const updateStudentProfile = async (studentId, profileData) => {
+  const { data } = await api.put(`/students/${studentId}`, profileData);
+  return data;
+};
+
+export const getAccessibilityProfile = async (studentId) => {
+  const { data } = await api.get(`/students/${studentId}/accessibility-profile`);
+  return data;
+};
+
+export const updateAccessibilityProfile = async (studentId, profileData) => {
+  const { data } = await api.put(`/students/${studentId}/accessibility-profile`, profileData);
   return data;
 };

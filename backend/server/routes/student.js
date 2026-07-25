@@ -75,7 +75,13 @@ router.get('/report', async (req, res, next) => {
         improvementData: [], skillData: [], strengths: [],
         areasToExplore: [], beforeStats: [], afterStats: [],
         submissionHistory: [],
-        problemStats: { easy: { solved: 0 }, medium: { solved: 0 }, hard: { solved: 0 }, total: { solved: 0 } }
+        // FIX: include total counts so increments work from the first activity
+        problemStats: {
+          easy:   { solved: 0, total: 100 },
+          medium: { solved: 0, total: 80 },
+          hard:   { solved: 0, total: 30 },
+          total:  { solved: 0, total: 210 }
+        }
       });
       report = await Report.findById(report._id).populate('userId', 'name email level levelTitle streak');
     }
@@ -123,7 +129,32 @@ router.post('/complete-activity', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ── Assessment Questions ──────────────────────────────────────
+// ── Classroom Published Assessments for Student Dashboard ──────
+router.get('/assessments', async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    // Find all classes the student is enrolled in
+    const enrolledClasses = await Class.find({ students: userId }).select('_id');
+    const classIds = enrolledClasses.map(c => c._id);
+
+    if (classIds.length === 0) {
+      return res.json({ success: true, assessments: [] });
+    }
+
+    // Fetch published assessments for these enrolled classes only
+    const assessments = await Assessment.find({
+      classId: { $in: classIds },
+      isPublished: true
+    })
+    .populate('teacherId', 'name email')
+    .populate('classId', 'name subject section')
+    .sort({ scheduledDate: 1, createdAt: -1 });
+
+    res.json({ success: true, assessments });
+  } catch (err) { next(err); }
+});
+
+// ── Assessment Questions (Legacy) ──────────────────────────────
 router.get('/assessment', async (req, res, next) => {
   try {
     const userId = req.user.id;

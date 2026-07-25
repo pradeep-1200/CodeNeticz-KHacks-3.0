@@ -3,9 +3,11 @@ const router = express.Router();
 const Assignment = require('../models/Assignment');
 const Class = require('../models/Class');
 const Notification = require('../models/Notification');
+const User = require('../models/User');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { rbac } = require('../src/middleware/rbac');
 
 // Set up disk storage for student assignment document uploads
 const uploadDir = path.join(__dirname, '../uploads/assignments');
@@ -28,13 +30,17 @@ const upload = multer({
     limits: { fileSize: 15 * 1024 * 1024 } // 15MB limit
 });
 
-// CREATE Assignment (Staff)
-router.post('/create', async (req, res) => {
-    const { classId, title, description, deadline, toolsAllowed, questions, allowedFormats } = req.body;
+// CREATE Assignment (Staff only)
+// FIX: added rbac — was unprotected, any user could create assignments
+router.post('/create', rbac('TEACHER', 'ADMIN'), async (req, res, next) => {
+    const { classId, title, description, deadline, toolsAllowed, questions } = req.body;
     try {
+        if (!classId || !title?.trim()) {
+            return res.status(400).json({ success: false, message: 'classId and title are required' });
+        }
         const newAssignment = new Assignment({
             classId,
-            title,
+            title: title.trim(),
             description,
             deadline,
             toolsAllowed,
@@ -55,9 +61,7 @@ router.post('/create', async (req, res) => {
         }
 
         res.status(201).json({ success: true, assignment: newAssignment });
-    } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
-    }
+    } catch (err) { next(err); }
 });
 
 // GET Assignments for Class
@@ -111,11 +115,13 @@ router.post('/submit', upload.single('file'), async (req, res) => {
         // Notify teacher of submission
         const cls = await Class.findById(assignment.classId);
         if (cls && cls.teacherId) {
+            // FIX: req.user.name is never set by auth middleware — look up the user's name
+            const submitter = await User.findById(studentId).select('name');
             await Notification.create({
-                userId: cls.teacherId,
-                message: `${req.user?.name || 'A student'} turned in ${assignment.title}`,
-                type: 'info',
-                link: '/staff/classes'
+                userId:  cls.teacherId,
+                message: `${submitter?.name || 'A student'} turned in ${assignment.title}`,
+                type:    'info',
+                link:    '/staff/classes'
             });
         }
 

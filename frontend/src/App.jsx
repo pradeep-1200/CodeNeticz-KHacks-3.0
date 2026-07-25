@@ -30,6 +30,7 @@ import UploadMaterial   from './pages/staff/UploadMaterial';
 import StaffReports     from './pages/staff/StaffReports';
 import TeacherLevelBuilder from './pages/teacher/LevelBuilder';
 import PrelimsManager   from './pages/staff/PrelimsManager';
+import StudentProfile   from './pages/staff/StudentProfile';
 
 // Sticky notes system
 import { StickyProvider }    from './context/StickyContext';
@@ -122,6 +123,7 @@ function App() {
             <Route path="/staff/prelims"        element={<ProtectedRoute role="TEACHER"><PrelimsManager /></ProtectedRoute>} />
             <Route path="/staff/create-level"   element={<ProtectedRoute role="TEACHER"><TeacherLevelBuilder /></ProtectedRoute>} />
             <Route path="/staff/reports"        element={<ProtectedRoute role="TEACHER"><StaffReports /></ProtectedRoute>} />
+            <Route path="/teacher/students/:studentId" element={<ProtectedRoute role="TEACHER"><StudentProfile /></ProtectedRoute>} />
 
             {/* ── 404 Fallback ─────────────────────────────── */}
             <Route path="*" element={<NotFound />} />

@@ -1,5 +1,6 @@
-﻿const REQUIRED_VARS = [
-  'DATABASE_URL',
+﻿// FIX: removed DATABASE_URL from REQUIRED_VARS — Prisma/PostgreSQL is not used
+//      in any active route. Requiring it was crashing the server when only MongoDB is configured.
+const REQUIRED_VARS = [
   'MONGODB_URI',
   'JWT_ACCESS_SECRET',
   'JWT_REFRESH_SECRET'

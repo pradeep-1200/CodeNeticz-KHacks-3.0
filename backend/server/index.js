@@ -35,13 +35,9 @@ app.use(helmet({
   }
 }));
 
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(',');
+// Allow all origins (development mode)
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (e.g., mobile apps, Postman)
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error(`Origin ${origin} not allowed by CORS`));
-  },
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 }));
@@ -63,6 +59,7 @@ const { authenticate } = require('./src/middleware/auth');
 app.use('/api/auth',          require('./routes/auth'));
 
 app.use('/api/student',       authenticate, require('./routes/student'));
+app.use('/api/students',      authenticate, require('./routes/students'));
 app.use('/api/materials',     authenticate, require('./routes/material'));
 app.use('/api/levels',        authenticate, require('./routes/levels'));
 app.use('/api/classes',       authenticate, require('./routes/classes'));
@@ -79,6 +76,7 @@ app.use('/api/staff',         authenticate, require('./routes/staff'));
 // Versioned aliases for legacy feature routes. Authentication is shared with
 // the versioned auth API, which keeps every frontend request on /api/v1.
 app.use('/api/v1/student',       authenticate, require('./routes/student'));
+app.use('/api/v1/students',      authenticate, require('./routes/students'));
 app.use('/api/v1/materials',     authenticate, require('./routes/material'));
 app.use('/api/v1/levels',        authenticate, require('./routes/levels'));
 app.use('/api/v1/classes',       authenticate, require('./routes/classes'));

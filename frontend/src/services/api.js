@@ -63,7 +63,8 @@ api.interceptors.response.use(
           {},
           { withCredentials: true }
         );
-        const newToken = data.data.accessToken;
+        const newToken = data?.data?.accessToken;
+        if (!newToken) throw new Error('Refresh response missing token');
         useAuthStore.getState().setToken(newToken);
         waitQueue.forEach(({ resolve }) => resolve(newToken));
         waitQueue = [];

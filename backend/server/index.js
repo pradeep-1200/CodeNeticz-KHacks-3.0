@@ -49,18 +49,22 @@ app.use(helmet({
 //  3. http://localhost:5173 — always allowed for local development.
 //
 //  4. Any Vercel preview deployment for this project, matched by the
-//     pattern  ^https://aclc-frontend.*\.vercel\.app$
+//     patterns ^https://aclc-frontend.*\.vercel\.app$ and
+//              ^https://aclc-frontend.*\.projects\.vercel\.app$
 //     This covers:
-//       - https://aclc-frontend-mu.vercel.app        (current deploy)
-//       - https://aclc-frontend-<hash>.vercel.app    (future previews)
-//       - https://aclc-frontend-<branch>.vercel.app  (branch previews)
+//       - https://aclc-frontend-mu.vercel.app                     (prod deploy)
+//       - https://aclc-frontend-<hash>.vercel.app                 (preview)
+//       - https://aclc-frontend-<hash>-nakulans.projects.vercel.app (personal)
 //     Unrelated Vercel apps (different prefix) are still rejected.
 //
 // NOTE: origin: '*' is intentionally never used — credentials: true
 //       requires an explicit origin echo, not a wildcard.
 
 // Regex that matches any aclc-frontend Vercel deployment URL.
-const VERCEL_PREVIEW_PATTERN = /^https:\/\/aclc-frontend.*\.vercel\.app$/;
+// Covers both standard and team/personal project Vercel URLs:
+//   - https://aclc-frontend-*.vercel.app
+//   - https://aclc-frontend-*-nakulans.projects.vercel.app
+const VERCEL_PREVIEW_PATTERN = /^https:\/\/aclc-frontend.*\.(vercel\.app|projects\.vercel\.app)$/;
 
 // Exact origins collected from environment variables.
 const rawAllowedOrigins = process.env.ALLOWED_ORIGINS

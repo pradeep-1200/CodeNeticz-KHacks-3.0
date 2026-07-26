@@ -15,10 +15,13 @@ const COOKIE_OPTS = {
 
 async function register(req, res, next) {
   try {
-    const meta = { ip: req.ip, userAgent: req.headers['user-agent'] };
-    const result = await authService.register(req.body, meta);
-    res.cookie('aclc_rt', result.refreshToken, COOKIE_OPTS);
-    res.status(201).json({ success: true, data: { accessToken: result.accessToken, user: result.user } });
+    // Registration only creates the account — no tokens, no cookies, no session.
+    // The client must redirect the user to /login to authenticate explicitly.
+    const result = await authService.register(req.body);
+    res.status(201).json({
+      success: true,
+      message: result.message
+    });
   } catch (err) { next(err); }
 }
 

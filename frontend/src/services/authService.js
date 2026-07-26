@@ -3,9 +3,10 @@ import { useAuthStore } from '../store/authStore';
 
 export const authService = {
   async register(name, email, password) {
+    // Only creates the account — does NOT store tokens or update auth state.
+    // The caller is responsible for redirecting to /login.
     const { data } = await api.post('/auth/register', { name, email, password });
-    useAuthStore.getState().setAuth(data.data.user, data.data.accessToken);
-    return data.data;
+    return data; // { success: true, message: "Registration successful. Please log in." }
   },
 
   async login(email, password) {

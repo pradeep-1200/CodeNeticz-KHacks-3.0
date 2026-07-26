@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
-import { ArrowRight, ShieldCheck, ArrowLeft, User, Mail, Lock, Sparkles, BookOpen } from 'lucide-react';
+import { ArrowRight, ShieldCheck, ArrowLeft, User, Mail, Lock, Sparkles, BookOpen, CheckCircle } from 'lucide-react';
 import { authService } from '../services/authService';
 import { useAuthStore } from '../store/authStore';
 
@@ -14,29 +14,41 @@ const Register = () => {
         return <Navigate to={dest} replace />;
     }
 
-    const [error,    setError]    = useState('');
-    const [loading,  setLoading]  = useState(false);
-    const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+    const [error,     setError]     = useState('');
+    const [loading,   setLoading]   = useState(false);
+    const [success,   setSuccess]   = useState(false);   // true after account created
+    const [countdown, setCountdown] = useState(2);       // seconds before auto-redirect
+    const [formData,  setFormData]  = useState({ name: '', email: '', password: '', confirmPassword: '' });
 
     // Derive role hint based on typed domain
-    const emailDomain = formData.email.includes('@') ? formData.email.split('@')[1] : '';
-    const isTeacherHint = emailDomain.startsWith('staff.') || emailDomain === 'staff.com';
+    const emailDomain   = formData.email.includes('@') ? formData.email.split('@')[1] : '';
+    const isTeacherHint = emailDomain.startsWith('staff.')   || emailDomain === 'staff.com';
     const isStudentHint = emailDomain.startsWith('student.') || emailDomain === 'student.com';
+
+    // Auto-redirect countdown after successful registration
+    useEffect(() => {
+        if (!success) return;
+        if (countdown <= 0) { navigate('/login', { replace: true }); return; }
+        const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
+        return () => clearTimeout(timer);
+    }, [success, countdown, navigate]);
 
     const handleRegister = async (e) => {
         e.preventDefault();
         setError('');
+
         if (formData.password !== formData.confirmPassword) {
             setError('Passwords do not match'); return;
         }
         if (formData.password.length < 8 || formData.password.length > 30) {
             setError('Password must be 8–30 characters'); return;
         }
+
         setLoading(true);
         try {
-            const { user } = await authService.register(formData.name, formData.email, formData.password);
-            // Role is determined by email domain on the backend
-            navigate(user.role === 'TEACHER' || user.role === 'ADMIN' ? '/staff/dashboard' : '/student/dashboard', { replace: true });
+            // Register only creates the account — no tokens, no auth state.
+            await authService.register(formData.name, formData.email, formData.password);
+            setSuccess(true);
         } catch (err) {
             setError(err.response?.data?.error?.message || err.message || 'Registration failed. Please try again.');
         } finally {
@@ -46,14 +58,14 @@ const Register = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4 md:p-6 bg-[var(--bg-base)] text-[var(--text-primary)] relative overflow-hidden">
-            
+
             {/* Ambient Lighting */}
             <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
             {/* Back Button */}
-            <Link 
-                to="/" 
+            <Link
+                to="/"
                 className="absolute top-6 left-6 p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-purple-500/50 transition-all flex items-center gap-2 text-sm font-bold shadow-sm z-20"
             >
                 <ArrowLeft size={18} />
@@ -61,11 +73,11 @@ const Register = () => {
             </Link>
 
             <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 rounded-3xl shadow-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] overflow-hidden relative z-10 animate-fade-in-up">
-                
+
                 {/* Left Side Brand Banner */}
                 <div className="bg-gradient-to-br from-purple-700 via-indigo-700 to-purple-900 p-8 md:p-12 text-white flex flex-col justify-between relative overflow-hidden hidden md:flex">
                     <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full blur-xl pointer-events-none" />
-                    
+
                     <div className="space-y-4">
                         <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center">
                             <BookOpen size={24} />
@@ -88,8 +100,35 @@ const Register = () => {
                     </div>
                 </div>
 
-                {/* Right Side Form Panel */}
+                {/* Right Side Form / Success Panel */}
                 <div className="p-8 md:p-10 flex flex-col justify-between">
+
+                    {/* ── Success state ── */}
+                    {success ? (
+                        <div className="flex flex-col items-center justify-center flex-1 gap-6 py-8 animate-fade-in-up">
+                            <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
+                                <CheckCircle size={32} className="text-emerald-500" />
+                            </div>
+                            <div className="text-center space-y-1">
+                                <h2 className="text-2xl font-black text-[var(--text-primary)]">Account Created!</h2>
+                                <p className="text-sm text-[var(--text-secondary)] font-medium">
+                                    Your account has been set up successfully.
+                                </p>
+                            </div>
+                            <p className="text-xs text-[var(--text-secondary)] font-semibold">
+                                Redirecting to login in <span className="font-black text-purple-600">{countdown}s</span>…
+                            </p>
+                            <Link
+                                to="/login"
+                                replace
+                                className="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white font-extrabold rounded-2xl text-sm transition-all shadow-md shadow-purple-600/20 flex items-center gap-2"
+                            >
+                                Go to Login <ArrowRight size={16} />
+                            </Link>
+                        </div>
+                    ) : (
+
+                    /* ── Registration form ── */
                     <div>
                         <div className="text-center md:text-left mb-6">
                             <h1 className="text-3xl font-black mb-1 tracking-tight text-[var(--text-primary)]">Create Account</h1>
@@ -185,13 +224,15 @@ const Register = () => {
                                 )}
                             </button>
                         </form>
-                    </div>
 
-                    <div className="mt-6 pt-4 border-t border-[var(--border-color)] text-center">
-                        <Link to="/login" className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline">
-                            Already have an account? Sign in
-                        </Link>
+                        <div className="mt-6 pt-4 border-t border-[var(--border-color)] text-center">
+                            <Link to="/login" className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline">
+                                Already have an account? Sign in
+                            </Link>
+                        </div>
                     </div>
+                    )}
+
                 </div>
             </div>
         </div>

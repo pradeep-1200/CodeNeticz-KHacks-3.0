@@ -37,7 +37,9 @@ function resolveRoleFromDomain(email) {
 }
 
 // ── Register ───────────────────────────────────────────────────
-async function register(data, meta = {}) {
+// Creates the user account only — does NOT issue tokens or set cookies.
+// The client must redirect to /login so the user authenticates explicitly.
+async function register(data) {
   ensureDatabaseAvailable();
   const { name, email, password } = data;
 
@@ -50,21 +52,13 @@ async function register(data, meta = {}) {
   }
 
   const passwordHash = await hashPassword(password);
-  // P1 FIX: Uses canonical User model — passwordHash field, uppercase role enum
   const user = await User.create({ name, email, passwordHash, role });
 
   logger.info('User registered', { category: 'auth', action: 'user.register', userId: user._id.toString(), role });
 
-  const accessToken = generateAccessToken({ id: user._id.toString(), role, institutionId: '' });
-  const rt          = generateRefreshToken();
-  await RefreshToken.create({
-    userId: user._id, tokenHash: rt.hash, expiresAt: rt.expiresAt,
-    ipAddress: meta.ip, userAgent: meta.userAgent
-  });
-
+  // Return only the confirmation message — no tokens, no session.
   return {
-    accessToken,
-    refreshToken: rt.token,
+    message: 'Registration successful. Please log in.',
     user: { id: user._id, name: user.name, email: user.email, role }
   };
 }

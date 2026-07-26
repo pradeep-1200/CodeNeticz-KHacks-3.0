@@ -1,17 +1,24 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
-export const getBackendBaseUrl = () => {
-  const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-  return rawUrl.replace(/\/api\/v1$/, '').replace(/\/api$/, '').replace(/\/+$/, '');
-};
+// ── Single source of truth for the API base URL ───────────────
+// VITE_API_URL must be the backend *origin* only, e.g.
+//   Development:  http://localhost:5000
+//   Production:   https://codeneticz-khacks-3-0.onrender.com
+//
+// We always append /api/v1 here — never anywhere else in the app.
+const BACKEND_ORIGIN = (import.meta.env.VITE_API_URL || 'http://localhost:5000')
+  .replace(/\/+$/, '');          // strip any accidental trailing slashes
 
-const BASE_URL = `${getBackendBaseUrl()}/api/v1`;
+export const API_BASE_URL = `${BACKEND_ORIGIN}/api/v1`;
 
-// ── Base Axios instance ────────────────────────────────────────
+// Exported for the rare case a non-API URL is needed (e.g. file attachment hrefs)
+export const getBackendOrigin = () => BACKEND_ORIGIN;
+
+// ── Single axios instance ─────────────────────────────────────
 const api = axios.create({
-  baseURL: BASE_URL,
-  withCredentials: true,   // Send httpOnly refresh token cookie
+  baseURL: API_BASE_URL,
+  withCredentials: true,   // send httpOnly refresh-token cookie
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' }
 });
@@ -49,7 +56,13 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const { data } = await axios.post(`${BASE_URL}/auth/refresh`, {}, { withCredentials: true });
+        // Use a bare axios call (not the intercepted `api` instance) to avoid
+        // an infinite 401 loop.  The URL is fully qualified using API_BASE_URL.
+        const { data } = await axios.post(
+          `${API_BASE_URL}/auth/refresh`,
+          {},
+          { withCredentials: true }
+        );
         const newToken = data.data.accessToken;
         useAuthStore.getState().setToken(newToken);
         waitQueue.forEach(({ resolve }) => resolve(newToken));
@@ -74,9 +87,12 @@ api.interceptors.response.use(
 export default api;
 
 // ─────────────────────────────────────────────────────────────
-// A5 FIX: All API call functions centralized here
-// Pages import these directly instead of writing fetch/axios calls inline
+// Centralised API helpers — every page/component imports from here.
+// All paths are relative to API_BASE_URL (/api/v1).
 // ─────────────────────────────────────────────────────────────
+
+// ── Auth API ──────────────────────────────────────────────────
+// (consumed by authService.js — kept here for completeness)
 
 // ── Student API ───────────────────────────────────────────────
 export const getDashboardData = async () => {
@@ -210,7 +226,6 @@ export const getPrelimsQuestions = async () => {
 };
 
 export const submitPrelimsTest = async (answers) => {
-  // P2 FIX: userId comes from JWT on backend — no need to pass it from frontend
   const { data } = await api.post('/prelims/submit', { answers });
   return data;
 };
@@ -319,7 +334,7 @@ export const createAnnouncement = async (announcementData) => {
   return data;
 };
 
-// ── Assessment Submission API (Phase 4) ───────────────────────
+// ── Assessment Submission API ─────────────────────────────────
 export const startAssessmentAttempt = async (assessmentId) => {
   const { data } = await api.post(`/submissions/${assessmentId}/start`);
   return data;
@@ -340,9 +355,8 @@ export const getMySubmission = async (assessmentId) => {
   return data;
 };
 
-// ── AI Math Assistant API (Phase 6) ───────────────────────────
+// ── AI Math Assistant API ─────────────────────────────────────
 export const getMathAssistance = async (payload) => {
-  // payload: { question, questionType, options, studentAnswer, accessibilityProfile }
   const { data } = await api.post('/ai/math-assistant', payload);
   return data;
 };
@@ -368,8 +382,7 @@ export const updateAccessibilityProfile = async (studentId, profileData) => {
   return data;
 };
 
-// ── Analytics API (Phase 8) ───────────────────────────────────
-
+// ── Analytics API ─────────────────────────────────────────────
 export const getMyAssessmentResult = async (assessmentId) => {
   const { data } = await api.get(`/analytics/my-result/${assessmentId}`);
   return data;

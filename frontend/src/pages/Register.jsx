@@ -1,104 +1,93 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
-import { ArrowRight, ShieldCheck, ArrowLeft, User, Mail, Lock, Sparkles, BookOpen, CheckCircle } from 'lucide-react';
+import { ArrowRight, ShieldCheck, ArrowLeft, User, Mail, Lock, Sparkles, BookOpen, CheckCircle2 } from 'lucide-react';
 import { authService } from '../services/authService';
 import { useAuthStore } from '../store/authStore';
 
 const Register = () => {
-    const navigate = useNavigate();
-    const user     = useAuthStore(s => s.user);
+    const navigate  = useNavigate();
+    const user      = useAuthStore(s => s.user);
 
-    // ── All hooks declared unconditionally at the top ─────────
-    // (React Rules of Hooks: never call hooks after a conditional return)
-    const [error,     setError]     = useState('');
-    const [loading,   setLoading]   = useState(false);
-    const [success,   setSuccess]   = useState(false);
-    const [countdown, setCountdown] = useState(2);
-    const [formData,  setFormData]  = useState({
-        name: '', email: '', password: '', confirmPassword: ''
-    });
-
-    // Auto-redirect countdown after successful registration
-    useEffect(() => {
-        if (!success) return;
-        if (countdown <= 0) { navigate('/login', { replace: true }); return; }
-        const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
-        return () => clearTimeout(timer);
-    }, [success, countdown, navigate]);
-
-    // ── Early redirect for already-authenticated users ────────
-    // This must come AFTER all hook declarations.
+    // Already authenticated — skip registration and go straight to the dashboard
     if (user) {
-        const dest = user.role === 'TEACHER' || user.role === 'ADMIN'
-            ? '/staff/dashboard'
-            : '/student/dashboard';
+        const dest = user.role === 'TEACHER' || user.role === 'ADMIN' ? '/staff/dashboard' : '/student/dashboard';
         return <Navigate to={dest} replace />;
     }
 
-    // ── Derived values (not hooks — safe after hooks block) ───
-    const emailDomain   = formData.email.includes('@') ? formData.email.split('@')[1] : '';
-    const isTeacherHint = emailDomain.startsWith('staff.')   || emailDomain === 'staff.com';
-    const isStudentHint = emailDomain.startsWith('student.') || emailDomain === 'student.com';
+    const [error,    setError]    = useState('');
+    const [loading,  setLoading]  = useState(false);
+    const [success,  setSuccess]  = useState(false);   // shows success banner
+    const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
 
-    // ── Form submission ───────────────────────────────────────
-    // isSubmitting is a ref so the guard works synchronously — before React
-    // has had a chance to re-render with loading=true.  This prevents the
-    // double-submission window that exists between setLoading(true) and the
-    // next paint (React 18 batches state, so disabled={loading} is not yet
-    // applied when a second submit fires within the same task).
-    const isSubmitting = React.useRef(false);
+    // Derive role hint based on typed domain
+    const emailDomain = formData.email.includes('@') ? formData.email.split('@')[1] : '';
+    const isTeacherHint = emailDomain.startsWith('staff.') || emailDomain === 'staff.com';
+    const isStudentHint = emailDomain.startsWith('student.') || emailDomain === 'student.com';
 
     const handleRegister = async (e) => {
         e.preventDefault();
-
-        // Synchronous guard — stops any duplicate submit before the first
-        // setLoading(true) re-render has had a chance to disable the button.
-        if (isSubmitting.current) return;
-        isSubmitting.current = true;
-
         setError('');
-
         if (formData.password !== formData.confirmPassword) {
-            setError('Passwords do not match');
-            isSubmitting.current = false;
-            return;
+            setError('Passwords do not match'); return;
         }
         if (formData.password.length < 8 || formData.password.length > 30) {
-            setError('Password must be 8–30 characters');
-            isSubmitting.current = false;
-            return;
+            setError('Password must be 8–30 characters'); return;
         }
-
         setLoading(true);
         try {
-            // Register only creates the account — no tokens, no auth state.
-            // The success state triggers the countdown → navigate('/login').
+            // Only creates the account — no tokens, no auth state update.
             await authService.register(formData.name, formData.email, formData.password);
+
+            // Show success banner, then redirect to /login after 2 seconds.
             setSuccess(true);
+            setTimeout(() => navigate('/login', { replace: true }), 2000);
         } catch (err) {
-            setError(
-                err.response?.data?.error?.message ||
-                err.response?.data?.message ||
-                err.message ||
-                'Registration failed. Please try again.'
-            );
+            setError(err.response?.data?.error?.message || err.message || 'Registration failed. Please try again.');
         } finally {
             setLoading(false);
-            isSubmitting.current = false;
         }
     };
 
-    // ── Render ────────────────────────────────────────────────
+    // ── Success state ────────────────────────────────────────────────────────
+    if (success) {
+        return (
+            <div className="min-h-screen flex items-center justify-center p-4 bg-[var(--bg-base)] text-[var(--text-primary)]">
+                <div className="w-full max-w-md text-center space-y-6 animate-fade-in-up">
+                    <div className="w-20 h-20 mx-auto rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
+                        <CheckCircle2 size={40} className="text-emerald-500" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-black text-[var(--text-primary)] mb-2">Account Created!</h1>
+                        <p className="text-sm text-[var(--text-secondary)] font-medium">
+                            Your account has been created successfully.<br />
+                            Redirecting you to the login page…
+                        </p>
+                    </div>
+                    <div className="flex justify-center">
+                        <span className="animate-spin inline-block w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full" />
+                    </div>
+                    <Link
+                        to="/login"
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-extrabold text-sm text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20"
+                    >
+                        Go to Login <ArrowRight size={16} />
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    // ── Registration form ────────────────────────────────────────────────────
     return (
         <div className="min-h-screen flex items-center justify-center p-4 md:p-6 bg-[var(--bg-base)] text-[var(--text-primary)] relative overflow-hidden">
-
+            
             {/* Ambient Lighting */}
             <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
             {/* Back Button */}
-            <Link
-                to="/"
+            <Link 
+                to="/" 
                 className="absolute top-6 left-6 p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-purple-500/50 transition-all flex items-center gap-2 text-sm font-bold shadow-sm z-20"
             >
                 <ArrowLeft size={18} />
@@ -106,11 +95,11 @@ const Register = () => {
             </Link>
 
             <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 rounded-3xl shadow-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] overflow-hidden relative z-10 animate-fade-in-up">
-
+                
                 {/* Left Side Brand Banner */}
                 <div className="bg-gradient-to-br from-purple-700 via-indigo-700 to-purple-900 p-8 md:p-12 text-white flex flex-col justify-between relative overflow-hidden hidden md:flex">
                     <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full blur-xl pointer-events-none" />
-
+                    
                     <div className="space-y-4">
                         <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center">
                             <BookOpen size={24} />
@@ -119,8 +108,7 @@ const Register = () => {
                             Join the Adaptive Learning Community
                         </h2>
                         <p className="text-purple-100 font-medium text-sm leading-relaxed">
-                            Create your account to unlock personalized font spacing, automated text
-                            simplification, and speech-to-text dictation.
+                            Create your account to unlock personalized font spacing, automated text simplification, and speech-to-text dictation.
                         </p>
                     </div>
 
@@ -134,156 +122,110 @@ const Register = () => {
                     </div>
                 </div>
 
-                {/* Right Side — Success panel or Registration form */}
+                {/* Right Side Form Panel */}
                 <div className="p-8 md:p-10 flex flex-col justify-between">
-
-                    {success ? (
-                        /* ── Success state ─────────────────────────────────── */
-                        <div className="flex flex-col items-center justify-center flex-1 gap-6 py-8 animate-fade-in-up">
-                            <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
-                                <CheckCircle size={32} className="text-emerald-500" />
-                            </div>
-                            <div className="text-center space-y-1">
-                                <h2 className="text-2xl font-black text-[var(--text-primary)]">Account Created!</h2>
-                                <p className="text-sm text-[var(--text-secondary)] font-medium">
-                                    Your account has been set up successfully.
-                                </p>
-                            </div>
-                            <p className="text-xs text-[var(--text-secondary)] font-semibold">
-                                Redirecting to login in{' '}
-                                <span className="font-black text-purple-600">{countdown}s</span>…
+                    <div>
+                        <div className="text-center md:text-left mb-6">
+                            <h1 className="text-3xl font-black mb-1 tracking-tight text-[var(--text-primary)]">Create Account</h1>
+                            <p className="text-xs md:text-sm text-[var(--text-secondary)] font-medium">
+                                Role is auto-assigned based on your institution email
                             </p>
-                            <Link
-                                to="/login"
-                                replace
-                                className="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white font-extrabold rounded-2xl text-sm transition-all shadow-md shadow-purple-600/20 flex items-center gap-2"
+                        </div>
+
+                        {error && (
+                            <div className="mb-4 p-3.5 rounded-xl text-xs font-bold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/20 text-center animate-fade-in-up">
+                                {error}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleRegister} className="space-y-3.5">
+                            <div>
+                                <label className="block text-xs font-extrabold text-[var(--text-secondary)] mb-1 uppercase tracking-wider">Full Name</label>
+                                <div className="relative">
+                                    <User size={18} className="absolute left-3.5 top-3.5 text-[var(--text-secondary)]" />
+                                    <input
+                                        type="text"
+                                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-base)] text-[var(--text-primary)] font-medium text-sm focus:outline-none focus:border-purple-500 transition-all"
+                                        placeholder="Alex Johnson"
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-extrabold text-[var(--text-secondary)] mb-1 uppercase tracking-wider">Institution Email</label>
+                                <div className="relative">
+                                    <Mail size={18} className="absolute left-3.5 top-3.5 text-[var(--text-secondary)]" />
+                                    <input
+                                        type="email"
+                                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-base)] text-[var(--text-primary)] font-medium text-sm focus:outline-none focus:border-purple-500 transition-all"
+                                        placeholder="name@student.com or name@staff.com"
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                {emailDomain && (
+                                    <div className="mt-1 text-[10px] font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1">
+                                        <Sparkles size={12} />
+                                        {isTeacherHint ? 'Role detected: Faculty / Staff' : isStudentHint ? 'Role detected: Student' : 'Standard institutional registration'}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs font-extrabold text-[var(--text-secondary)] mb-1 uppercase tracking-wider">Password</label>
+                                    <div className="relative">
+                                        <Lock size={18} className="absolute left-3.5 top-3.5 text-[var(--text-secondary)]" />
+                                        <input
+                                            type="password"
+                                            className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-base)] text-[var(--text-primary)] font-medium text-sm focus:outline-none focus:border-purple-500 transition-all"
+                                            placeholder="••••••••"
+                                            value={formData.password}
+                                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-extrabold text-[var(--text-secondary)] mb-1 uppercase tracking-wider">Confirm</label>
+                                    <div className="relative">
+                                        <Lock size={18} className="absolute left-3.5 top-3.5 text-[var(--text-secondary)]" />
+                                        <input
+                                            type="password"
+                                            className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-base)] text-[var(--text-primary)] font-medium text-sm focus:outline-none focus:border-purple-500 transition-all"
+                                            placeholder="••••••••"
+                                            value={formData.confirmPassword}
+                                            onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button
+                                id="register-submit"
+                                type="submit"
+                                disabled={loading}
+                                className="w-full py-4 mt-2 text-white rounded-xl font-extrabold text-sm transition-all shadow-lg bg-purple-600 hover:bg-purple-700 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-purple-600/20"
                             >
-                                Go to Login <ArrowRight size={16} />
-                            </Link>
-                        </div>
-                    ) : (
-                        /* ── Registration form ─────────────────────────────── */
-                        <div>
-                            <div className="text-center md:text-left mb-6">
-                                <h1 className="text-3xl font-black mb-1 tracking-tight text-[var(--text-primary)]">
-                                    Create Account
-                                </h1>
-                                <p className="text-xs md:text-sm text-[var(--text-secondary)] font-medium">
-                                    Role is auto-assigned based on your institution email
-                                </p>
-                            </div>
+                                {loading ? (
+                                    <span className="animate-spin inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
+                                ) : (
+                                    <>Create My Account <ArrowRight size={18} /></>
+                                )}
+                            </button>
+                        </form>
+                    </div>
 
-                            {error && (
-                                <div className="mb-4 p-3.5 rounded-xl text-xs font-bold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/20 text-center animate-fade-in-up">
-                                    {error}
-                                </div>
-                            )}
-
-                            <form onSubmit={handleRegister} className="space-y-3.5">
-                                <div>
-                                    <label className="block text-xs font-extrabold text-[var(--text-secondary)] mb-1 uppercase tracking-wider">
-                                        Full Name
-                                    </label>
-                                    <div className="relative">
-                                        <User size={18} className="absolute left-3.5 top-3.5 text-[var(--text-secondary)]" />
-                                        <input
-                                            type="text"
-                                            className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-base)] text-[var(--text-primary)] font-medium text-sm focus:outline-none focus:border-purple-500 transition-all"
-                                            placeholder="Alex Johnson"
-                                            value={formData.name}
-                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-extrabold text-[var(--text-secondary)] mb-1 uppercase tracking-wider">
-                                        Institution Email
-                                    </label>
-                                    <div className="relative">
-                                        <Mail size={18} className="absolute left-3.5 top-3.5 text-[var(--text-secondary)]" />
-                                        <input
-                                            type="email"
-                                            className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-base)] text-[var(--text-primary)] font-medium text-sm focus:outline-none focus:border-purple-500 transition-all"
-                                            placeholder="name@student.com or name@staff.com"
-                                            value={formData.email}
-                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    {emailDomain && (
-                                        <div className="mt-1 text-[10px] font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1">
-                                            <Sparkles size={12} />
-                                            {isTeacherHint
-                                                ? 'Role detected: Faculty / Staff'
-                                                : isStudentHint
-                                                ? 'Role detected: Student'
-                                                : 'Standard institutional registration'}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="block text-xs font-extrabold text-[var(--text-secondary)] mb-1 uppercase tracking-wider">
-                                            Password
-                                        </label>
-                                        <div className="relative">
-                                            <Lock size={18} className="absolute left-3.5 top-3.5 text-[var(--text-secondary)]" />
-                                            <input
-                                                type="password"
-                                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-base)] text-[var(--text-primary)] font-medium text-sm focus:outline-none focus:border-purple-500 transition-all"
-                                                placeholder="••••••••"
-                                                value={formData.password}
-                                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-extrabold text-[var(--text-secondary)] mb-1 uppercase tracking-wider">
-                                            Confirm
-                                        </label>
-                                        <div className="relative">
-                                            <Lock size={18} className="absolute left-3.5 top-3.5 text-[var(--text-secondary)]" />
-                                            <input
-                                                type="password"
-                                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-base)] text-[var(--text-primary)] font-medium text-sm focus:outline-none focus:border-purple-500 transition-all"
-                                                placeholder="••••••••"
-                                                value={formData.confirmPassword}
-                                                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <button
-                                    id="register-submit"
-                                    type="submit"
-                                    disabled={loading}
-                                    className="w-full py-4 mt-2 text-white rounded-xl font-extrabold text-sm transition-all shadow-lg bg-purple-600 hover:bg-purple-700 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-purple-600/20"
-                                >
-                                    {loading ? (
-                                        <span className="animate-spin inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
-                                    ) : (
-                                        <>Create My Account <ArrowRight size={18} /></>
-                                    )}
-                                </button>
-                            </form>
-
-                            <div className="mt-6 pt-4 border-t border-[var(--border-color)] text-center">
-                                <Link
-                                    to="/login"
-                                    className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline"
-                                >
-                                    Already have an account? Sign in
-                                </Link>
-                            </div>
-                        </div>
-                    )}
-
+                    <div className="mt-6 pt-4 border-t border-[var(--border-color)] text-center">
+                        <Link to="/login" className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline">
+                            Already have an account? Sign in
+                        </Link>
+                    </div>
                 </div>
             </div>
         </div>

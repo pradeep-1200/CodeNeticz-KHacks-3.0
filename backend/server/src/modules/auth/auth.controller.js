@@ -20,7 +20,7 @@ async function register(req, res, next) {
     const result = await authService.register(req.body);
     res.status(201).json({
       success: true,
-      message: result.message
+      message: 'Registration successful. Please log in.'
     });
   } catch (err) { next(err); }
 }

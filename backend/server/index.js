@@ -60,11 +60,12 @@ app.use(helmet({
 // NOTE: origin: '*' is intentionally never used — credentials: true
 //       requires an explicit origin echo, not a wildcard.
 
-// Regex that matches any aclc-frontend Vercel deployment URL.
-// Covers both standard and team/personal project Vercel URLs:
-//   - https://aclc-frontend-*.vercel.app
-//   - https://aclc-frontend-*-nakulans.projects.vercel.app
-const VERCEL_PREVIEW_PATTERN = /^https:\/\/aclc-frontend.*\.(vercel\.app|projects\.vercel\.app)$/;
+// Regex that matches any Vercel deployment URL belonging to this project.
+// Covers both the original aclc-frontend prefix and the production code-neticz-k-hacks-3-0 prefix:
+//   - https://aclc-frontend*.vercel.app
+//   - https://code-neticz-k-hacks-3-0*.vercel.app
+//   - https://*-nakulans.projects.vercel.app  (personal team deploys)
+const VERCEL_PREVIEW_PATTERN = /^https:\/\/(aclc-frontend|code-neticz-k-hacks-3-0).*\.(vercel\.app|projects\.vercel\.app)$/
 
 // Exact origins collected from environment variables.
 const rawAllowedOrigins = process.env.ALLOWED_ORIGINS
@@ -73,6 +74,7 @@ const rawAllowedOrigins = process.env.ALLOWED_ORIGINS
 
 const defaultOrigins = [
   process.env.CLIENT_URL || 'https://aclc-frontend-mu.vercel.app',
+  'https://code-neticz-k-hacks-3-0.vercel.app',   // production frontend (new URL)
   'http://localhost:5173'
 ];
 

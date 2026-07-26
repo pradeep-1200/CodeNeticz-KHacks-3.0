@@ -37,9 +37,9 @@ function resolveRoleFromDomain(email) {
 }
 
 // ── Register ───────────────────────────────────────────────────
-// Creates the user account only — does NOT issue tokens or set cookies.
-// The client must redirect to /login so the user authenticates explicitly.
-async function register(data) {
+// Registration ONLY creates the account. No tokens are issued.
+// The client must call /auth/login separately after registering.
+async function register(data, meta = {}) {
   ensureDatabaseAvailable();
   const { name, email, password } = data;
 
@@ -56,9 +56,8 @@ async function register(data) {
 
   logger.info('User registered', { category: 'auth', action: 'user.register', userId: user._id.toString(), role });
 
-  // Return only the confirmation message — no tokens, no session.
+  // Return only user metadata — no access or refresh tokens.
   return {
-    message: 'Registration successful. Please log in.',
     user: { id: user._id, name: user.name, email: user.email, role }
   };
 }

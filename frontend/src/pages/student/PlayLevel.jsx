@@ -5,7 +5,7 @@ import QuizGame from '../../components/games/QuizGame';
 import JumbledSentenceGame from '../../components/games/JumbledSentenceGame';
 import SpeechGame from '../../components/games/SpeechGame';
 import { ArrowLeft, Star, Heart, Trophy, ChevronRight, Home, Loader2 } from 'lucide-react';
-import { getBackendBaseUrl } from '../../services/api';
+import api from '../../services/api';
 
 const PlayLevel = () => {
     const { levelId } = useParams();
@@ -52,9 +52,7 @@ const PlayLevel = () => {
             }
 
             try {
-                const res = await fetch(`${getBackendBaseUrl()}/api/levels/${levelId}`);
-                if (!res.ok) throw new Error(`Status: ${res.status}`);
-                const data = await res.json();
+                const { data } = await api.get(`/levels/${levelId}`);
                 if (data.success) {
                     setLevel(data.level);
                 } else {

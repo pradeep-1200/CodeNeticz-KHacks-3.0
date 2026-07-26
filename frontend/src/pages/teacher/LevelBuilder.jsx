@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import StaffNavbar from '../../components/StaffNavbar';
 import { Plus, Trash2, Save, ArrowLeft, GripVertical, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getBackendBaseUrl } from '../../services/api';
+import api from '../../services/api';
 
 const TeacherLevelBuilder = () => {
     const navigate = useNavigate();
@@ -96,21 +96,10 @@ const TeacherLevelBuilder = () => {
 
         setIsSaving(true);
         try {
-            const token = (await import('../../store/authStore')).useAuthStore.getState().accessToken;
-            const baseUrl = `${getBackendBaseUrl()}/api/v1`;
-            const res = await fetch(`${baseUrl}/levels`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { Authorization: `Bearer ${token}` } : {})
-                },
-                body: JSON.stringify(level)
-            });
-            const data = await res.json();
+            const { data } = await api.post('/levels', level);
             if (data.success) {
                 alert("Level created successfully!");
-                // Optionally navigate back or clear form
-                setLevel({ title: '', description: '', difficulty: 'easy', xpReward: 500, tasks: [] });
+                setLevel({ title: '', description: '', difficulty: 'easy', targetProfile: 'DEFAULT', xpReward: 500, tasks: [] });
             } else {
                 alert("Error creating level: " + data.message);
             }

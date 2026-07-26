@@ -109,11 +109,11 @@ cd CodeNeticz-KHacks-3.0
    ```env
    PORT=5000
    NODE_ENV=development
-   MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/aclc?retryWrites=true&w=majority
+   MONGO_URI=""
    JWT_SECRET=your_super_secret_jwt_access_key_32_chars
    JWT_REFRESH_SECRET=your_super_secret_jwt_refresh_key_32_chars
    CLIENT_URL=http://localhost:5173
-   ALLOWED_ORIGINS=http://localhost:5173,https://code-neticz-k-hacks-3-0.vercel.app
+   ALLOWED_ORIGINS=""
    CLOUDINARY_CLOUD_NAME=your_cloudinary_name
    CLOUDINARY_API_KEY=your_cloudinary_api_key
    CLOUDINARY_API_SECRET=your_cloudinary_api_secret

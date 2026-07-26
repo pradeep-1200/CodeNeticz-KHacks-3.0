@@ -41,15 +41,32 @@ const Register = () => {
     const isStudentHint = emailDomain.startsWith('student.') || emailDomain === 'student.com';
 
     // ── Form submission ───────────────────────────────────────
+    // isSubmitting is a ref so the guard works synchronously — before React
+    // has had a chance to re-render with loading=true.  This prevents the
+    // double-submission window that exists between setLoading(true) and the
+    // next paint (React 18 batches state, so disabled={loading} is not yet
+    // applied when a second submit fires within the same task).
+    const isSubmitting = React.useRef(false);
+
     const handleRegister = async (e) => {
         e.preventDefault();
+
+        // Synchronous guard — stops any duplicate submit before the first
+        // setLoading(true) re-render has had a chance to disable the button.
+        if (isSubmitting.current) return;
+        isSubmitting.current = true;
+
         setError('');
 
         if (formData.password !== formData.confirmPassword) {
-            setError('Passwords do not match'); return;
+            setError('Passwords do not match');
+            isSubmitting.current = false;
+            return;
         }
         if (formData.password.length < 8 || formData.password.length > 30) {
-            setError('Password must be 8–30 characters'); return;
+            setError('Password must be 8–30 characters');
+            isSubmitting.current = false;
+            return;
         }
 
         setLoading(true);
@@ -67,6 +84,7 @@ const Register = () => {
             );
         } finally {
             setLoading(false);
+            isSubmitting.current = false;
         }
     };
 

@@ -49,7 +49,7 @@ backend/ML/Dyslexia/venv/
 # ── 🤖 ML / AI MODEL FILES (too large for Git) ─────────────
 # HuggingFace cached models
 cache/
-models/
+
 *.bin
 *.safetensors
 *.h5

@@ -1,10 +1,19 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { ArrowRight, ShieldCheck, ArrowLeft, User, Mail, Lock, Sparkles, BookOpen } from 'lucide-react';
 import { authService } from '../services/authService';
+import { useAuthStore } from '../store/authStore';
 
 const Register = () => {
     const navigate  = useNavigate();
+    const user      = useAuthStore(s => s.user);
+
+    // Already authenticated — skip registration and go straight to the dashboard
+    if (user) {
+        const dest = user.role === 'TEACHER' || user.role === 'ADMIN' ? '/staff/dashboard' : '/student/dashboard';
+        return <Navigate to={dest} replace />;
+    }
+
     const [error,    setError]    = useState('');
     const [loading,  setLoading]  = useState(false);
     const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });

@@ -1,12 +1,20 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link, Navigate } from 'react-router-dom';
 import { User, ArrowLeft, Accessibility, Lock, Mail, Sparkles, BookOpen, ShieldCheck } from 'lucide-react';
 import { authService } from '../services/authService';
+import { useAuthStore } from '../store/authStore';
 
 const Login = () => {
   const navigate  = useNavigate();
   const location  = useLocation();
   const from      = location.state?.from || null; // where we came from (ProtectedRoute redirect)
+  const user      = useAuthStore(s => s.user);
+
+  // Already authenticated — skip the login form and go straight to the dashboard
+  if (user) {
+    const dest = from || (user.role === 'TEACHER' || user.role === 'ADMIN' ? '/staff/dashboard' : '/student/dashboard');
+    return <Navigate to={dest} replace />;
+  }
 
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');

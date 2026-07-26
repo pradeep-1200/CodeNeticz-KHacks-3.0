@@ -7,9 +7,12 @@
 .env
 .env.*
 !.env.example        # keep the template
+*.env
 
 # ── 📦 NODE / NPM ──────────────────────────────────────────
 node_modules/
+backend/server/node_modules/
+frontend/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -26,6 +29,8 @@ lerna-debug.log*
 dist/
 dist-ssr/
 build/
+frontend/dist/
+frontend/build/
 *.local
 
 # ── 🐍 PYTHON ──────────────────────────────────────────────
@@ -41,23 +46,19 @@ __pycache__/
 pip-wheel-metadata/
 .pytest_cache/
 
-# Specific venv paths used in the project
+# Specific venv paths used in sub-projects
 cognitive_disability/dyslexia/venv/
 cognitive_disability/dyscalculia/venv/
 backend/ML/Dyslexia/venv/
 
 # ── 🤖 ML / AI MODEL FILES (too large for Git) ─────────────
-# HuggingFace cached models
 cache/
-
 *.bin
 *.safetensors
 *.h5
 *.pt
 *.ckpt
 *.onnx
-
-# Word / embedding caches generated at runtime
 word_cache.json
 
 # ── 🗄️ DATABASE ────────────────────────────────────────────
@@ -65,20 +66,15 @@ word_cache.json
 *.sqlite3
 *.db
 
-# Prisma generated client (regenerated from schema)
-backend/server/node_modules/.prisma/
-
-# ── 📁 UPLOADS (runtime user data, not source) ─────────────
+# ── 📁 UPLOADS & LOGS (runtime user data) ──────────────────
 uploads/
 backend/server/uploads/
 backend/public/
-
-# ── 📋 LOGS ────────────────────────────────────────────────
 logs/
 *.log
 backend/server/logs/
 
-# ── 🖥️ EDITOR & IDE ────────────────────────────────────────
+# ── 🖥️ EDITOR, IDE & AGENT ARTIFACTS ───────────────────────
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
@@ -88,6 +84,8 @@ backend/server/logs/
 *.njsproj
 *.sln
 *.sw?
+.gemini/
+.brain/
 
 # ── 🖼️ OS JUNK ─────────────────────────────────────────────
 .DS_Store
@@ -96,7 +94,6 @@ desktop.ini
 ehthumbs.db
 
 # ── 🔧 MISC ────────────────────────────────────────────────
-# Large binary system files
 *.dll
 *.so
 *.dylib
@@ -105,16 +102,7 @@ ehthumbs.db
 *.a
 *.obj
 *.o
-
-# Coverage reports
 coverage/
 *.lcov
 .nyc_output/
-
-# TypeScript build info
 *.tsbuildinfo
-
-# ── 📄 INTERNAL / GENERATED DOCS (not for public repo) ────
-TECHNICAL_OVERVIEW.md
-Deployment_Playbook/
-GIT_LARGE_FILES_FIX.md

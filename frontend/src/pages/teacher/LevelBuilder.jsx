@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import StaffNavbar from '../../components/StaffNavbar';
 import { Plus, Trash2, Save, ArrowLeft, GripVertical, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getBackendBaseUrl } from '../../../services/api';
+import { getBackendBaseUrl } from '../../services/api';
 
 const TeacherLevelBuilder = () => {
     const navigate = useNavigate();
@@ -96,7 +96,7 @@ const TeacherLevelBuilder = () => {
 
         setIsSaving(true);
         try {
-            const token = (await import('../../../store/authStore')).useAuthStore.getState().accessToken;
+            const token = (await import('../../store/authStore')).useAuthStore.getState().accessToken;
             const baseUrl = `${getBackendBaseUrl()}/api/v1`;
             const res = await fetch(`${baseUrl}/levels`, {
                 method: 'POST',

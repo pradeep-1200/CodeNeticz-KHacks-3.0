@@ -35,28 +35,23 @@ app.use(helmet({
   }
 }));
 
-// ── CORS — environment-aware ───────────────────────────────────
-// In production, only allow the deployed frontend origin.
-// In development, allow all origins so local dev works without config.
-const isProd       = process.env.NODE_ENV === 'production';
-const clientOrigin = process.env.CLIENT_URL || 'https://aclc-frontend.vercel.app';
+// ── CORS — environment-driven exact origin matching ────────────
+const rawAllowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)
+  : [];
 
-const allowedOrigins = isProd
-  ? [clientOrigin]
-  : [
-      clientOrigin,
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'http://127.0.0.1:5173'
-    ];
+const defaultOrigins = [
+  process.env.CLIENT_URL || 'https://aclc-frontend.vercel.app',
+  'http://localhost:5173'
+];
+
+const allowedOrigins = Array.from(new Set([...rawAllowedOrigins, ...defaultOrigins]));
 
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (curl, Postman, server-to-server)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
-    // In development also allow any localhost port
-    if (!isProd && /^http:\/\/localhost(:\d+)?$/.test(origin)) return callback(null, true);
     callback(new Error(`CORS: origin '${origin}' not allowed`));
   },
   credentials: true,

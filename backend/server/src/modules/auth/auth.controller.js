@@ -1,10 +1,16 @@
-﻿const authService = require('./auth.service');
+const authService = require('./auth.service');
+
+// ── Cookie options — cross-origin safe in production ──────────
+// Frontend (vercel.app) and backend (onrender.com) are different domains.
+// SameSite=None + Secure=true is required for cross-site cookies.
+// SameSite=Strict is used in development (same-origin via vite proxy).
+const isProd = process.env.NODE_ENV === 'production';
 
 const COOKIE_OPTS = {
   httpOnly: true,
-  sameSite: 'strict',
-  secure:   process.env.NODE_ENV === 'production',
-  maxAge:   7 * 24 * 60 * 60 * 1000  // 7 days
+  sameSite: isProd ? 'none' : 'strict',
+  secure:   isProd,                      // must be true when sameSite=none
+  maxAge:   7 * 24 * 60 * 60 * 1000     // 7 days
 };
 
 async function register(req, res, next) {
@@ -40,7 +46,7 @@ async function logout(req, res, next) {
   try {
     const raw = req.cookies?.aclc_rt;
     await authService.logout(raw);
-    res.clearCookie('aclc_rt');
+    res.clearCookie('aclc_rt', { ...COOKIE_OPTS, maxAge: 0 });
     res.json({ success: true, data: { message: 'Logged out successfully' } });
   } catch (err) { next(err); }
 }

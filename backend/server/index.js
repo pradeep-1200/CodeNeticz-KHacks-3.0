@@ -35,9 +35,30 @@ app.use(helmet({
   }
 }));
 
-// Allow all origins (development mode)
+// ── CORS — environment-aware ───────────────────────────────────
+// In production, only allow the deployed frontend origin.
+// In development, allow all origins so local dev works without config.
+const isProd       = process.env.NODE_ENV === 'production';
+const clientOrigin = process.env.CLIENT_URL || 'https://aclc-frontend.vercel.app';
+
+const allowedOrigins = isProd
+  ? [clientOrigin]
+  : [
+      clientOrigin,
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://127.0.0.1:5173'
+    ];
+
 app.use(cors({
-  origin: true,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (curl, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    // In development also allow any localhost port
+    if (!isProd && /^http:\/\/localhost(:\d+)?$/.test(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin '${origin}' not allowed`));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 }));
@@ -47,6 +68,9 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser());
 app.use(requestLogger);
+
+// Serve uploads statically
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ── 2. Routes ──────────────────────────────────────────────────
 app.use('/api/v1/auth',          require('./src/modules/auth/auth.routes'));

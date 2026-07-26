@@ -1,11 +1,17 @@
-// P1 FIX: Legacy auth routes — now use real Argon2 hashing + real JWT
-// These routes exist alongside /api/v1/auth for backward compatibility
-// They delegate to auth.service.js for the actual business logic
 const express = require('express');
 const router  = express.Router();
 
 const authService = require('../src/modules/auth/auth.service');
 const logger      = require('../src/utils/logger');
+
+// ── Cookie options — cross-origin safe in production ──────────
+const isProd = process.env.NODE_ENV === 'production';
+const COOKIE_OPTS = {
+  httpOnly: true,
+  sameSite: isProd ? 'none' : 'strict',
+  secure:   isProd,
+  maxAge:   7 * 24 * 60 * 60 * 1000
+};
 
 // ── POST /api/auth/login ───────────────────────────────────────
 router.post('/login', async (req, res, next) => {
@@ -17,13 +23,7 @@ router.post('/login', async (req, res, next) => {
     const meta   = { ip: req.ip, userAgent: req.headers['user-agent'] };
     const result = await authService.login({ email, password }, meta);
 
-    // Set httpOnly refresh token cookie
-    res.cookie('aclc_rt', result.refreshToken, {
-      httpOnly: true, sameSite: 'strict',
-      secure:   process.env.NODE_ENV === 'production',
-      maxAge:   7 * 24 * 60 * 60 * 1000
-    });
-
+    res.cookie('aclc_rt', result.refreshToken, COOKIE_OPTS);
     res.json({ success: true, user: result.user, token: result.accessToken });
   } catch (err) {
     if (err.code === 'INVALID_CREDENTIALS') {
@@ -43,12 +43,7 @@ router.post('/register', async (req, res, next) => {
     const meta   = { ip: req.ip, userAgent: req.headers['user-agent'] };
     const result = await authService.register({ name, email, password }, meta);
 
-    res.cookie('aclc_rt', result.refreshToken, {
-      httpOnly: true, sameSite: 'strict',
-      secure:   process.env.NODE_ENV === 'production',
-      maxAge:   7 * 24 * 60 * 60 * 1000
-    });
-
+    res.cookie('aclc_rt', result.refreshToken, COOKIE_OPTS);
     res.status(201).json({ success: true, user: result.user, token: result.accessToken });
   } catch (err) {
     if (err.code === 'EMAIL_EXISTS') {
@@ -62,7 +57,7 @@ router.post('/register', async (req, res, next) => {
 router.post('/logout', async (req, res) => {
   const raw = req.cookies?.aclc_rt;
   await authService.logout(raw).catch(() => {});
-  res.clearCookie('aclc_rt');
+  res.clearCookie('aclc_rt', { ...COOKIE_OPTS, maxAge: 0 });
   res.json({ success: true, message: 'Logged out' });
 });
 

@@ -18,7 +18,8 @@ import {
    createClassAssessment,
    getClassAssessments,
    unpublishAssessment,
-   deleteClassAssessment
+   deleteClassAssessment,
+   getBackendBaseUrl
 } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import { useNavigate } from 'react-router-dom';
@@ -839,7 +840,7 @@ const ClassManager = () => {
                                                            <div className="bg-white dark:bg-[var(--bg-surface)] p-2.5 rounded-lg font-mono text-[11px] border border-[var(--border-color)] text-[var(--text-primary)]">{sub.content}</div>
                                                            {sub.attachment && (
                                                               <a 
-                                                                 href={`http://localhost:5000${sub.attachment}`} 
+                                                                 href={`${getBackendBaseUrl()}${sub.attachment}`} 
                                                                  target="_blank" 
                                                                  rel="noreferrer" 
                                                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-[11px] font-extrabold shadow-sm hover:bg-purple-700 transition-colors"

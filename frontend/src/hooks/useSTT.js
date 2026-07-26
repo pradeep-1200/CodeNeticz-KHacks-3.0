@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { transcribeAudio } from '../services/api';   // uses VITE_API_URL + auth token
 
 const useSTT = () => {
     const [isRecording, setIsRecording] = useState(false);
@@ -22,8 +23,6 @@ const useSTT = () => {
             mediaRecorderRef.current.onstop = async () => {
                 const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
                 await processAudio(audioBlob);
-
-                // Stop all tracks
                 stream.getTracks().forEach(track => track.stop());
             };
 
@@ -31,8 +30,8 @@ const useSTT = () => {
             setIsRecording(true);
             setError(null);
         } catch (err) {
-            console.error("Error accessing microphone:", err);
-            setError("Microphone access denied or not available");
+            console.error('Error accessing microphone:', err);
+            setError('Microphone access denied or not available');
         }
     }, []);
 
@@ -44,48 +43,35 @@ const useSTT = () => {
     }, [isRecording]);
 
     const processAudio = async (audioBlob) => {
-        const formData = new FormData();
-        formData.append('audio', audioBlob, 'recording.webm');
-
         try {
-            const res = await fetch('http://localhost:5000/api/stt/process', {
-                method: 'POST',
-                body: formData
-            });
-            const data = await res.json();
+            // transcribeAudio in api.js uses the centralized axios instance with
+            // VITE_API_URL and the Authorization header — no hardcoded URL here.
+            const data = await transcribeAudio(audioBlob);
 
             if (data.success) {
                 setTranscript(data.text);
 
-                // Try to insert into active element if it's an input/textarea
+                // Insert into focused input/textarea if available
                 const activeElement = document.activeElement;
                 if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
-                    const start = activeElement.selectionStart;
-                    const end = activeElement.selectionEnd;
-                    const text = activeElement.value;
+                    const start  = activeElement.selectionStart;
+                    const end    = activeElement.selectionEnd;
+                    const text   = activeElement.value;
                     const before = text.substring(0, start);
-                    const after = text.substring(end, text.length);
+                    const after  = text.substring(end, text.length);
                     activeElement.value = before + (before && !before.endsWith(' ') ? ' ' : '') + data.text + after;
-
-                    // Dispatch input event so React state updates
                     activeElement.dispatchEvent(new Event('input', { bubbles: true }));
                 }
             } else {
-                setError(data.message || "Transcription failed");
+                setError(data.message || 'Transcription failed');
             }
         } catch (err) {
-            console.error("STT Error:", err);
-            setError("Server error during transcription");
+            console.error('STT Error:', err);
+            setError('Server error during transcription');
         }
     };
 
-    return {
-        isRecording,
-        transcript,
-        error,
-        startRecording,
-        stopRecording
-    };
+    return { isRecording, transcript, error, startRecording, stopRecording };
 };
 
 export default useSTT;

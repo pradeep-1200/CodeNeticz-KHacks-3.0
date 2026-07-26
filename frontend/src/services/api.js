@@ -1,7 +1,12 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+export const getBackendBaseUrl = () => {
+  const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  return rawUrl.replace(/\/api\/v1$/, '').replace(/\/api$/, '').replace(/\/+$/, '');
+};
+
+const BASE_URL = `${getBackendBaseUrl()}/api/v1`;
 
 // ── Base Axios instance ────────────────────────────────────────
 const api = axios.create({

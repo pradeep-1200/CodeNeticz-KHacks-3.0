@@ -5,25 +5,18 @@ import { authService } from '../services/authService';
 import { useAuthStore } from '../store/authStore';
 
 const Register = () => {
-    const navigate  = useNavigate();
-    const user      = useAuthStore(s => s.user);
+    const navigate = useNavigate();
+    const user     = useAuthStore(s => s.user);
 
-    // Already authenticated — skip registration and go straight to the dashboard
-    if (user) {
-        const dest = user.role === 'TEACHER' || user.role === 'ADMIN' ? '/staff/dashboard' : '/student/dashboard';
-        return <Navigate to={dest} replace />;
-    }
-
+    // ── All hooks declared unconditionally at the top ─────────
+    // (React Rules of Hooks: never call hooks after a conditional return)
     const [error,     setError]     = useState('');
     const [loading,   setLoading]   = useState(false);
-    const [success,   setSuccess]   = useState(false);   // true after account created
-    const [countdown, setCountdown] = useState(2);       // seconds before auto-redirect
-    const [formData,  setFormData]  = useState({ name: '', email: '', password: '', confirmPassword: '' });
-
-    // Derive role hint based on typed domain
-    const emailDomain   = formData.email.includes('@') ? formData.email.split('@')[1] : '';
-    const isTeacherHint = emailDomain.startsWith('staff.')   || emailDomain === 'staff.com';
-    const isStudentHint = emailDomain.startsWith('student.') || emailDomain === 'student.com';
+    const [success,   setSuccess]   = useState(false);
+    const [countdown, setCountdown] = useState(2);
+    const [formData,  setFormData]  = useState({
+        name: '', email: '', password: '', confirmPassword: ''
+    });
 
     // Auto-redirect countdown after successful registration
     useEffect(() => {
@@ -33,6 +26,21 @@ const Register = () => {
         return () => clearTimeout(timer);
     }, [success, countdown, navigate]);
 
+    // ── Early redirect for already-authenticated users ────────
+    // This must come AFTER all hook declarations.
+    if (user) {
+        const dest = user.role === 'TEACHER' || user.role === 'ADMIN'
+            ? '/staff/dashboard'
+            : '/student/dashboard';
+        return <Navigate to={dest} replace />;
+    }
+
+    // ── Derived values (not hooks — safe after hooks block) ───
+    const emailDomain   = formData.email.includes('@') ? formData.email.split('@')[1] : '';
+    const isTeacherHint = emailDomain.startsWith('staff.')   || emailDomain === 'staff.com';
+    const isStudentHint = emailDomain.startsWith('student.') || emailDomain === 'student.com';
+
+    // ── Form submission ───────────────────────────────────────
     const handleRegister = async (e) => {
         e.preventDefault();
         setError('');
@@ -47,15 +55,22 @@ const Register = () => {
         setLoading(true);
         try {
             // Register only creates the account — no tokens, no auth state.
+            // The success state triggers the countdown → navigate('/login').
             await authService.register(formData.name, formData.email, formData.password);
             setSuccess(true);
         } catch (err) {
-            setError(err.response?.data?.error?.message || err.message || 'Registration failed. Please try again.');
+            setError(
+                err.response?.data?.error?.message ||
+                err.response?.data?.message ||
+                err.message ||
+                'Registration failed. Please try again.'
+            );
         } finally {
             setLoading(false);
         }
     };
 
+    // ── Render ────────────────────────────────────────────────
     return (
         <div className="min-h-screen flex items-center justify-center p-4 md:p-6 bg-[var(--bg-base)] text-[var(--text-primary)] relative overflow-hidden">
 
@@ -86,7 +101,8 @@ const Register = () => {
                             Join the Adaptive Learning Community
                         </h2>
                         <p className="text-purple-100 font-medium text-sm leading-relaxed">
-                            Create your account to unlock personalized font spacing, automated text simplification, and speech-to-text dictation.
+                            Create your account to unlock personalized font spacing, automated text
+                            simplification, and speech-to-text dictation.
                         </p>
                     </div>
 
@@ -100,11 +116,11 @@ const Register = () => {
                     </div>
                 </div>
 
-                {/* Right Side Form / Success Panel */}
+                {/* Right Side — Success panel or Registration form */}
                 <div className="p-8 md:p-10 flex flex-col justify-between">
 
-                    {/* ── Success state ── */}
                     {success ? (
+                        /* ── Success state ─────────────────────────────────── */
                         <div className="flex flex-col items-center justify-center flex-1 gap-6 py-8 animate-fade-in-up">
                             <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
                                 <CheckCircle size={32} className="text-emerald-500" />
@@ -116,7 +132,8 @@ const Register = () => {
                                 </p>
                             </div>
                             <p className="text-xs text-[var(--text-secondary)] font-semibold">
-                                Redirecting to login in <span className="font-black text-purple-600">{countdown}s</span>…
+                                Redirecting to login in{' '}
+                                <span className="font-black text-purple-600">{countdown}s</span>…
                             </p>
                             <Link
                                 to="/login"
@@ -127,110 +144,126 @@ const Register = () => {
                             </Link>
                         </div>
                     ) : (
-
-                    /* ── Registration form ── */
-                    <div>
-                        <div className="text-center md:text-left mb-6">
-                            <h1 className="text-3xl font-black mb-1 tracking-tight text-[var(--text-primary)]">Create Account</h1>
-                            <p className="text-xs md:text-sm text-[var(--text-secondary)] font-medium">
-                                Role is auto-assigned based on your institution email
-                            </p>
-                        </div>
-
-                        {error && (
-                            <div className="mb-4 p-3.5 rounded-xl text-xs font-bold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/20 text-center animate-fade-in-up">
-                                {error}
+                        /* ── Registration form ─────────────────────────────── */
+                        <div>
+                            <div className="text-center md:text-left mb-6">
+                                <h1 className="text-3xl font-black mb-1 tracking-tight text-[var(--text-primary)]">
+                                    Create Account
+                                </h1>
+                                <p className="text-xs md:text-sm text-[var(--text-secondary)] font-medium">
+                                    Role is auto-assigned based on your institution email
+                                </p>
                             </div>
-                        )}
 
-                        <form onSubmit={handleRegister} className="space-y-3.5">
-                            <div>
-                                <label className="block text-xs font-extrabold text-[var(--text-secondary)] mb-1 uppercase tracking-wider">Full Name</label>
-                                <div className="relative">
-                                    <User size={18} className="absolute left-3.5 top-3.5 text-[var(--text-secondary)]" />
-                                    <input
-                                        type="text"
-                                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-base)] text-[var(--text-primary)] font-medium text-sm focus:outline-none focus:border-purple-500 transition-all"
-                                        placeholder="Alex Johnson"
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        required
-                                    />
+                            {error && (
+                                <div className="mb-4 p-3.5 rounded-xl text-xs font-bold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/20 text-center animate-fade-in-up">
+                                    {error}
                                 </div>
-                            </div>
+                            )}
 
-                            <div>
-                                <label className="block text-xs font-extrabold text-[var(--text-secondary)] mb-1 uppercase tracking-wider">Institution Email</label>
-                                <div className="relative">
-                                    <Mail size={18} className="absolute left-3.5 top-3.5 text-[var(--text-secondary)]" />
-                                    <input
-                                        type="email"
-                                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-base)] text-[var(--text-primary)] font-medium text-sm focus:outline-none focus:border-purple-500 transition-all"
-                                        placeholder="name@student.com or name@staff.com"
-                                        value={formData.email}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        required
-                                    />
-                                </div>
-                                {emailDomain && (
-                                    <div className="mt-1 text-[10px] font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1">
-                                        <Sparkles size={12} />
-                                        {isTeacherHint ? 'Role detected: Faculty / Staff' : isStudentHint ? 'Role detected: Student' : 'Standard institutional registration'}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <form onSubmit={handleRegister} className="space-y-3.5">
                                 <div>
-                                    <label className="block text-xs font-extrabold text-[var(--text-secondary)] mb-1 uppercase tracking-wider">Password</label>
+                                    <label className="block text-xs font-extrabold text-[var(--text-secondary)] mb-1 uppercase tracking-wider">
+                                        Full Name
+                                    </label>
                                     <div className="relative">
-                                        <Lock size={18} className="absolute left-3.5 top-3.5 text-[var(--text-secondary)]" />
+                                        <User size={18} className="absolute left-3.5 top-3.5 text-[var(--text-secondary)]" />
                                         <input
-                                            type="password"
+                                            type="text"
                                             className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-base)] text-[var(--text-primary)] font-medium text-sm focus:outline-none focus:border-purple-500 transition-all"
-                                            placeholder="••••••••"
-                                            value={formData.password}
-                                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                            placeholder="Alex Johnson"
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                             required
                                         />
                                     </div>
                                 </div>
+
                                 <div>
-                                    <label className="block text-xs font-extrabold text-[var(--text-secondary)] mb-1 uppercase tracking-wider">Confirm</label>
+                                    <label className="block text-xs font-extrabold text-[var(--text-secondary)] mb-1 uppercase tracking-wider">
+                                        Institution Email
+                                    </label>
                                     <div className="relative">
-                                        <Lock size={18} className="absolute left-3.5 top-3.5 text-[var(--text-secondary)]" />
+                                        <Mail size={18} className="absolute left-3.5 top-3.5 text-[var(--text-secondary)]" />
                                         <input
-                                            type="password"
+                                            type="email"
                                             className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-base)] text-[var(--text-primary)] font-medium text-sm focus:outline-none focus:border-purple-500 transition-all"
-                                            placeholder="••••••••"
-                                            value={formData.confirmPassword}
-                                            onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                                            placeholder="name@student.com or name@staff.com"
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                             required
                                         />
                                     </div>
+                                    {emailDomain && (
+                                        <div className="mt-1 text-[10px] font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1">
+                                            <Sparkles size={12} />
+                                            {isTeacherHint
+                                                ? 'Role detected: Faculty / Staff'
+                                                : isStudentHint
+                                                ? 'Role detected: Student'
+                                                : 'Standard institutional registration'}
+                                        </div>
+                                    )}
                                 </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-extrabold text-[var(--text-secondary)] mb-1 uppercase tracking-wider">
+                                            Password
+                                        </label>
+                                        <div className="relative">
+                                            <Lock size={18} className="absolute left-3.5 top-3.5 text-[var(--text-secondary)]" />
+                                            <input
+                                                type="password"
+                                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-base)] text-[var(--text-primary)] font-medium text-sm focus:outline-none focus:border-purple-500 transition-all"
+                                                placeholder="••••••••"
+                                                value={formData.password}
+                                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-extrabold text-[var(--text-secondary)] mb-1 uppercase tracking-wider">
+                                            Confirm
+                                        </label>
+                                        <div className="relative">
+                                            <Lock size={18} className="absolute left-3.5 top-3.5 text-[var(--text-secondary)]" />
+                                            <input
+                                                type="password"
+                                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-base)] text-[var(--text-primary)] font-medium text-sm focus:outline-none focus:border-purple-500 transition-all"
+                                                placeholder="••••••••"
+                                                value={formData.confirmPassword}
+                                                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button
+                                    id="register-submit"
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full py-4 mt-2 text-white rounded-xl font-extrabold text-sm transition-all shadow-lg bg-purple-600 hover:bg-purple-700 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-purple-600/20"
+                                >
+                                    {loading ? (
+                                        <span className="animate-spin inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
+                                    ) : (
+                                        <>Create My Account <ArrowRight size={18} /></>
+                                    )}
+                                </button>
+                            </form>
+
+                            <div className="mt-6 pt-4 border-t border-[var(--border-color)] text-center">
+                                <Link
+                                    to="/login"
+                                    className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline"
+                                >
+                                    Already have an account? Sign in
+                                </Link>
                             </div>
-
-                            <button
-                                id="register-submit"
-                                type="submit"
-                                disabled={loading}
-                                className="w-full py-4 mt-2 text-white rounded-xl font-extrabold text-sm transition-all shadow-lg bg-purple-600 hover:bg-purple-700 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-purple-600/20"
-                            >
-                                {loading ? (
-                                    <span className="animate-spin inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
-                                ) : (
-                                    <>Create My Account <ArrowRight size={18} /></>
-                                )}
-                            </button>
-                        </form>
-
-                        <div className="mt-6 pt-4 border-t border-[var(--border-color)] text-center">
-                            <Link to="/login" className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline">
-                                Already have an account? Sign in
-                            </Link>
                         </div>
-                    </div>
                     )}
 
                 </div>

@@ -34,17 +34,18 @@ router.post('/login', async (req, res, next) => {
 });
 
 // ── POST /api/auth/register ────────────────────────────────────
+// Legacy route — kept for backward compatibility.
+// Registration now only creates the account; no tokens or cookies are issued.
+// The client must redirect to /login to authenticate.
 router.post('/register', async (req, res, next) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
     if (!name || !email || !password) {
       return res.status(400).json({ success: false, message: 'Name, email, and password required' });
     }
-    const meta   = { ip: req.ip, userAgent: req.headers['user-agent'] };
-    const result = await authService.register({ name, email, password }, meta);
-
-    res.cookie('aclc_rt', result.refreshToken, COOKIE_OPTS);
-    res.status(201).json({ success: true, user: result.user, token: result.accessToken });
+    const result = await authService.register({ name, email, password });
+    // Do NOT set cookies. Do NOT return tokens.
+    res.status(201).json({ success: true, message: result.message });
   } catch (err) {
     if (err.code === 'EMAIL_EXISTS') {
       return res.status(409).json({ success: false, message: err.message });

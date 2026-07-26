@@ -8,16 +8,16 @@ const Register = () => {
     const navigate  = useNavigate();
     const user      = useAuthStore(s => s.user);
 
+    const [error,    setError]    = useState('');
+    const [loading,  setLoading]  = useState(false);
+    const [success,  setSuccess]  = useState(false);   // shows success banner
+    const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+
     // Already authenticated — skip registration and go straight to the dashboard
     if (user) {
         const dest = user.role === 'TEACHER' || user.role === 'ADMIN' ? '/staff/dashboard' : '/student/dashboard';
         return <Navigate to={dest} replace />;
     }
-
-    const [error,    setError]    = useState('');
-    const [loading,  setLoading]  = useState(false);
-    const [success,  setSuccess]  = useState(false);   // shows success banner
-    const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
 
     // Derive role hint based on typed domain
     const emailDomain = formData.email.includes('@') ? formData.email.split('@')[1] : '';

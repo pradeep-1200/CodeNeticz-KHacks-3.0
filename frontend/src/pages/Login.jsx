@@ -10,16 +10,16 @@ const Login = () => {
   const from      = location.state?.from || null; // where we came from (ProtectedRoute redirect)
   const user      = useAuthStore(s => s.user);
 
+  const [email,    setEmail]    = useState('');
+  const [password, setPassword] = useState('');
+  const [error,    setError]    = useState('');
+  const [loading,  setLoading]  = useState(false);
+
   // Already authenticated — skip the login form and go straight to the dashboard
   if (user) {
     const dest = from || (user.role === 'TEACHER' || user.role === 'ADMIN' ? '/staff/dashboard' : '/student/dashboard');
     return <Navigate to={dest} replace />;
   }
-
-  const [email,    setEmail]    = useState('');
-  const [password, setPassword] = useState('');
-  const [error,    setError]    = useState('');
-  const [loading,  setLoading]  = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();

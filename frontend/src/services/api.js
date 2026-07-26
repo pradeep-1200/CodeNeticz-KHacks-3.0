@@ -72,8 +72,35 @@ api.interceptors.response.use(
       } catch (refreshErr) {
         waitQueue.forEach(({ reject }) => reject(refreshErr));
         waitQueue = [];
-        useAuthStore.getState().clearAuth();
-        window.location.href = '/login';
+
+        // ── Resilient session handling ──────────────────────────────
+        // Only clear the user's session when the /auth/refresh endpoint
+        // explicitly rejects the refresh token (401 or 403).
+        //
+        // Do NOT clear auth for:
+        //   - Network timeouts (err.code === 'ECONNABORTED' or no response)
+        //   - HTTP 429  – backend rate-limited; user is still authenticated
+        //   - HTTP 5xx  – transient server errors; token may still be valid
+        //
+        // This prevents users from being logged out during Render cold-starts,
+        // rate-limit windows, or momentary network blips.
+        const refreshStatus = refreshErr.response?.status;
+        const isAuthFailure  = refreshStatus === 401 || refreshStatus === 403;
+        const isNetworkError = !refreshErr.response; // timeout / connection refused
+
+        if (isAuthFailure) {
+          // The refresh token is genuinely invalid or expired — log out cleanly.
+          useAuthStore.getState().clearAuth();
+          window.location.href = '/login';
+        } else if (isNetworkError) {
+          // Backend is temporarily unreachable (cold-start / network blip).
+          // Keep the session alive so the user can retry.
+          console.warn('[api] Token refresh skipped — backend unreachable. Session preserved.');
+        } else {
+          // 429, 5xx or any other transient error — keep session alive.
+          console.warn(`[api] Token refresh skipped — HTTP ${refreshStatus}. Session preserved.`);
+        }
+
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;

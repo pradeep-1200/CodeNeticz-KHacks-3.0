@@ -47,14 +47,16 @@ router.post('/summarize', async (req, res) => {
 
         python.on('error', (err) => {
             console.error('Failed to start Python process:', err);
-            res.status(500).json({ error: 'Failed to start Python process', details: err.message });
+            if (!res.headersSent) {
+                res.status(500).json({ error: 'Failed to start Python process', details: err.message });
+            }
         });
 
         python.on('close', (code) => {
             console.log(`Python process exited with code ${code}`);
+            if (res.headersSent) return;
             if (code !== 0) {
                 console.error('Summarization error output:', errorOutput);
-                // Send the actual error message back to the frontend!
                 return res.status(500).json({
                     error: 'Summarization failed',
                     details: errorOutput || 'Unknown error',
@@ -62,15 +64,14 @@ router.post('/summarize', async (req, res) => {
                 });
             }
             try {
-                // Ensure output is valid JSON if expected, or just text
-                // Check if the output is just the summary string or a JSON object
-                // The python script for BART prints just the text
                 const result = output.trim();
                 if (!result) throw new Error("Empty output from Python script");
                 res.json({ summary: result });
             } catch (e) {
                 console.error("Error parsing Python output:", e);
-                res.status(500).json({ error: "Invalid output from AI model", details: output });
+                if (!res.headersSent) {
+                    res.status(500).json({ error: "Invalid output from AI model", details: output });
+                }
             }
         });
 
@@ -122,11 +123,14 @@ router.post('/simplify', async (req, res) => {
 
         python.on('error', (err) => {
             console.error('[Simplify] Spawn Error:', err);
-            res.status(500).json({ error: 'Failed to start Python process', details: err.message });
+            if (!res.headersSent) {
+                res.status(500).json({ error: 'Failed to start Python process', details: err.message });
+            }
         });
 
         python.on('close', (code) => {
             console.log(`[Simplify] process exited with code ${code}`);
+            if (res.headersSent) return;
             if (code !== 0) {
                 console.error('[Simplify] Error output:', errorOutput);
                 return res.status(500).json({

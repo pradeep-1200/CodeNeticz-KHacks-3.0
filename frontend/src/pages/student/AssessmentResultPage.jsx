@@ -196,6 +196,10 @@ const AssessmentResultPage = () => {
     const polls   = useRef(0);
 
     const loadResult = useCallback(async () => {
+        // Skip the poll entirely when the browser tab is in the background.
+        // This avoids burning rate-limit budget while the user isn't watching.
+        if (document.hidden) return;
+
         try {
             const res = await getMyAssessmentResult(assessmentId);
             if (res.success && res.result) {
@@ -205,7 +209,7 @@ const AssessmentResultPage = () => {
             }
         } catch (err) {
             polls.current++;
-            if (polls.current >= 12) { // 60 seconds
+            if (polls.current >= 12) { // ~96 seconds at 8 s/poll
                 setError(err?.response?.data?.message || 'Result not available yet. Your teacher may need to review it.');
                 setLoading(false);
                 if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
@@ -215,8 +219,9 @@ const AssessmentResultPage = () => {
 
     useEffect(() => {
         loadResult();
-        // Poll every 5 seconds while loading
-        pollRef.current = setInterval(loadResult, 5000);
+        // Poll every 8 seconds while waiting for AI evaluation.
+        // Interval raised from 5 s to 8 s to reduce backend rate-limit consumption.
+        pollRef.current = setInterval(loadResult, 8000);
         return () => { if (pollRef.current) clearInterval(pollRef.current); };
     }, [loadResult]);
 

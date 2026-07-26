@@ -35,8 +35,34 @@ app.use(helmet({
   }
 }));
 
-// ── CORS — environment-driven exact origin matching ────────────
-const rawAllowedOrigins = process.env.ALLOWED_ORIGINS 
+// ── CORS ───────────────────────────────────────────────────────
+//
+// Allowed origins are resolved in this priority order:
+//
+//  1. ALLOWED_ORIGINS env var — comma-separated list of exact origins
+//     (set this in Render's Environment dashboard for any extra domains).
+//
+//  2. CLIENT_URL env var — single exact origin fallback, used when
+//     ALLOWED_ORIGINS is not set (defaults to the production frontend).
+//
+//  3. http://localhost:5173 — always allowed for local development.
+//
+//  4. Any Vercel preview deployment for this project, matched by the
+//     pattern  ^https://aclc-frontend.*\.vercel\.app$
+//     This covers:
+//       - https://aclc-frontend-mu.vercel.app        (current deploy)
+//       - https://aclc-frontend-<hash>.vercel.app    (future previews)
+//       - https://aclc-frontend-<branch>.vercel.app  (branch previews)
+//     Unrelated Vercel apps (different prefix) are still rejected.
+//
+// NOTE: origin: '*' is intentionally never used — credentials: true
+//       requires an explicit origin echo, not a wildcard.
+
+// Regex that matches any aclc-frontend Vercel deployment URL.
+const VERCEL_PREVIEW_PATTERN = /^https:\/\/aclc-frontend.*\.vercel\.app$/;
+
+// Exact origins collected from environment variables.
+const rawAllowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)
   : [];
 
@@ -45,13 +71,20 @@ const defaultOrigins = [
   'http://localhost:5173'
 ];
 
-const allowedOrigins = Array.from(new Set([...rawAllowedOrigins, ...defaultOrigins]));
+const exactAllowedOrigins = Array.from(new Set([...rawAllowedOrigins, ...defaultOrigins]));
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (curl, Postman, server-to-server)
+    // Allow requests with no Origin header (Postman, curl, server-to-server).
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
+
+    // Allow any explicitly listed exact origin.
+    if (exactAllowedOrigins.includes(origin)) return callback(null, true);
+
+    // Allow any Vercel preview deployment belonging to this project.
+    if (VERCEL_PREVIEW_PATTERN.test(origin)) return callback(null, true);
+
+    // Reject everything else with a descriptive error.
     callback(new Error(`CORS: origin '${origin}' not allowed`));
   },
   credentials: true,

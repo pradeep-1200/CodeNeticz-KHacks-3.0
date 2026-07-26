@@ -41,7 +41,7 @@ const rawAllowedOrigins = process.env.ALLOWED_ORIGINS
   : [];
 
 const defaultOrigins = [
-  process.env.CLIENT_URL || 'https://aclc-frontend.vercel.app',
+  process.env.CLIENT_URL || 'https://aclc-frontend-mu.vercel.app',
   'http://localhost:5173'
 ];
 
